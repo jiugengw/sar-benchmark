@@ -47,13 +47,11 @@ def log(message, file):
     print(message, file=file, flush=True)
 
 
-def make_loader(args, split):
-    """Batches of `split`; only the training set is shuffled and augmented."""
-    train = split == 'train'
-    dataset = SARMultiTask(args.data, split, train=train, limit=args.limit)
+def make_loader(args, indices, train):
+    """Build a loader over selected rows from the labeled course training set."""
+    dataset = SARMultiTask(args.data, train=train, limit=args.limit, indices=indices)
     return DataLoader(dataset, args.batch_size, shuffle=train, num_workers=args.workers, collate_fn=collate,
-                      persistent_workers=train and args.workers > 0)  # training workers live across epochs
-
+                      persistent_workers=train and args.workers > 0)
 
 def lr_factor(step, warmup, total):
     """Learning-rate multiplier: linear warmup over `warmup` steps, then cosine decay to 0 at step `total`."""
@@ -115,8 +113,29 @@ def main():
     log_file = open(run_dir / 'log.txt', 'w')
     log(json.dumps(vars(args), default=str), log_file)
 
-    # Data
-    train_loader, val_loader, test_loader = (make_loader(args, split) for split in ('train', 'val', 'test'))
+    # Deterministic 90/10 split of the labeled course training set.
+    rows = SARMultiTask(args.data, train=False, limit=args.limit)
+    n = len(rows)
+    if n < 2:
+        raise ValueError(f"Need at least 2 labeled images for a train/validation split; found {n}.")
+    permutation = torch.randperm(n, generator=torch.Generator().manual_seed(args.seed)).tolist()
+    n_val = max(1, round(n * 0.10))
+    val_indices = permutation[:n_val]
+    train_indices = permutation[n_val:]
+    train_loader = make_loader(args, train_indices, train=True)
+    val_loader = make_loader(args, val_indices, train=False)
+
+    # Detection evaluation uses only annotations for this validation holdout.
+    source_gt = json.loads((args.data / 'train' / 'instances.json').read_text())
+    val_image_ids = {rows.coco_images[rows.rows[i]['file_name']]['id'] for i in val_indices}
+    val_gt = {
+        **source_gt,
+        'images': [image for image in source_gt['images'] if image['id'] in val_image_ids],
+        'annotations': [ann for ann in source_gt['annotations'] if ann['image_id'] in val_image_ids],
+    }
+    val_gt_path = run_dir / 'instances_val_holdout.json'
+    val_gt_path.write_text(json.dumps(val_gt))
+    log(f'data: {len(train_indices)} train, {len(val_indices)} validation images', log_file)
 
     # Model: adapters are created on the CPU, so they are added before .cuda()
     backbone = build_backbone(args.backbone, pretrained=args.init == 'pretrained')
@@ -140,24 +159,21 @@ def main():
     for epoch in range(1, args.epochs + 1):
         train_one_epoch(model, train_loader, optimizer, schedule, epoch, log_file)
         if epoch % args.eval_every == 0 or epoch == args.epochs:
-            val, val_detections = evaluate(model, val_loader, args.data / 'detection' / 'instances_val.json')
+            val, val_detections = evaluate(model, val_loader, val_gt_path)
             history.append({'epoch': epoch, **val})
             log(f'epoch {epoch} val: {headline(val)}', log_file)
     train_hours = (time.time() - start) / 3600
 
-    # Evaluate on test, once
-    test, test_detections = evaluate(model, test_loader, args.data / 'detection' / 'instances_test.json')
+    # Save the trained model before final reporting.
+    torch.save(model.state_dict(), run_dir / 'model.pt')
     peak_gb = torch.cuda.max_memory_allocated() / 2**30
-    log(f'test: {headline(test)}\ntraining {train_hours:.2f} h, peak GPU memory {peak_gb:.1f} GB', log_file)
+    log(f'training {train_hours:.2f} h, peak GPU memory {peak_gb:.1f} GB', log_file)
 
-    # Save
     summary = {'args': vars(args), 'parameters': parameters, 'trainable_parameters': trainable,
                'train_hours': train_hours, 'peak_gpu_memory_gb': peak_gb,
-               'val_history': history, 'val': history[-1], 'test': test}
+               'val_history': history, 'val': history[-1], 'test': None}
     (run_dir / 'metrics.json').write_text(json.dumps(summary, indent=2, default=str))
     (run_dir / 'predictions_val.json').write_text(json.dumps(val_detections))
-    (run_dir / 'predictions_test.json').write_text(json.dumps(test_detections))
-    torch.save(model.state_dict(), run_dir / 'model.pt')
 
 
 if __name__ == '__main__':

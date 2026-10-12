@@ -22,12 +22,15 @@ class SARMultiTask(Dataset):
     An item is (image [1, size, size], label 0..8, target), target = {'boxes': XYXY on the resized
     image, 'labels': 1..9, 'image_id': COCO id, 'orig_size': (h, w)}."""
 
-    def __init__(self, root, split, train=False, size=512, limit=None):
+    def __init__(self, root, train=False, size=512, limit=None, indices=None):
         self.root = Path(root)
-        with open(self.root / 'classification' / f'{split}.csv') as f:
+        self.image_root = self.root / 'train'
+        with open(self.image_root / 'labels.csv', newline='') as f:
             self.rows = list(csv.DictReader(f))[:limit]
-        coco = json.loads((self.root / 'detection' / f'instances_{split}.json').read_text())
-        self.coco_images = {img['file_name']: img for img in coco['images']}  # key = CSV 'image'
+        if indices is not None:
+            self.rows = [self.rows[i] for i in indices]
+        coco = json.loads((self.image_root / 'instances.json').read_text())
+        self.coco_images = {img['file_name']: img for img in coco['images']}
         self.annotations = defaultdict(list)  # COCO image id -> its boxes
         for ann in coco['annotations']:
             self.annotations[ann['image_id']].append(ann)
@@ -46,12 +49,12 @@ class SARMultiTask(Dataset):
 
     def __getitem__(self, i):
         row = self.rows[i]
-        info = self.coco_images[row['image']]
+        info = self.coco_images[row['file_name']]
         anns = self.annotations[info['id']]
         orig_size = (info['height'], info['width'])
         boxes = tv_tensors.BoundingBoxes([a['bbox'] for a in anns], format='XYWH', canvas_size=orig_size,
                                          dtype=torch.float32)  # integer boxes would be truncated by Resize
-        image = Image.open(self.root / row['image']).convert('L')  # PIL: torchvision.io cannot read .bmp
+        image = Image.open(self.image_root / row['file_name']).convert('L')  # PIL: torchvision.io cannot read .bmp
         image, boxes = self.transform(image, boxes)
         target = {'boxes': boxes, 'labels': torch.tensor([a['category_id'] for a in anns]),
                   'image_id': info['id'], 'orig_size': orig_size}
