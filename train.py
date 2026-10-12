@@ -16,6 +16,10 @@ from sarbench.data import SARMultiTask, collate, to_original_xywh
 from sarbench.metrics import classification_metrics, detection_metrics
 from sarbench.model import MultiTaskModel
 
+# Validation reference: mean ViT + LoRA scores over seeds 0, 1 and 2.
+VAL_REFERENCE_F1 = 0.9331
+VAL_REFERENCE_MAP = 0.2613
+
 
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__)
@@ -102,7 +106,14 @@ def evaluate(model, loader, gt_json):
 
 
 def headline(metrics):
-    return ' '.join(f'{k} {metrics[k]:.4f}' for k in ('accuracy', 'macro_f1', 'balanced_accuracy', 'mAP', 'AP50'))
+    scores = ' '.join(f'{k} {metrics[k]:.4f}' for k in ('accuracy', 'macro_f1', 'balanced_accuracy', 'mAP', 'AP50'))
+    return f'{scores} Δm {metrics["delta_m"]:+.2f}'
+
+
+def validation_delta_m(metrics):
+    """Mean relative change in validation macro-F1 and mAP, in percentage points."""
+    return 50 * ((metrics['macro_f1'] - VAL_REFERENCE_F1) / VAL_REFERENCE_F1
+                 + (metrics['mAP'] - VAL_REFERENCE_MAP) / VAL_REFERENCE_MAP)
 
 
 def main():
@@ -160,6 +171,7 @@ def main():
         train_one_epoch(model, train_loader, optimizer, schedule, epoch, log_file)
         if epoch % args.eval_every == 0 or epoch == args.epochs:
             val, val_detections = evaluate(model, val_loader, val_gt_path)
+            val['delta_m'] = validation_delta_m(val)
             history.append({'epoch': epoch, **val})
             log(f'epoch {epoch} val: {headline(val)}', log_file)
     train_hours = (time.time() - start) / 3600

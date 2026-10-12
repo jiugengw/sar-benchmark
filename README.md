@@ -84,18 +84,18 @@ bash run_all.sh                                                  # all eight run
 
 - Options: `--backbone vit|terramind`, `--init pretrained|scratch`, `--adapt full|lora|moelora`
   (`python train.py -h`).
+- Each validation line reports Δm against the validation ViT + LoRA reference (macro-F1 93.31%, mAP 26.13%).
 - `--adapt full` and `--init scratch` train 106 M parameters: over the 40 M budget, for reference only.
 - Pretrained weights download from Hugging Face on first use (ViT 0.4 GB, TerraMind 1.5 GB).
 - Times for one RTX PRO 6000 Blackwell GPU. Memory: [docs/DETAILS.md](docs/DETAILS.md#time-and-memory).
 
 ### 2.3 Use Course Data
 
-TA Zichen ran this code on fully labelled data in another folder layout. For the
-[course data](https://huggingface.co/datasets/doem1997/cs701-sar-course-data), adapt `sarbench/data.py` and `train.py`:
+Fetch the course archives already stored under `data/` with Git LFS, then extract them into `data/course-data/`.
+Commands and the expected layout are in [docs/WORKFLOW.md](docs/WORKFLOW.md).
 
-- train on `train/labels.csv` + `train/instances.json`
-- hold out part of train for local validation (val and test have no labels)
-- predict on the images in `val/images.json` and `test/images.json`
+Experiments use `train.py` options; you can switch backbone or adaptation without editing the training loop. Run
+outputs stay under `runs/` by default. See [docs/WORKFLOW.md](docs/WORKFLOW.md) for commands and Git guidance.
 
 ### 2.4 Make Submission
 
@@ -143,6 +143,7 @@ Accuracy and AP50: [docs/DETAILS.md](docs/DETAILS.md#results-in-full).
 
 ```
 train.py              entry: train + evaluate one configuration
+train.py.old          archived previous version of train.py; not used by training
 run_all.sh            the eight reference runs (calls train.py)
 make_submission.py    write_submission(): predictions -> submission.zip
 sarbench/             the code behind train.py

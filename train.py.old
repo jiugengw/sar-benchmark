@@ -1,3 +1,4 @@
+# Archived previous version of train.py; retained for reference only.
 """Train one model jointly for classification and detection, then score it on val and test.
 Example: python train.py --backbone vit --init pretrained --adapt lora"""
 import argparse

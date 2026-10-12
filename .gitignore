@@ -1,3 +1,5 @@
 runs/
+/data/course-data/
+.venv/
 __pycache__/
 .pytest_cache/
