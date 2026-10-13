@@ -1,4 +1,4 @@
-"""The course data in TA Zichen's folder layout (see README): every image has one class label and >= 1 box.
+"""Labeled course training data: every image has one class label and >= 1 box.
 Loads images and boxes at a fixed input size and maps predicted boxes back to original pixels."""
 import csv
 import json
@@ -18,7 +18,7 @@ MEAN, STD = 0.2526, 0.2133
 
 
 class SARMultiTask(Dataset):
-    """The images of classification/{split}.csv with their boxes from detection/instances_{split}.json.
+    """Images from train/labels.csv with boxes from train/instances.json under the data root.
     An item is (image [1, size, size], label 0..8, target), target = {'boxes': XYXY on the resized
     image, 'labels': 1..9, 'image_id': COCO id, 'orig_size': (h, w)}."""
 

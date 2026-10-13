@@ -15,8 +15,10 @@ data/course-data/
     └── ... image files ...
 ```
 
-The validation set is made by holding out 10% of the labeled training rows. The loader does not need labels for the
-separate course validation or test splits.
+Local validation holds out a seeded random 10% of the labeled training rows: 939 holdout images and 8,453 training
+images for this dataset. The public course `val/` images are a separate, unlabeled submission split. The trainer
+does not evaluate official validation or test scores locally. Always pass `--data`; its legacy default points
+outside the extracted `data/course-data/` folder.
 
 ### Fetch and extract the repository archives
 
@@ -50,8 +52,12 @@ python train.py --data data/course-data --backbone terramind --init pretrained -
 
 # Short run for checking the setup
 python train.py --data data/course-data --backbone vit --init pretrained --adapt lora \
-  --limit 64 --epochs 1 --eval-every 1 --out runs/smoke
+  --limit 64 --epochs 1 --eval-every 1 --out runs/smoke \
+  --results results/smoke --checkpoints checkpoints/smoke
 ```
+
+The tiny holdout can omit classes and produce non-finite classification scores; use it only to check pipeline
+execution. Full-score comparisons need the normal labeled holdout.
 
 `--out` chooses a parent output folder. The run is written to a configuration-named directory inside it. Each run
 contains `log.txt`, `metrics.json` (including validation history and Δm), `predictions_val.json`, and `model.pt`.

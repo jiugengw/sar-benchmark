@@ -1,6 +1,9 @@
-# Details of the reference code
+# Model and training details
 
 Back to the [README](../README.md).
+
+The architecture below follows the TA's reference implementation. The training and file descriptions document
+the current course-data code. The final score tables preserve the TA's original labeled-split measurements.
 
 ## Model
 
@@ -31,14 +34,23 @@ loss = cross-entropy + the four Faster R-CNN losses
 Every run also trains the 20.1 M parameters of the heads (neck, RPN, RoI heads, classifier), so
 `trainable_parameters` in `metrics.json` is the backbone count + 20.1 M.
 
-## Training protocol (the same for all eight runs)
+## Current training protocol
 
+- Read labels and COCO annotations from `train/labels.csv` and `train/instances.json` under `--data`.
+- Hold out a seeded random 10% of the labeled training rows. With 9,392 images this gives 8,453 training images
+  and 939 local validation images. This split is not stratified; a different `--seed` changes it.
 - AdamW, weight decay 0.05, batch size 16, bf16 autocast, 24 epochs.
-- Learning rate 1e-4; the backbone of the two pretrained `full` runs uses 2e-5 (`--backbone-lr 2e-5`, as in
-  `run_all.sh`), so a pretrained backbone is fine-tuned gently.
+- Learning rate 1e-4. `--backbone-lr` defaults to that rate; `run_all.sh` sets it to 2e-5 for the two pretrained
+  `full` runs, so their pretrained backbones are fine-tuned gently.
 - One epoch of linear warmup, then cosine decay to 0, updated every iteration.
-- Validation every 4 epochs and after the last one; test once, at the end. The reported model is the
-  last-epoch model: there is no checkpoint selection.
+- Validate every `--eval-every` epochs (default 4) and after the last epoch. Use `--eval-every 1` for every epoch.
+- Report accuracy, macro-F1, balanced accuracy, mAP, AP50, and Delta m on the labeled local holdout. Delta m uses
+  fixed validation reference scores 0.9331 / 0.2613. Classification and AP values in JSON are fractions; Delta m
+  is stored as a percentage value.
+- Save the final-epoch model. There is no best-checkpoint selection, and the weights do not contain optimizer or
+  scheduler state for exact training resumption.
+- The trainer does not score the separate course validation or test splits. Use `make_submission.py` to predict
+  their images; Codabench provides the official scores for the submitted predictions.
 
 ## Design notes
 
@@ -61,46 +73,78 @@ Every run also trains the 20.1 M parameters of the heads (neck, RPN, RoI heads, 
 
 ## Time and memory
 
-On one RTX PRO 6000 Blackwell GPU, a run alone takes about 50 min (LoRA about 47 min, MoE-LoRA about 1 h);
-all eight in sequence take about 7 h. A run keeps about 11-17 GiB of GPU memory in use; TerraMind with
-MoE-LoRA needs the most and does not fit on a 16 GB card. A smaller `--batch-size` saves memory but changes
-the protocol.
+The TA's original measurements on one RTX PRO 6000 Blackwell GPU were about 50 minutes per run (LoRA about
+47 minutes, MoE-LoRA about 1 hour) and about 7 hours for all eight configurations. Reported allocated memory was
+about 11–17 GiB; the TerraMind + MoE-LoRA configuration did not fit a 16 GB card under that setup.
+
+Recorded RTX 3090 (24 GB) measurements for the current local holdout, seed 0, batch size 16, 24 epochs, and
+validation every epoch:
+
+| Configuration | Training loop including validation | Peak allocated GPU memory |
+|---|---:|---:|
+| ViT pretrained + MoE-LoRA | 2.72 h | 11.98 GiB |
+| TerraMind pretrained + MoE-LoRA | 2.82 h | 14.17 GiB |
+
+These are single-run measurements, not estimates for every configuration. `train_hours` excludes initial
+downloads, data setup, and final file export. GPU utilization, other processes, and validation frequency affect
+elapsed time. `nvidia-smi` can report more memory than PyTorch's allocated-memory figure because it also includes
+reserved memory and other GPU allocations. A smaller `--batch-size` saves memory but changes the protocol.
 
 ## What a run writes
 
-`runs/<backbone>_<init>_<adapt>/`:
+`<out>/<backbone>_<init>_<adapt>/`, with `--out runs` by default:
 
-- `log.txt`: training progress and the val and test scores.
+- `log.txt`: training progress and local validation scores, including Delta m.
 - `metrics.json`: arguments, parameter counts, `train_hours` (wall time of the epoch loop, including the
   periodic validation; it grows if the GPU is shared), `peak_gpu_memory_gb` (`torch.cuda.max_memory_allocated`
-  in GiB; the process needs about 2.5 GiB more), every validation result, and the final val and test metrics.
-- `predictions_val.json`, `predictions_test.json`: detections in COCO result format, in original pixels.
+  in GiB), every local validation result, and the final validation metrics. `test` is `null`, since the trainer
+  does not perform test evaluation.
+- `predictions_val.json`: final-model detections on the local holdout, in COCO result format and original pixels.
+- `instances_val_holdout.json`: correct annotations and image metadata for that same holdout.
 - `model.pt`: the final weights (`state_dict`).
 
 The current course-data trainer also copies `metrics.json`, `predictions_val.json`, and
 `instances_val_holdout.json` to `results/<backbone>_<init>_<adapt>/seed_<seed>/` after a successful run. The
 `--results` option changes the parent folder. Model weights and configuration are also archived under
-`checkpoints/<backbone>_<init>_<adapt>/seed_<seed>/`; `--checkpoints` changes that parent folder. Logs stay in the run directory. Detection reports
-are regenerated under `reports/detection-review/`; [viewing instructions](WORKFLOW.md#view-the-report) explain
-local browsing and SSH port forwarding.
+`checkpoints/<backbone>_<init>_<adapt>/seed_<seed>/`; `--checkpoints` changes that parent folder. Logs stay in the
+run directory. Detection reports are regenerated under `reports/detection-review/`;
+[viewing instructions](WORKFLOW.md#view-the-report) explain local browsing and SSH port forwarding. Submission
+generation is a separate command and writes prediction ZIPs rather than local validation metrics.
 
 ## Checks
 
 ```bash
-bash run_all.sh --limit 64 --epochs 1 --out runs/smoke   # all eight configurations on 64 images per split, a few minutes
-python -m pytest tests                                   # the tests (need a GPU)
+# Short training-pipeline check; this is not a useful score comparison
+python train.py --data data/course-data --backbone vit --init pretrained --adapt lora \
+  --limit 64 --epochs 1 --out runs/smoke --results results/smoke --checkpoints checkpoints/smoke
+
+# Original tests that do not read the dataset (require a GPU and may download weights)
+python -m pytest tests/test_backbones.py tests/test_adapters.py
 ```
 
-`test_data.py`, `test_metrics.py` and `test_model.py` read the data in TA Zichen's layout (see the README),
-so they need the same adaptation as the code; `test_backbones.py` and `test_adapters.py` need no data.
+The small `--limit` is applied before making the 90/10 holdout. A 64-image limit leaves only 6 validation images,
+which cannot represent all 9 classes; classification metrics can be non-finite. Use it to inspect pipeline
+execution rather than rank models.
+
+`test_data.py`, the dataset-dependent detection test in `test_metrics.py`, and `test_model.py` still expect the
+TA's original dataset layout; the data/model tests also use the original loader API. They need adaptation before
+the full suite is usable with course data. The hand-computed classification metric test does not need a dataset:
+
+```bash
+python -m pytest tests/test_metrics.py::test_classification_metrics_by_hand
+```
 
 ## Results in full
+
+These are the TA's original measurements on labeled validation and test splits. The current local holdout has
+939 images, so its metrics should not be read as a reproduction of these tables. Saved current scores live in
+`results/`; the model architecture is shared, but the evaluation protocol differs.
 
 Scores in %, mean ± sample standard deviation over seeds 0, 1 and 2, last-epoch model. Accuracy and macro-F1
 for classification; COCO mAP (AP@[.50:.95]) and AP50 for detection. The seeds differ by a few tenths of a
 point, so smaller differences are noise. Δm is computed per seed against the reference, the mean of the three
-ViT-B/16 + LoRA runs (test 93.99 / 25.41, val 93.31 / 26.13; the Codabench leaderboard uses the same values), then
-averaged, so the reference configuration shows 0. Full fine-tuning and training from scratch train 106 M
+ViT-B/16 + LoRA runs (test 93.99 / 25.41, val 93.31 / 26.13), then averaged, so the reference configuration shows 0.
+The current trainer's local Delta m uses the validation reference values. Full fine-tuning and training from scratch train 106 M
 parameters with the heads, over the 40 M trainable budget of the assignment: they are references, full fine-tuning
 the upper bound.
 

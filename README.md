@@ -1,7 +1,8 @@
 # CS701 SAR Multi-Task Benchmark
 
-Reference code for the CS701 team assignment. One ViT-B/16 backbone, two tasks on SAR images: **classify** the
-image (9 classes) and **detect** its objects.
+Course-data training code adapted from the TA's CS701 reference implementation. One ViT-B/16 backbone, two tasks
+on SAR images: **classify** the image (9 classes) and **detect** its objects. The current trainer uses a labeled
+training holdout; the TA's original benchmark scores are retained below as reference results.
 
 ![One SAR image, one shared backbone, two heads: a class and the boxes](docs/task_pipeline.png)
 
@@ -17,7 +18,8 @@ image (9 classes) and **detect** its objects.
    - [2.2 Train Baseline](#22-train-baseline)
    - [2.3 Use Course Data](#23-use-course-data)
    - [2.4 Make Submission](#24-make-submission)
-3. [Baseline Results (for reference)](#3-baseline-results-for-reference)
+   - [2.5 Saved Files and Detection Report](#25-saved-files-and-detection-report)
+3. [TA Reference Results](#3-ta-reference-results)
 4. [Code Structure](#4-code-structure)
 5. [Links](#5-links)
 
@@ -54,11 +56,13 @@ image (9 classes) and **detect** its objects.
 ### 1.3 Metric
 
 - Classification: macro-F1. Detection: COCO mAP.
-- Ranking: **Δm**, mean relative change of macro-F1 and mAP vs a reference model (ViT + LoRA, the example command
-  in 2.2; mean of 3 seeds):
+- Ranking: **Δm**, mean relative change of macro-F1 and mAP vs the TA's ViT + LoRA reference, averaged over 3 seeds:
   `Δm = 100% × ½ [(F1 − F1_ref) / F1_ref + (mAP − mAP_ref) / mAP_ref]`
 - Δm = 0: as good as the reference. Δm > 0: better. ViT full fine-tuning: about +13 (over the trainable budget: an
-  upper bound).
+  upper bound in the TA's test results).
+- The current trainer uses fixed validation reference scores: **macro-F1 93.31%, mAP 26.13%**. Your local holdout
+  differs from the TA's labeled validation split, so local Δm is a comparison aid rather than an official score.
+  A new ViT + LoRA run is not forced to score Δm = 0.
 
 ### 1.4 Small Objects
 
@@ -77,43 +81,100 @@ pip install -r requirements.txt   # CUDA 12.8 builds of torch 2.9.0 / torchvisio
 
 ### 2.2 Train Baseline
 
+After fetching and extracting the [course data](#23-use-course-data):
+
 ```bash
-python train.py --backbone vit --init pretrained --adapt lora   # the Δm reference; one run, about 50 min
-bash run_all.sh                                                  # all eight runs, about 7 h
+python train.py --data data/course-data --backbone vit --init pretrained --adapt lora \
+  --seed 0 --eval-every 1
+
+# All eight reference configurations, including the over-budget full/scratch runs
+bash run_all.sh --data data/course-data
 ```
 
 - Options: `--backbone vit|terramind`, `--init pretrained|scratch`, `--adapt full|lora|moelora`
   (`python train.py -h`).
 - Each validation line reports Δm against the validation ViT + LoRA reference (macro-F1 93.31%, mAP 26.13%).
+- Default training: 24 epochs, batch size 16, learning rate 1e-4, seed 0. `--eval-every 1` validates every epoch;
+  the default interval is 4 epochs. The saved checkpoint is the final-epoch model.
 - `--adapt full` and `--init scratch` train 106 M parameters: over the 40 M budget, for reference only.
 - Pretrained weights download from Hugging Face on first use (ViT 0.4 GB, TerraMind 1.5 GB).
-- Times for one RTX PRO 6000 Blackwell GPU. Memory: [docs/DETAILS.md](docs/DETAILS.md#time-and-memory).
+- Training time depends on GPU, adaptation, and validation frequency. Hardware-specific measurements are in
+  [docs/DETAILS.md](docs/DETAILS.md#time-and-memory).
 
 ### 2.3 Use Course Data
 
 Fetch the course archives already stored under `data/` with Git LFS, then extract them into `data/course-data/`.
-Commands and the expected layout are in [docs/WORKFLOW.md](docs/WORKFLOW.md).
 
-Experiments use `train.py` options; you can switch backbone or adaptation without editing the training loop. Run
-outputs stay under `runs/` by default, with the three report-input JSON files automatically copied to
-`results/<backbone>_<init>_<adapt>/seed_<seed>/` after training. Model weights and their configuration are also
-preserved under `checkpoints/<backbone>_<init>_<adapt>/seed_<seed>/`, with weights stored through Git LFS.
-See [docs/WORKFLOW.md](docs/WORKFLOW.md) for commands,
-Git guidance, and instructions to generate and view the detection report under `reports/detection-review/`.
+```bash
+git lfs install
+git lfs pull --include="data/*.tar.gz"
+mkdir -p data/course-data
+tar -xzf data/train.tar.gz -C data/course-data
+tar -xzf data/val.tar.gz -C data/course-data
+```
+
+`--data` points to the folder containing `train/labels.csv`, `train/instances.json`, and the referenced images.
+Pass it explicitly; the script's legacy default points to a different dataset location.
+
+The trainer holds out a seeded random 10% of the labeled training set. For the 9,392 course training images,
+that means **8,453 training images and 939 local validation images**. The public course validation images are
+unlabeled and used for submission prediction. `train.py` does not evaluate the official validation or test split.
+
+Select experiments with CLI options rather than editing the training loop. Full data layout and command examples
+are in [docs/WORKFLOW.md](docs/WORKFLOW.md).
 
 ### 2.4 Make Submission
 
-`make_submission.py` has `write_submission` (the function in the briefing video): maps your boxes back to
-original image pixels, writes `submission.zip` for Codabench.
-
-It also predicts the course validation images from a saved checkpoint:
+`make_submission.py` loads a saved model, predicts the course validation images, maps boxes back to original image
+pixels, and writes a ZIP containing `classification.csv` and `detection.json`:
 
 ```bash
 python make_submission.py --run checkpoints/terramind_pretrained_moelora/seed_0 \
   --data data/course-data --split val --out submissions/my-model.zip
 ```
 
-## 3. Baseline Results (for reference)
+`--run` must contain `model.pt` and `metrics.json`. Choose an unused ZIP filename. Generating a ZIP does not upload
+it to Codabench or consume a submission slot. `--split test` works when the course test images and `images.json`
+are available locally.
+
+### 2.5 Saved Files and Detection Report
+
+After a successful run, `train.py` saves the following. Here, `<config>` means `<backbone>_<init>_<adapt>`.
+
+| Location | Contents / purpose |
+|---|---|
+| `runs/<config>/` | Training log, final model weights, local validation history, predictions, and holdout annotations. |
+| `results/<config>/seed_<seed>/` | Copies of `metrics.json`, `predictions_val.json`, and `instances_val_holdout.json` for saved results and reproducible reports. |
+| `checkpoints/<config>/seed_<seed>/` | Copies of `model.pt` and `metrics.json` for running the trained model again; weights use Git LFS. |
+| `reports/detection-review/` | Generated HTML and annotated images, recreated from saved predictions and training images. |
+
+`--out`, `--results`, and `--checkpoints` change the respective parent directories. Reusing the same run path
+overwrites its outputs. For another seed or hyperparameter experiment, choose distinct output parents.
+`model.pt` stores learned weights, without optimizer or scheduler state for exact training resumption.
+
+To compare saved detections:
+
+```bash
+python inspect_detections.py \
+  --runs results/terramind_pretrained_moelora results/vit_pretrained_moelora \
+  --data data/course-data --out reports/detection-review
+```
+
+Use result directories containing all three JSON files. Some saved examples place them directly under the
+configuration directory; new runs use the seed subdirectory. The report shows a ground-truth-only panel, model
+predictions, class AP scores, and error filters. Diagnostic matches use confidence ≥ 0.3 and IoU ≥ 0.5; these
+counts are separate from COCO mAP.
+
+Open `reports/detection-review/index.html` locally, or follow the
+[Mac / SSH viewing instructions](docs/WORKFLOW.md#view-the-report). Generated reports, run files, and extracted
+data are ignored by Git. Saved result JSONs and Git LFS checkpoints can be committed. Details:
+[results/README.md](results/README.md), [checkpoints/README.md](checkpoints/README.md).
+
+## 3. TA Reference Results
+
+These are the TA's original benchmark measurements using labeled validation and test splits, averaged over three
+seeds. They provide historical comparison values. The current course-data trainer uses a different local holdout
+and does not reproduce these evaluation splits. Current experiment scores are stored in `results/`.
 
 Test split, %, mean ± std over 3 seeds. Δm reference: ViT + LoRA, mean of its 3 seeds (93.99 / 25.41), so its Δm
 is 0. Full fine-tuning and from scratch train 106 M parameters with the heads: over the 40 M budget, shown for
@@ -164,7 +225,7 @@ sarbench/             the code behind train.py
 ├── adapters.py       LoRA, MoE-LoRA on a frozen backbone
 ├── model.py          backbone + class head + ViTDet feature pyramid + Faster R-CNN
 └── metrics.py        accuracy, macro-F1, COCO box AP
-tests/                checks of sarbench/ (python -m pytest tests)
+tests/                original checks; dataset-dependent tests need adaptation to the course loader
 docs/DETAILS.md       model, training protocol, design notes, time and memory
 results/              saved metrics, holdout predictions, and correct annotations
 checkpoints/          saved model.pt weights (Git LFS) and model configuration
