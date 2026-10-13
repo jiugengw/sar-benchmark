@@ -11,11 +11,12 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from sarbench.adapters import add_adapters
+from sarbench.adapters import add_adapters, unfreeze_last_blocks
 from sarbench.backbones import build_backbone
 from sarbench.data import SARMultiTask, collate, to_original_xywh
 from sarbench.metrics import classification_metrics, detection_metrics
 from sarbench.model import MultiTaskModel
+from sarbench.optim import parameter_groups
 
 # Validation reference: mean ViT + LoRA scores over seeds 0, 1 and 2.
 VAL_REFERENCE_F1 = 0.9331
@@ -28,6 +29,10 @@ def parse_args():
     p.add_argument('--backbone', required=True, choices=['vit', 'terramind'])
     p.add_argument('--init', required=True, choices=['pretrained', 'scratch'])
     p.add_argument('--adapt', required=True, choices=['full', 'lora', 'moelora'])
+    p.add_argument('--unfreeze-last', type=int, default=0,
+                   help='also train the last N encoder blocks with pretrained LoRA/MoE-LoRA (default: 0)')
+    p.add_argument('--unfrozen-lr', type=float, default=2e-5,
+                   help='learning rate for original weights enabled by --unfreeze-last')
     p.add_argument('--epochs', type=int, default=24)
     p.add_argument('--batch-size', type=int, default=16)
     p.add_argument('--lr', type=float, default=1e-4)
@@ -45,6 +50,10 @@ def parse_args():
     args = p.parse_args()
     if args.init == 'scratch' and args.adapt != 'full':
         p.error('--init scratch is only valid with --adapt full')
+    if args.unfreeze_last < 0 or args.unfreeze_last > 12:
+        p.error('--unfreeze-last must be between 0 and 12')
+    if args.unfreeze_last and (args.init != 'pretrained' or args.adapt == 'full'):
+        p.error('--unfreeze-last requires pretrained initialization and lora or moelora adaptation')
     if args.backbone_lr is None:
         args.backbone_lr = args.lr
     return args
@@ -133,7 +142,10 @@ def save_artifacts(run_dir, destination, filenames):
 def main():
     args = parse_args()
     torch.manual_seed(args.seed)
-    run_dir = args.out / f'{args.backbone}_{args.init}_{args.adapt}'
+    configuration = f'{args.backbone}_{args.init}_{args.adapt}'
+    if args.unfreeze_last:
+        configuration += f'_unfreeze{args.unfreeze_last}'
+    run_dir = args.out / configuration
     run_dir.mkdir(parents=True, exist_ok=True)
     log_file = open(run_dir / 'log.txt', 'w')
     log(json.dumps(vars(args), default=str), log_file)
@@ -166,16 +178,20 @@ def main():
     backbone = build_backbone(args.backbone, pretrained=args.init == 'pretrained')
     if args.adapt != 'full':
         add_adapters(backbone, args.adapt)  # also freezes the backbone
-    model = MultiTaskModel(backbone, task_routing=args.adapt == 'moelora').cuda()
+    unfreeze_last_blocks(backbone, args.unfreeze_last)
+    model = MultiTaskModel(backbone, task_routing=args.adapt == 'moelora')
     parameters = sum(p.numel() for p in model.parameters())
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     log(f'parameters: {parameters:,} total, {trainable:,} trainable', log_file)
+    if args.unfreeze_last and (parameters > 130_000_000 or trainable > 40_000_000):
+        raise ValueError('Partial fine-tuning exceeds the 130M total / 40M trainable parameter budget.')
+    model.cuda()
 
     # Optimizer and schedule: trainable backbone parameters at --backbone-lr, all new modules at --lr
-    backbone_params = [p for p in model.backbone.parameters() if p.requires_grad]
-    head_params = [p for name, p in model.named_parameters() if not name.startswith('backbone.')]
-    optimizer = torch.optim.AdamW([{'params': backbone_params, 'lr': args.backbone_lr}, {'params': head_params}],
-                                  lr=args.lr, weight_decay=args.weight_decay)
+    groups = parameter_groups(model, args.backbone_lr, args.lr,
+                              args.unfrozen_lr if args.unfreeze_last else None)
+    log('optimizer groups: ' + ', '.join(f'{group["name"]} lr {group["lr"]:.2e}' for group in groups), log_file)
+    optimizer = torch.optim.AdamW(groups, lr=args.lr, weight_decay=args.weight_decay)
     warmup, total = len(train_loader), args.epochs * len(train_loader)  # one epoch of warmup
     schedule = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step: lr_factor(step, warmup, total))
 

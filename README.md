@@ -98,6 +98,8 @@ bash run_all.sh --data data/course-data
   the default interval is 4 epochs. The saved checkpoint is the final-epoch model.
 - `--adapt full` and `--init scratch` train 106 M parameters: over the 40 M budget, for reference only.
 - Pretrained weights download from Hugging Face on first use (ViT 0.4 GB, TerraMind 1.5 GB).
+- Optional `--unfreeze-last N` trains the last N original backbone blocks alongside pretrained LoRA/MoE-LoRA;
+  `--unfrozen-lr` sets their learning rate. See [partial fine-tuning examples](docs/WORKFLOW.md#partial-fine-tuning-and-short-screening-runs).
 - Training time depends on GPU, adaptation, and validation frequency. Hardware-specific measurements are in
   [docs/DETAILS.md](docs/DETAILS.md#time-and-memory).
 
@@ -140,6 +142,7 @@ are available locally.
 ### 2.5 Saved Files and Detection Report
 
 After a successful run, `train.py` saves the following. Here, `<config>` means `<backbone>_<init>_<adapt>`.
+Partial fine-tuning adds `_unfreezeN` to that configuration name.
 
 | Location | Contents / purpose |
 |---|---|
@@ -224,8 +227,9 @@ sarbench/             the code behind train.py
 ├── backbones.py      ViT (ImageNet-21k), TerraMind-1.0-base
 ├── adapters.py       LoRA, MoE-LoRA on a frozen backbone
 ├── model.py          backbone + class head + ViTDet feature pyramid + Faster R-CNN
-└── metrics.py        accuracy, macro-F1, COCO box AP
-tests/                original checks; dataset-dependent tests need adaptation to the course loader
+├── metrics.py        accuracy, macro-F1, COCO box AP
+└── optim.py          learning-rate groups for adapters, heads, and unfrozen backbone weights
+tests/                CPU partial-fine-tuning checks and original tests; dataset-dependent tests need adaptation
 docs/DETAILS.md       model, training protocol, design notes, time and memory
 results/              saved metrics, holdout predictions, and correct annotations
 checkpoints/          saved model.pt weights (Git LFS) and model configuration

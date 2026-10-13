@@ -59,6 +59,25 @@ python train.py --data data/course-data --backbone vit --init pretrained --adapt
 The tiny holdout can omit classes and produce non-finite classification scores; use it only to check pipeline
 execution. Full-score comparisons need the normal labeled holdout.
 
+### Partial fine-tuning and short screening runs
+
+Frozen backbone weights stay fixed; LoRA/MoE-LoRA adapters and task heads still train. `--unfreeze-last N` also
+allows the original weights in the last N encoder blocks to train. It is supported with pretrained LoRA or
+MoE-LoRA. Those original weights use `--unfrozen-lr` (default 2e-5), while adapters use `--backbone-lr` and heads
+use `--lr`. The trainer checks the total/trainable parameter budget for this mode.
+
+For example, TerraMind + MoE-LoRA with two unfrozen blocks has 35.30M trainable parameters. A 12-epoch screen:
+
+```bash
+python train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \
+  --unfreeze-last 2 --unfrozen-lr 2e-5 --epochs 12 --seed 0 --eval-every 1 \
+  --out runs/partial-screen --results results/partial-screen --checkpoints checkpoints/partial-screen
+```
+
+The configuration directory gets an `_unfreeze2` suffix. Short runs help screen ideas, but `--epochs 12` changes
+the cosine schedule: it is not equivalent to epoch 12 of a 24-epoch run. Compare promising methods with a matched
+epoch count and schedule before interpreting a difference as an improvement.
+
 `--out` chooses a parent output folder. The run is written to a configuration-named directory inside it. Each run
 contains `log.txt`, `metrics.json` (including validation history and Δm), `predictions_val.json`, and `model.pt`.
 The default parent folder is `runs/`.

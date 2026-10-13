@@ -34,6 +34,12 @@ loss = cross-entropy + the four Faster R-CNN losses
 Every run also trains the 20.1 M parameters of the heads (neck, RPN, RoI heads, classifier), so
 `trainable_parameters` in `metrics.json` is the backbone count + 20.1 M.
 
+**Partial fine-tuning** (`--unfreeze-last N`) optionally makes the original weights in the last N encoder blocks
+trainable alongside pretrained LoRA/MoE-LoRA. Remaining original backbone weights stay frozen. The unfrozen
+weights have their own learning rate (`--unfrozen-lr`, default 2e-5). TerraMind + MoE-LoRA with two unfrozen blocks
+has 35,304,217 trainable parameters, including heads, within the 40M limit. This mode adds `_unfreezeN` to the
+configuration directory name and rejects settings that exceed the parameter budget.
+
 ## Current training protocol
 
 - Read labels and COCO annotations from `train/labels.csv` and `train/instances.json` under `--data`.
@@ -132,6 +138,7 @@ the full suite is usable with course data. The hand-computed classification metr
 
 ```bash
 python -m pytest tests/test_metrics.py::test_classification_metrics_by_hand
+python -m pytest tests/test_partial_finetuning.py
 ```
 
 ## Results in full

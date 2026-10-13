@@ -1,0 +1,28 @@
+{
+  "baseline_24_epoch_final": {
+    "epoch": 24,
+    "macro_f1": 0.9065185933604089,
+    "mAP": 0.2721760461387116,
+    "AP50": 0.5778946055534777,
+    "AP75": 0.22018773391868507,
+    "delta_m": 0.6567816091112005
+  },
+  "baseline_epoch12_under_24_epoch_schedule": {
+    "epoch": 12,
+    "macro_f1": 0.8927085665681227,
+    "mAP": 0.2228602709140001,
+    "AP50": 0.5011216265258591,
+    "AP75": 0.1688195437335153,
+    "delta_m": -9.51984608541344
+  },
+  "trial_12_epoch_final": {
+    "epoch": 12,
+    "macro_f1": 0.9136152514773682,
+    "mAP": 0.20656136884142828,
+    "AP50": 0.4749602073484491,
+    "AP75": 0.15104340942309624,
+    "delta_m": -11.518375231627111
+  },
+  "trainable_parameters": 35304217,
+  "comparison_note": "12 versus 24 epochs use different cosine schedules. This is screening evidence; a full 24-epoch trial is needed for a matched final comparison."
+}

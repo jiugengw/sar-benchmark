@@ -1,0 +1,42 @@
+[
+  {
+    "backbone": "terramind",
+    "adapt": "moelora",
+    "seed": 0,
+    "macro_f1": 0.9065185933604089,
+    "mAP": 0.2721760461387116,
+    "delta_m": 0.6567816091112005,
+    "train_hours": 2.818165975941552,
+    "metrics_path": "results/terramind_pretrained_moelora/metrics.json"
+  },
+  {
+    "backbone": "vit",
+    "adapt": "moelora",
+    "seed": 0,
+    "macro_f1": 0.9223436677069172,
+    "mAP": 0.2548981588008242,
+    "delta_m": -1.8013744971287584,
+    "train_hours": 2.7175636142492294,
+    "metrics_path": "results/vit_pretrained_moelora/metrics.json"
+  },
+  {
+    "backbone": "terramind",
+    "adapt": "lora",
+    "seed": 0,
+    "macro_f1": 0.9145745902149796,
+    "mAP": 0.2544985402596265,
+    "delta_m": -2.2941465357663757,
+    "train_hours": 2.0040441060728496,
+    "metrics_path": "results/terramind_pretrained_lora/metrics.json"
+  },
+  {
+    "backbone": "vit",
+    "adapt": "lora",
+    "seed": 0,
+    "macro_f1": 0.9260898485571105,
+    "mAP": 0.24854522101594767,
+    "delta_m": -2.8162766544609417,
+    "train_hours": 1.0706434524059296,
+    "metrics_path": "results/vit_pretrained_lora/metrics.json"
+  }
+]

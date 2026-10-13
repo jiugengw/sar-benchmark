@@ -50,6 +50,15 @@ def add_adapters(backbone, kind):
         blk.attn.proj = adapter(blk.attn.proj)
 
 
+def unfreeze_last_blocks(backbone, count):
+    """Allow the last `count` encoder blocks to train alongside the adapters."""
+    if count < 0 or count > len(backbone.blocks):
+        raise ValueError(f'Cannot unfreeze {count} blocks from a {len(backbone.blocks)}-block backbone.')
+    if count:
+        for block in backbone.blocks[-count:]:
+            block.requires_grad_(True)
+
+
 def set_task(module, task):
     """Route every MoELoRA inside `module` through the router of `task` (0 = classification, 1 = detection)."""
     for layer in module.modules():
