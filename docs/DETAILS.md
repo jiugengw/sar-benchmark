@@ -77,6 +77,13 @@ the protocol.
 - `predictions_val.json`, `predictions_test.json`: detections in COCO result format, in original pixels.
 - `model.pt`: the final weights (`state_dict`).
 
+The current course-data trainer also copies `metrics.json`, `predictions_val.json`, and
+`instances_val_holdout.json` to `results/<backbone>_<init>_<adapt>/seed_<seed>/` after a successful run. The
+`--results` option changes the parent folder. Model weights and configuration are also archived under
+`checkpoints/<backbone>_<init>_<adapt>/seed_<seed>/`; `--checkpoints` changes that parent folder. Logs stay in the run directory. Detection reports
+are regenerated under `reports/detection-review/`; [viewing instructions](WORKFLOW.md#view-the-report) explain
+local browsing and SSH port forwarding.
+
 ## Checks
 
 ```bash

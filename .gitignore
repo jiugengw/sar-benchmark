@@ -1,4 +1,5 @@
 runs/
+/reports/detection-review/
 /data/course-data/
 .venv/
 __pycache__/

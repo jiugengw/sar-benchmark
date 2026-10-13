@@ -95,12 +95,23 @@ Fetch the course archives already stored under `data/` with Git LFS, then extrac
 Commands and the expected layout are in [docs/WORKFLOW.md](docs/WORKFLOW.md).
 
 Experiments use `train.py` options; you can switch backbone or adaptation without editing the training loop. Run
-outputs stay under `runs/` by default. See [docs/WORKFLOW.md](docs/WORKFLOW.md) for commands and Git guidance.
+outputs stay under `runs/` by default, with the three report-input JSON files automatically copied to
+`results/<backbone>_<init>_<adapt>/seed_<seed>/` after training. Model weights and their configuration are also
+preserved under `checkpoints/<backbone>_<init>_<adapt>/seed_<seed>/`, with weights stored through Git LFS.
+See [docs/WORKFLOW.md](docs/WORKFLOW.md) for commands,
+Git guidance, and instructions to generate and view the detection report under `reports/detection-review/`.
 
 ### 2.4 Make Submission
 
 `make_submission.py` has `write_submission` (the function in the briefing video): maps your boxes back to
 original image pixels, writes `submission.zip` for Codabench.
+
+It also predicts the course validation images from a saved checkpoint:
+
+```bash
+python make_submission.py --run checkpoints/terramind_pretrained_moelora/seed_0 \
+  --data data/course-data --split val --out submissions/my-model.zip
+```
 
 ## 3. Baseline Results (for reference)
 
@@ -146,6 +157,7 @@ train.py              entry: train + evaluate one configuration
 train.py.old          archived previous version of train.py; not used by training
 run_all.sh            the eight reference runs (calls train.py)
 make_submission.py    write_submission(): predictions -> submission.zip
+inspect_detections.py saved predictions + correct boxes -> HTML detection report
 sarbench/             the code behind train.py
 ├── data.py           images + boxes at 512 × 512, flips; boxes back to original pixels
 ├── backbones.py      ViT (ImageNet-21k), TerraMind-1.0-base
@@ -154,6 +166,9 @@ sarbench/             the code behind train.py
 └── metrics.py        accuracy, macro-F1, COCO box AP
 tests/                checks of sarbench/ (python -m pytest tests)
 docs/DETAILS.md       model, training protocol, design notes, time and memory
+results/              saved metrics, holdout predictions, and correct annotations
+checkpoints/          saved model.pt weights (Git LFS) and model configuration
+reports/detection-review/  generated HTML and image overlays (ignored by Git)
 ```
 
 More: [docs/DETAILS.md](docs/DETAILS.md).

@@ -3,6 +3,7 @@ Example: python train.py --backbone vit --init pretrained --adapt lora"""
 import argparse
 import json
 import math
+import shutil
 import time
 from pathlib import Path
 
@@ -37,6 +38,10 @@ def parse_args():
     p.add_argument('--limit', type=int, help='use only the first N images of every split (quick checks)')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--out', type=Path, default=Path('runs'))
+    p.add_argument('--results', type=Path, default=Path('results'),
+                   help='parent folder for saved JSON results, organized by configuration and seed')
+    p.add_argument('--checkpoints', type=Path, default=Path('checkpoints'),
+                   help='parent folder for preserved model weights and configuration, organized by seed')
     args = p.parse_args()
     if args.init == 'scratch' and args.adapt != 'full':
         p.error('--init scratch is only valid with --adapt full')
@@ -116,6 +121,15 @@ def validation_delta_m(metrics):
                  + (metrics['mAP'] - VAL_REFERENCE_MAP) / VAL_REFERENCE_MAP)
 
 
+def save_artifacts(run_dir, destination, filenames):
+    """Copy completed run artifacts using atomic replacement of each destination file."""
+    destination.mkdir(parents=True, exist_ok=True)
+    for name in filenames:
+        temporary = destination / (name + '.tmp')
+        shutil.copy2(run_dir / name, temporary)
+        temporary.replace(destination / name)
+
+
 def main():
     args = parse_args()
     torch.manual_seed(args.seed)
@@ -186,6 +200,12 @@ def main():
                'val_history': history, 'val': history[-1], 'test': None}
     (run_dir / 'metrics.json').write_text(json.dumps(summary, indent=2, default=str))
     (run_dir / 'predictions_val.json').write_text(json.dumps(val_detections))
+    results_dir = args.results / run_dir.name / f'seed_{args.seed}'
+    save_artifacts(run_dir, results_dir, ('metrics.json', 'predictions_val.json', 'instances_val_holdout.json'))
+    log(f'saved JSON results: {results_dir}', log_file)
+    checkpoint_dir = args.checkpoints / run_dir.name / f'seed_{args.seed}'
+    save_artifacts(run_dir, checkpoint_dir, ('model.pt', 'metrics.json'))
+    log(f'saved checkpoint: {checkpoint_dir}', log_file)
 
 
 if __name__ == '__main__':

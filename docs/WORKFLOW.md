@@ -57,17 +57,68 @@ python train.py --data data/course-data --backbone vit --init pretrained --adapt
 contains `log.txt`, `metrics.json` (including validation history and Δm), `predictions_val.json`, and `model.pt`.
 The default parent folder is `runs/`.
 
-## Keep Git focused on code
+At the end of a successful run, `train.py` also copies `metrics.json`, `predictions_val.json`, and
+`instances_val_holdout.json` into `results/<backbone>_<init>_<adapt>/seed_<seed>/`. Different seeds have separate
+result folders. Use `--results results/my-experiment` to choose a different parent folder for a learning-rate or
+epoch-count variant with the same configuration and seed; reusing the same result path replaces its JSON files.
 
-`runs/` and the extracted `data/course-data/` folder are ignored by Git. Keep generated checkpoints and predictions
-in `runs/`. The saved ViT + LoRA metrics file is in `results/vit_pretrained_lora/metrics.json`, outside the ignored
-folder. Use `--out results/experiment-1` when you want a new run's files visible to Git; otherwise the default keeps
-them under ignored `runs/`. Git only tracks files after you add them to a commit. The two source archives under
-`data/` remain tracked with Git LFS, so commits store pointers while LFS stores the large files. Commit code and
-documentation changes normally:
+`model.pt` contains the learned model weights. It is saved in the run folder and also copied with `metrics.json`
+to `checkpoints/<backbone>_<init>_<adapt>/seed_<seed>/`. Use `--checkpoints` to choose another checkpoint parent.
+The weights are required for new predictions and submission generation. The JSON results are sufficient to
+regenerate the detection report when the training images are also available.
+
+## Inspect detection errors
+
+Compare saved predictions on the same local holdout without another GPU inference pass. Each result directory
+must contain `metrics.json`, `predictions_val.json`, and `instances_val_holdout.json`:
+
+```bash
+python inspect_detections.py \
+  --runs results/terramind_pretrained_moelora results/vit_pretrained_moelora \
+  --data data/course-data --out reports/detection-review
+```
+
+Open `reports/detection-review/index.html` in a browser. It shows the correct boxes in a separate ground-truth panel,
+model predictions on the same images, class AP scores, and filters for missed objects, incorrect classes,
+duplicates, and inaccurate boxes. Green/orange boxes in the model panels are ground truth; blue/yellow/purple/red
+boxes are predictions, as explained in the legend. Click an image to view it larger.
+
+The diagnostic matcher uses confidence at least 0.3 and IoU at least 0.5; change these with `--score-threshold` and
+`--iou`. Its counts are separate from COCO mAP. `summary.json` contains counts for all holdout images; the gallery
+shows selected examples with errors and coverage across classes. Add more completed result directories to `--runs`
+to compare more models. File descriptions are in [results/README.md](../results/README.md).
+
+### View the report
+
+If the files are on your own computer, open `reports/detection-review/index.html` directly in a browser.
+
+If they are on a GPU machine you access over SSH, start a server from the repository folder on that machine:
+
+```bash
+python -m http.server 8000 --bind 127.0.0.1 --directory reports/detection-review
+```
+
+In a separate terminal on your Mac, forward that port using the same `user@host` you use to connect to the GPU:
+
+```bash
+ssh -N -L 8000:127.0.0.1:8000 YOUR_GPU_HOST
+```
+
+Replace `YOUR_GPU_HOST` with your SSH destination, then open **http://localhost:8000** on the Mac. Leave both
+terminals running while viewing the report. The generated HTML and overlay images are ignored by Git; regenerate
+them from the saved JSON files whenever needed.
+
+## Save files with Git
+
+`runs/`, the extracted `data/course-data/` folder, and generated `reports/detection-review/` files are ignored by
+Git. Training automatically preserves the three small JSON files under `results/`, where they are visible to Git.
+
+The checkpoint copies under `checkpoints/` and the two source archives under `data/` use Git LFS, so commits store
+pointers while LFS stores the large files. Detailed logs remain in the ignored run directory. Files in `results/`
+and `checkpoints/` become part of repository history after adding and committing them:
 
 ```bash
 git status --short
-git add .gitignore train.py README.md docs/WORKFLOW.md
-git commit -m "Report validation delta m and document workflow"
+git add results/ checkpoints/ .gitattributes
+git commit -m "Save experiment results"
 ```
