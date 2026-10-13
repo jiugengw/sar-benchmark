@@ -40,7 +40,7 @@ class SimpleFeaturePyramid(nn.Module):
 class MultiTaskModel(nn.Module):
     """backbone tokens -> classification logits (mean token -> LayerNorm -> Linear) and Faster R-CNN detections."""
 
-    def __init__(self, backbone, task_routing: bool, num_classes=9):
+    def __init__(self, backbone, task_routing: bool, num_classes=9, anchor_profile='default'):
         super().__init__()
         self.backbone = backbone
         self.task_routing = task_routing  # MoE-LoRA: the backbone runs once per task, with that task's routers
@@ -48,10 +48,20 @@ class MultiTaskModel(nn.Module):
         self.neck = SimpleFeaturePyramid(backbone.embed_dim)
         # Small objects (median ~16 px at 512 px, 99 % below ~240 px): two anchor scales per octave, from 8 px at
         # stride 4 up to 181 px at stride 64, times 3 aspect ratios = 6 anchors per location.
-        anchors = AnchorGenerator(((8, 11), (16, 23), (32, 45), (64, 91), (128, 181)), ((0.5, 1.0, 2.0),) * 5)
+        sizes = ((8, 11), (16, 23), (32, 45), (64, 91), (128, 181))
+        ratios = (0.5, 1.0, 2.0)
+        if anchor_profile == 'wide':
+            # Isolate shape coverage: preserve scales, add elongated anchors.
+            ratios = (0.2, 0.5, 1.0, 2.0, 5.0)
+        elif anchor_profile == 'large':
+            # Isolate scale coverage: extend the coarsest level to larger objects.
+            sizes = (*sizes[:4], (181, 256))
+        elif anchor_profile != 'default':
+            raise ValueError(f'Unknown anchor profile: {anchor_profile}')
+        anchors = AnchorGenerator(sizes, (ratios,) * 5)
         # Everything else is torchvision's Faster R-CNN default.
         self.rpn = RegionProposalNetwork(
-            anchors, RPNHead(256, 6), fg_iou_thresh=0.7, bg_iou_thresh=0.3, batch_size_per_image=256,
+            anchors, RPNHead(256, len(sizes[0]) * len(ratios)), fg_iou_thresh=0.7, bg_iou_thresh=0.3, batch_size_per_image=256,
             positive_fraction=0.5, pre_nms_top_n=dict(training=2000, testing=1000),
             post_nms_top_n=dict(training=2000, testing=1000), nms_thresh=0.7)
         self.roi_heads = RoIHeads(

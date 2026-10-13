@@ -4,6 +4,10 @@ Course-data training code adapted from the TA's CS701 reference implementation. 
 on SAR images: **classify** the image (9 classes) and **detect** its objects. The current trainer uses a labeled
 training holdout; the TA's original benchmark scores are retained below as reference results.
 
+**Overnight detection experiments:** read [the twelve-run plan](docs/OVERNIGHT_PLAN.md), then submit
+`sbatch overnight.sbatch` from an activated project environment. This batch tests anchors, image geometry,
+class sampling, and box localization at fixed learning rates; its total Slurm time limit is 20 hours.
+
 ![One SAR image, one shared backbone, two heads: a class and the boxes](docs/task_pipeline.png)
 
 ## Contents

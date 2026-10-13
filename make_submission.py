@@ -8,7 +8,7 @@ import json
 import zipfile
 from pathlib import Path
 
-def write_submission(images, preds, size=512, out="submission.zip"):
+def write_submission(images, preds, size=512, out="submission.zip", geometry='stretch'):
     """images: from images.json; preds[file_name] = (label,
     boxes [x1, y1, x2, y2] on the model input, classes, scores).
     Both the classification label and detection classes are zero-based (0..8).
@@ -17,9 +17,18 @@ def write_submission(images, preds, size=512, out="submission.zip"):
     for im in images:
         label, boxes, classes, scores = preds[im["file_name"]]
         rows.append(f"{im['id']},{int(label)}")  # the integer id
-        sx, sy = im["width"] / size, im["height"] / size
+        if geometry == 'pad':
+            from sarbench.data import padded_size
+            rh, rw = padded_size((im['height'], im['width']), size)
+        else:
+            rh, rw = size, size
+        sx, sy = im["width"] / rw, im["height"] / rh
         for (x1, y1, x2, y2), c, s in zip(boxes, classes, scores):
-            box = [x1 * sx, y1 * sy, (x2 - x1) * sx, (y2 - y1) * sy]
+            x1, x2 = [min(im['width'], max(0, x * sx)) for x in (x1, x2)]
+            y1, y2 = [min(im['height'], max(0, y * sy)) for y in (y1, y2)]
+            if x2 <= x1 or y2 <= y1:
+                continue
+            box = [x1, y1, x2 - x1, y2 - y1]
             dets.append({"image_id": im["id"],
                          "category_id": int(c) + 1,  # label + 1
                          "bbox": [float(v) for v in box],
@@ -29,13 +38,13 @@ def write_submission(images, preds, size=512, out="submission.zip"):
         z.writestr("detection.json", json.dumps(dets))
 
 
-def inference_transform():
+def inference_transform(geometry='stretch'):
     from torchvision.transforms import v2
     import torch
-    from sarbench.data import MEAN, STD
+    from sarbench.data import MEAN, STD, ResizePad
 
     return v2.Compose([
-        v2.ToImage(), v2.Resize((512, 512)),
+        v2.ToImage(), ResizePad() if geometry == 'pad' else v2.Resize((512, 512)),
         v2.ToDtype(torch.float32, scale=True), v2.Normalize([MEAN], [STD]),
     ])
 
@@ -43,10 +52,10 @@ def inference_transform():
 class SubmissionImages:
     """Unlabeled images, with the same preprocessing used during validation."""
 
-    def __init__(self, split_root, images):
+    def __init__(self, split_root, images, geometry='stretch'):
         self.root = Path(split_root)
         self.images = images
-        self.transform = inference_transform()
+        self.transform = inference_transform(geometry)
 
     def __len__(self):
         return len(self.images)
@@ -91,10 +100,12 @@ def main():
     backbone = build_backbone(config['backbone'], pretrained=False)
     if config['adapt'] != 'full':
         add_adapters(backbone, config['adapt'])
-    model = MultiTaskModel(backbone, task_routing=config['adapt'] == 'moelora')
+    model = MultiTaskModel(backbone, task_routing=config['adapt'] == 'moelora',
+                           anchor_profile=config.get('anchor_profile', 'default'))
     model.load_state_dict(torch.load(args.run / 'model.pt', map_location='cpu', weights_only=True))
     model.cuda().eval()
-    loader = DataLoader(SubmissionImages(split_root, images), batch_size=args.batch_size,
+    geometry = config.get('geometry', 'stretch')
+    loader = DataLoader(SubmissionImages(split_root, images, geometry), batch_size=args.batch_size,
                         num_workers=args.workers, shuffle=False)
     predictions = {}
     with torch.inference_mode():
@@ -111,7 +122,7 @@ def main():
                 print(f'prediction batch {step}/{len(loader)}; {len(predictions)}/{len(images)} images', flush=True)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.out.with_suffix('.zip.tmp')
-    write_submission(images, predictions, out=temporary)
+    write_submission(images, predictions, out=temporary, geometry=geometry)
     temporary.replace(args.out)
     print(f'Saved {args.out}: {len(images)} classification rows and '
           f'{sum(len(prediction[1]) for prediction in predictions.values())} detections', flush=True)

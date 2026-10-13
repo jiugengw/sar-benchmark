@@ -9,7 +9,7 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 
 from sarbench.adapters import add_adapters, unfreeze_last_blocks
 from sarbench.backbones import build_backbone
@@ -42,12 +42,19 @@ def parse_args():
     p.add_argument('--workers', type=int, default=8)
     p.add_argument('--limit', type=int, help='use the first N labeled training images before splitting (quick checks)')
     p.add_argument('--seed', type=int, default=0)
+    p.add_argument('--anchor-profile', choices=['default', 'wide', 'large'], default='default')
+    p.add_argument('--geometry', choices=['stretch', 'pad'], default='stretch')
+    p.add_argument('--class-sampling', choices=['uniform', 'sqrt-balanced'], default='uniform')
+    p.add_argument('--box-loss-weight', type=float, default=1.0,
+                   help='multiplier for RoI box regression loss; classification and RPN losses unchanged')
     p.add_argument('--out', type=Path, default=Path('runs'))
     p.add_argument('--results', type=Path, default=Path('results'),
                    help='parent folder for saved JSON results, organized by configuration and seed')
     p.add_argument('--checkpoints', type=Path, default=Path('checkpoints'),
                    help='parent folder for preserved model weights and configuration, organized by seed')
     args = p.parse_args()
+    if not math.isfinite(args.box_loss_weight) or args.box_loss_weight <= 0:
+        p.error('--box-loss-weight must be finite and positive')
     if args.init == 'scratch' and args.adapt != 'full':
         p.error('--init scratch is only valid with --adapt full')
     if args.unfreeze_last < 0 or args.unfreeze_last > 12:
@@ -67,8 +74,16 @@ def log(message, file):
 
 def make_loader(args, indices, train):
     """Build a loader over selected rows from the labeled course training set."""
-    dataset = SARMultiTask(args.data, train=train, limit=args.limit, indices=indices)
-    return DataLoader(dataset, args.batch_size, shuffle=train, num_workers=args.workers, collate_fn=collate,
+    dataset = SARMultiTask(args.data, train=train, limit=args.limit, indices=indices, geometry=args.geometry)
+    sampler = None
+    if train and args.class_sampling == 'sqrt-balanced':
+        labels = torch.tensor([int(row['label']) for row in dataset.rows])
+        counts = torch.bincount(labels, minlength=9).clamp_min(1)
+        weights = counts[labels].double().rsqrt()
+        sampler = WeightedRandomSampler(weights, len(dataset), replacement=True,
+                                         generator=torch.Generator().manual_seed(args.seed))
+    return DataLoader(dataset, args.batch_size, shuffle=train and sampler is None, sampler=sampler,
+                      num_workers=args.workers, collate_fn=collate,
                       persistent_workers=train and args.workers > 0)
 
 def lr_factor(step, warmup, total):
@@ -78,7 +93,7 @@ def lr_factor(step, warmup, total):
     return 0.5 * (1 + math.cos(math.pi * (step - warmup) / max(total - warmup, 1)))  # --epochs 1: no decay phase
 
 
-def train_one_epoch(model, loader, optimizer, schedule, epoch, log_file):
+def train_one_epoch(model, loader, optimizer, schedule, epoch, log_file, box_loss_weight=1.0):
     """One pass over the training set; the loss is cross-entropy plus the four Faster R-CNN losses."""
     model.train()
     start, seen = time.time(), 0
@@ -87,7 +102,8 @@ def train_one_epoch(model, loader, optimizer, schedule, epoch, log_file):
         with torch.autocast('cuda', dtype=torch.bfloat16):  # bf16 has fp32's range: no loss scaling needed
             logits, _, det_losses = model(images.cuda(), targets)
             losses = {'classification': F.cross_entropy(logits, labels.cuda()), **det_losses}
-        loss = sum(losses.values())
+        loss = sum(value * (box_loss_weight if name == 'loss_box_reg' else 1.0)
+                   for name, value in losses.items())
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -112,9 +128,11 @@ def evaluate(model, loader, gt_json):
         predicted += logits.argmax(dim=1).tolist()
         for target, out in zip(targets, outputs):
             image_ids.append(target['image_id'])
-            boxes = to_original_xywh(out['boxes'], target['orig_size']).tolist()
+            boxes = to_original_xywh(out['boxes'], target['orig_size'], geometry=target['geometry'])
+            valid = (boxes[:, 2] > 0) & (boxes[:, 3] > 0)
             detections += [{'image_id': target['image_id'], 'category_id': c, 'bbox': b, 'score': s}
-                           for b, c, s in zip(boxes, out['labels'].tolist(), out['scores'].tolist())]
+                           for b, c, s in zip(boxes[valid].tolist(), out['labels'][valid].tolist(),
+                                             out['scores'][valid].tolist())]
     metrics = {**classification_metrics(labels, predicted), **detection_metrics(gt_json, detections, image_ids)}
     return metrics, detections
 
@@ -179,7 +197,7 @@ def main():
     if args.adapt != 'full':
         add_adapters(backbone, args.adapt)  # also freezes the backbone
     unfreeze_last_blocks(backbone, args.unfreeze_last)
-    model = MultiTaskModel(backbone, task_routing=args.adapt == 'moelora')
+    model = MultiTaskModel(backbone, task_routing=args.adapt == 'moelora', anchor_profile=args.anchor_profile)
     parameters = sum(p.numel() for p in model.parameters())
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     log(f'parameters: {parameters:,} total, {trainable:,} trainable', log_file)
@@ -198,7 +216,7 @@ def main():
     # Train, validating every --eval-every epochs; the reported model is the last-epoch model
     history, start = [], time.time()
     for epoch in range(1, args.epochs + 1):
-        train_one_epoch(model, train_loader, optimizer, schedule, epoch, log_file)
+        train_one_epoch(model, train_loader, optimizer, schedule, epoch, log_file, args.box_loss_weight)
         if epoch % args.eval_every == 0 or epoch == args.epochs:
             val, val_detections = evaluate(model, val_loader, val_gt_path)
             val['delta_m'] = validation_delta_m(val)

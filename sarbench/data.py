@@ -17,13 +17,36 @@ from torchvision.transforms import v2
 MEAN, STD = 0.2526, 0.2133
 
 
+def padded_size(orig_size, size=512):
+    h, w = orig_size
+    scale = size / max(h, w)
+    return max(1, round(h * scale)), max(1, round(w * scale))
+
+
+class ResizePad:
+    """Resize without stretching, then pad on the right and bottom (also transforms boxes)."""
+
+    def __init__(self, size=512):
+        self.size = size
+
+    def __call__(self, image, boxes=None):
+        from torchvision.transforms.v2 import functional as TF
+        h, w = padded_size(image.shape[-2:], self.size)
+        image = TF.pad(TF.resize(image, [h, w]), [0, 0, self.size - w, self.size - h])
+        if boxes is None:
+            return image
+        boxes = TF.pad(TF.resize(boxes, [h, w]), [0, 0, self.size - w, self.size - h])
+        return image, boxes
+
+
 class SARMultiTask(Dataset):
     """Images from train/labels.csv with boxes from train/instances.json under the data root.
     An item is (image [1, size, size], label 0..8, target), target = {'boxes': XYXY on the resized
     image, 'labels': 1..9, 'image_id': COCO id, 'orig_size': (h, w)}."""
 
-    def __init__(self, root, train=False, size=512, limit=None, indices=None):
+    def __init__(self, root, train=False, size=512, limit=None, indices=None, geometry='stretch'):
         self.root = Path(root)
+        self.geometry = geometry
         self.image_root = self.root / 'train'
         with open(self.image_root / 'labels.csv', newline='') as f:
             self.rows = list(csv.DictReader(f))[:limit]
@@ -38,7 +61,7 @@ class SARMultiTask(Dataset):
         self.transform = v2.Compose([
             v2.ToImage(),
             v2.ConvertBoundingBoxFormat('XYXY'),  # COCO [x, y, w, h] -> [x1, y1, x2, y2]
-            v2.Resize((size, size)),  # stretches non-square images; boxes are scaled with the pixels
+            ResizePad(size) if geometry == 'pad' else v2.Resize((size, size)),
             *flips,  # overhead imagery has no canonical "up"
             v2.ToDtype(torch.float32, scale=True),
             v2.Normalize([MEAN], [STD]),
@@ -57,7 +80,7 @@ class SARMultiTask(Dataset):
         image = Image.open(self.image_root / row['file_name']).convert('L')  # PIL: torchvision.io cannot read .bmp
         image, boxes = self.transform(image, boxes)
         target = {'boxes': boxes, 'labels': torch.tensor([a['category_id'] for a in anns]),
-                  'image_id': info['id'], 'orig_size': orig_size}
+                  'image_id': info['id'], 'orig_size': orig_size, 'geometry': self.geometry}
         return image, int(row['label']), target
 
 
@@ -67,7 +90,12 @@ def collate(batch):
     return torch.stack(images), torch.tensor(labels), list(targets)
 
 
-def to_original_xywh(boxes_xyxy, orig_size, size=512):
+def to_original_xywh(boxes_xyxy, orig_size, size=512, geometry='stretch'):
     """Undo the resize: XYXY boxes on the size x size input -> COCO [x, y, w, h] in original pixels."""
     h, w = orig_size
-    return box_convert(boxes_xyxy * boxes_xyxy.new_tensor([w, h, w, h]) / size, 'xyxy', 'xywh')
+    rh, rw = padded_size(orig_size, size) if geometry == 'pad' else (size, size)
+    boxes = boxes_xyxy * boxes_xyxy.new_tensor([w / rw, h / rh, w / rw, h / rh])
+    if geometry == 'pad':
+        boxes = torch.stack([boxes[:, 0].clamp(0, w), boxes[:, 1].clamp(0, h),
+                             boxes[:, 2].clamp(0, w), boxes[:, 3].clamp(0, h)], dim=1)
+    return box_convert(boxes, 'xyxy', 'xywh')
