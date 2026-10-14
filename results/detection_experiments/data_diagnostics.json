@@ -1,0 +1,209 @@
+{
+  "note": "Full labeled-training data summary; no validation labels used for training. Centered shape IoU assumes perfect anchor centers and ignores stride/rounding; this diagnoses shapes, not actual RPN recall. Padding changes geometry separately.",
+  "classification_image_counts": {
+    "0": 1182,
+    "8": 918,
+    "2": 1249,
+    "7": 1187,
+    "4": 1355,
+    "5": 1233,
+    "6": 1175,
+    "1": 650,
+    "3": 443
+  },
+  "category_ids": {
+    "1": "aircraft",
+    "2": "airport",
+    "3": "bridge",
+    "4": "car",
+    "5": "harbor",
+    "6": "oil_tank",
+    "7": "playground",
+    "8": "ship",
+    "9": "wind_turbine"
+  },
+  "box_counts": {
+    "aircraft": 2532,
+    "wind_turbine": 8625,
+    "bridge": 3984,
+    "ship": 1544,
+    "harbor": 2650,
+    "oil_tank": 5580,
+    "playground": 2610,
+    "airport": 919,
+    "car": 4089
+  },
+  "images": 9392,
+  "fraction_nonsquare": 0.0018100511073253834,
+  "fraction_aspect_over_1.5": 0.0007453151618398638,
+  "anchor_shape_coverage": {
+    "default": {
+      "aircraft": {
+        "boxes": 2532,
+        "mean_best_centered_iou": 0.8029621659032848,
+        "fraction_at_least_0.5": 0.9992101105845181,
+        "fraction_at_least_0.7": 0.995260663507109
+      },
+      "wind_turbine": {
+        "boxes": 8625,
+        "mean_best_centered_iou": 0.7481399920035177,
+        "fraction_at_least_0.5": 0.8775652173913043,
+        "fraction_at_least_0.7": 0.7467826086956522
+      },
+      "bridge": {
+        "boxes": 3984,
+        "mean_best_centered_iou": 0.7750902206914019,
+        "fraction_at_least_0.5": 0.9774096385542169,
+        "fraction_at_least_0.7": 0.8797690763052208
+      },
+      "ship": {
+        "boxes": 1544,
+        "mean_best_centered_iou": 0.7614840875542628,
+        "fraction_at_least_0.5": 0.9604922279792746,
+        "fraction_at_least_0.7": 0.8400259067357513
+      },
+      "harbor": {
+        "boxes": 2650,
+        "mean_best_centered_iou": 0.7668229772952095,
+        "fraction_at_least_0.5": 0.9279245283018868,
+        "fraction_at_least_0.7": 0.8520754716981133
+      },
+      "oil_tank": {
+        "boxes": 5580,
+        "mean_best_centered_iou": 0.81734589381195,
+        "fraction_at_least_0.5": 0.9797491039426524,
+        "fraction_at_least_0.7": 0.9261648745519713
+      },
+      "playground": {
+        "boxes": 2610,
+        "mean_best_centered_iou": 0.7754917208489787,
+        "fraction_at_least_0.5": 0.9996168582375479,
+        "fraction_at_least_0.7": 0.9697318007662835
+      },
+      "airport": {
+        "boxes": 919,
+        "mean_best_centered_iou": 0.6572624398956487,
+        "fraction_at_least_0.5": 0.7519042437431991,
+        "fraction_at_least_0.7": 0.5223068552774756
+      },
+      "car": {
+        "boxes": 4089,
+        "mean_best_centered_iou": 0.802328934718463,
+        "fraction_at_least_0.5": 1.0,
+        "fraction_at_least_0.7": 0.9955979457079971
+      }
+    },
+    "wide": {
+      "aircraft": {
+        "boxes": 2532,
+        "mean_best_centered_iou": 0.8032568787827348,
+        "fraction_at_least_0.5": 0.9996050552922591,
+        "fraction_at_least_0.7": 0.9960505529225908
+      },
+      "wind_turbine": {
+        "boxes": 8625,
+        "mean_best_centered_iou": 0.7481399920035177,
+        "fraction_at_least_0.5": 0.8775652173913043,
+        "fraction_at_least_0.7": 0.7467826086956522
+      },
+      "bridge": {
+        "boxes": 3984,
+        "mean_best_centered_iou": 0.7822143976629853,
+        "fraction_at_least_0.5": 0.9892068273092369,
+        "fraction_at_least_0.7": 0.8998493975903614
+      },
+      "ship": {
+        "boxes": 1544,
+        "mean_best_centered_iou": 0.7876346691122077,
+        "fraction_at_least_0.5": 0.9961139896373057,
+        "fraction_at_least_0.7": 0.9300518134715026
+      },
+      "harbor": {
+        "boxes": 2650,
+        "mean_best_centered_iou": 0.770917775275793,
+        "fraction_at_least_0.5": 0.930188679245283,
+        "fraction_at_least_0.7": 0.870188679245283
+      },
+      "oil_tank": {
+        "boxes": 5580,
+        "mean_best_centered_iou": 0.8187410892272743,
+        "fraction_at_least_0.5": 0.9818996415770609,
+        "fraction_at_least_0.7": 0.9292114695340502
+      },
+      "playground": {
+        "boxes": 2610,
+        "mean_best_centered_iou": 0.7757441500523116,
+        "fraction_at_least_0.5": 1.0,
+        "fraction_at_least_0.7": 0.9704980842911878
+      },
+      "airport": {
+        "boxes": 919,
+        "mean_best_centered_iou": 0.7363038242743263,
+        "fraction_at_least_0.5": 0.9042437431991295,
+        "fraction_at_least_0.7": 0.7519042437431991
+      },
+      "car": {
+        "boxes": 4089,
+        "mean_best_centered_iou": 0.8026743319423135,
+        "fraction_at_least_0.5": 1.0,
+        "fraction_at_least_0.7": 0.9968207385668868
+      }
+    },
+    "large": {
+      "aircraft": {
+        "boxes": 2532,
+        "mean_best_centered_iou": 0.7841235912779083,
+        "fraction_at_least_0.5": 0.9996050552922591,
+        "fraction_at_least_0.7": 0.909952606635071
+      },
+      "wind_turbine": {
+        "boxes": 8625,
+        "mean_best_centered_iou": 0.7481399920035177,
+        "fraction_at_least_0.5": 0.8775652173913043,
+        "fraction_at_least_0.7": 0.7467826086956522
+      },
+      "bridge": {
+        "boxes": 3984,
+        "mean_best_centered_iou": 0.7750190965114697,
+        "fraction_at_least_0.5": 0.9784136546184738,
+        "fraction_at_least_0.7": 0.8785140562248996
+      },
+      "ship": {
+        "boxes": 1544,
+        "mean_best_centered_iou": 0.7553563730122471,
+        "fraction_at_least_0.5": 0.9637305699481865,
+        "fraction_at_least_0.7": 0.8037564766839378
+      },
+      "harbor": {
+        "boxes": 2650,
+        "mean_best_centered_iou": 0.7848600005551079,
+        "fraction_at_least_0.5": 0.9826415094339622,
+        "fraction_at_least_0.7": 0.8649056603773585
+      },
+      "oil_tank": {
+        "boxes": 5580,
+        "mean_best_centered_iou": 0.81734589381195,
+        "fraction_at_least_0.5": 0.9797491039426524,
+        "fraction_at_least_0.7": 0.9261648745519713
+      },
+      "playground": {
+        "boxes": 2610,
+        "mean_best_centered_iou": 0.7754799575149532,
+        "fraction_at_least_0.5": 0.9996168582375479,
+        "fraction_at_least_0.7": 0.9697318007662835
+      },
+      "airport": {
+        "boxes": 919,
+        "mean_best_centered_iou": 0.6572563349036482,
+        "fraction_at_least_0.5": 0.8335146898803046,
+        "fraction_at_least_0.7": 0.4548422198041349
+      },
+      "car": {
+        "boxes": 4089,
+        "mean_best_centered_iou": 0.8023285170225536,
+        "fraction_at_least_0.5": 1.0,
+        "fraction_at_least_0.7": 0.9955979457079971
+      }
+    }
+  }
+}

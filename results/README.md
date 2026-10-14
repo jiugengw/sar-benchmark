@@ -43,3 +43,7 @@ Open `reports/detection-review/index.html` locally, or follow the [browser and S
 The generated HTML and images are ignored by Git and can be recreated from these inputs.
 
 The files here are visible to Git and are included in repository history after a commit.
+
+## Detection experiment comparison
+
+The five `terramind_pretrained_moelora_<experiment>_seed0/` folders preserve final metrics and holdout detection artifacts. See the [submission comparison](../submissions/README.md#detection-experiments) for each change's rationale, scores, and corresponding ZIP. Shared data diagnostics and completion records live in `detection_experiments/`.

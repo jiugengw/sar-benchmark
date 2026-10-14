@@ -1,0 +1,6 @@
+experiment	anchors	geometry	sampling	box_weight	exit_code	seconds
+01_wide_anchors	wide	stretch	uniform	1	0	12152
+02_large_anchors	large	stretch	uniform	1	0	11847
+03_preserve_geometry	default	pad	uniform	1	0	11849
+04_class_balance	default	stretch	sqrt-balanced	1	0	11896
+05_box_localization	default	stretch	uniform	2	0	11846
