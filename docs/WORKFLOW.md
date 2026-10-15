@@ -147,3 +147,43 @@ git status --short
 git add results/ checkpoints/ .gitattributes
 git commit -m "Save experiment results"
 ```
+
+## Five-fold offline evaluation
+
+Prepare deterministic, stratified folds from `train/labels.csv`:
+
+```bash
+bash run_anchor_cv5.sh
+```
+
+Inspect `runs/anchor48-cv5/fold_plan.json` for row assignments, class counts,
+and exact training commands. Each image appears in validation exactly once;
+all boxes belonging to that image stay together. The course validation images
+are not used. The seed for partitions is independent of the training seed.
+
+Run all five folds sequentially on one CUDA GPU:
+
+```bash
+bash run_anchor_cv5.sh --run
+```
+
+Defaults use 48-epoch TerraMind MoE-LoRA with normal anchors,
+photometric augmentation and box loss weight 2. Override `--anchor-profile`
+to compare another supported anchor profile on identical folds. Each fold starts a fresh
+model from pretrained weights. This is five training runs, with roughly 80/20
+train/validation splits. Completed folds are skipped on restart; an interrupted
+fold starts again. Use a different `--out` when changing settings.
+
+Training logs are `runs/anchor48-cv5/fold_<n>.console.log`. Each fold saves its
+own model, split manifest, predictions, ground truth, and metrics. After all
+folds complete, `cv_summary.json` reports individual scores and mean/sample
+standard deviation for classification F1, detection mAP, and other metrics.
+To regenerate the summary, repeat the same arguments with `--summarize-only`.
+
+Final-epoch scoring is the default. Enabling `--select-best` uses the reported
+validation fold to select the checkpoint, so its scores are selection-biased;
+use a separate inner holdout for checkpoint or calibration tuning when an
+unbiased outer-fold estimate is required. Local Delta m still uses the fixed
+reference scores, not a baseline retrained on matching folds. Compare candidate
+models on identical folds. Five models here provide an evaluation estimate;
+submission inference still uses a single model.

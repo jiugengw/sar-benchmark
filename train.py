@@ -45,6 +45,9 @@ def parse_args():
     p.add_argument('--workers', type=int, default=8)
     p.add_argument('--limit', type=int, help='use the first N labeled training images before splitting (quick checks)')
     p.add_argument('--seed', type=int, default=0)
+    p.add_argument('--fold', type=int, help='zero-based stratified validation fold (enables cross-validation)')
+    p.add_argument('--folds', type=int, default=5)
+    p.add_argument('--split-seed', type=int, default=0, help='fixed cross-validation partition seed')
     p.add_argument('--photometric', action='store_true', help='training-only mild brightness/contrast jitter')
     p.add_argument('--select-best', action='store_true', help='save the evaluated epoch with highest local Delta m')
     p.add_argument('--anchor-profile', choices=['default', 'wide', 'large'], default='default')
@@ -58,6 +61,8 @@ def parse_args():
     p.add_argument('--checkpoints', type=Path, default=Path('checkpoints'),
                    help='parent folder for preserved model weights and configuration, organized by seed')
     args = p.parse_args()
+    if args.folds < 2 or (args.fold is not None and not 0 <= args.fold < args.folds):
+        p.error('--folds must be >= 2 and --fold must be in [0, --folds)')
     if not math.isfinite(args.box_loss_weight) or args.box_loss_weight <= 0:
         p.error('--box-loss-weight must be finite and positive')
     if args.init == 'scratch' and args.adapt != 'full':
@@ -171,6 +176,8 @@ def main():
     if args.unfreeze_last:
         configuration += f'_unfreeze{args.unfreeze_last}'
     run_dir = args.out / configuration
+    if args.fold is not None:
+        run_dir = args.out / f'fold_{args.fold}' / configuration
     run_dir.mkdir(parents=True, exist_ok=True)
     log_file = open(run_dir / 'log.txt', 'w')
     log(json.dumps(vars(args), default=str), log_file)
@@ -180,10 +187,21 @@ def main():
     n = len(rows)
     if n < 2:
         raise ValueError(f"Need at least 2 labeled images for a train/validation split; found {n}.")
-    permutation = torch.randperm(n, generator=torch.Generator().manual_seed(args.seed)).tolist()
-    n_val = max(1, round(n * 0.10))
-    val_indices = permutation[:n_val]
-    train_indices = permutation[n_val:]
+    if args.fold is None:
+        permutation = torch.randperm(n, generator=torch.Generator().manual_seed(args.seed)).tolist()
+        n_val = max(1, round(n * 0.10))
+        val_indices = permutation[:n_val]
+        train_indices = permutation[n_val:]
+    else:
+        from sarbench.cross_validation import stratified_folds
+        train_indices, val_indices = stratified_folds(
+            [int(row['label']) for row in rows.rows], args.folds, args.split_seed)[args.fold]
+    split = {'fold': args.fold, 'folds': args.folds if args.fold is not None else None,
+             'split_seed': args.split_seed if args.fold is not None else args.seed,
+             'train_indices': train_indices, 'val_indices': val_indices,
+             'train_image_ids': [rows.coco_images[rows.rows[i]['file_name']]['id'] for i in train_indices],
+             'val_image_ids': [rows.coco_images[rows.rows[i]['file_name']]['id'] for i in val_indices]}
+    (run_dir / 'split.json').write_text(json.dumps(split, indent=2))
     train_loader = make_loader(args, train_indices, train=True)
     val_loader = make_loader(args, val_indices, train=False)
 
@@ -246,7 +264,7 @@ def main():
     peak_gb = torch.cuda.max_memory_allocated() / 2**30
     log(f'training {train_hours:.2f} h, peak GPU memory {peak_gb:.1f} GB', log_file)
 
-    summary = {'args': vars(args), 'parameters': parameters, 'trainable_parameters': trainable,
+    summary = {'args': vars(args), 'split': split, 'parameters': parameters, 'trainable_parameters': trainable,
                'train_hours': train_hours, 'peak_gpu_memory_gb': peak_gb,
                'val_history': history, 'val': best_val if args.select_best else history[-1],
                'final_val': history[-1], 'selection': 'best_local_delta_m' if args.select_best else 'final_epoch',
@@ -254,9 +272,13 @@ def main():
     (run_dir / 'metrics.json').write_text(json.dumps(summary, indent=2, default=str))
     (run_dir / 'predictions_val.json').write_text(json.dumps(val_detections))
     results_dir = args.results / run_dir.name / f'seed_{args.seed}'
-    save_artifacts(run_dir, results_dir, ('metrics.json', 'predictions_val.json', 'instances_val_holdout.json'))
+    if args.fold is not None:
+        results_dir = results_dir / f'fold_{args.fold}'
+    save_artifacts(run_dir, results_dir, ('metrics.json', 'predictions_val.json', 'instances_val_holdout.json', 'split.json'))
     log(f'saved JSON results: {results_dir}', log_file)
     checkpoint_dir = args.checkpoints / run_dir.name / f'seed_{args.seed}'
+    if args.fold is not None:
+        checkpoint_dir = checkpoint_dir / f'fold_{args.fold}'
     save_artifacts(run_dir, checkpoint_dir, ('model.pt', 'metrics.json'))
     log(f'saved checkpoint: {checkpoint_dir}', log_file)
 
