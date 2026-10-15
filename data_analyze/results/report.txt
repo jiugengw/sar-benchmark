@@ -1,0 +1,122 @@
+
+==============================================================================
+0. WHAT WAS LOADED
+==============================================================================
+train: 9392 labelled images, 32533 boxes | val: 1426 images (no labels)
+
+==============================================================================
+1. FILE FORMAT AND INTEGRITY
+==============================================================================
+[train] modes {'RGB': 8701, 'L': 691} | extensions {'.jpg': 8635, '.png': 757} | sizes {'512x512': 6995, '256x256': 2321, 'other': 76}
+[train] 8695/8701 multi-channel files have identical channels (true grey)
+[val] modes {'L': 125, 'RGB': 1301} | extensions {'.jpg': 1297, '.png': 129} | sizes {'512x512': 1067, '256x256': 349, 'other': 10}
+[val] 1298/1301 multi-channel files have identical channels (true grey)
+size in json != size on disk: 0 | images with zero boxes: 0 | boxes with w<=0 or h<=0: 0 | boxes extending outside image: 0 | box category != image label+1: 0
+exact duplicate groups in train: 0 | near-duplicate pairs (16x16 hash <=8 bits and thumbnail corr >0.95): 1912 (involving 1852 images, label conflicts: 0)
+   e.g. images/00006.png  ~  images/03081.png
+   e.g. images/00006.png  ~  images/04092.png
+   e.g. images/00011.jpg  ~  images/00281.jpg
+   e.g. images/00011.jpg  ~  images/04140.jpg
+   e.g. images/00011.jpg  ~  images/04943.jpg
+
+==============================================================================
+2. INTENSITY DISTRIBUTION  (decides clipping / gamma / log / normalisation)
+==============================================================================
+[train] pixels: mean 0.2657 std 0.2056 | p1 0 p50 59 p99 252 p99.9 255 (0-255) | exactly 0: 1.92% exactly 255: 0.683%
+[val] pixels: mean 0.2598 std 0.1934 | p1 0 p50 59 p99 250 p99.9 255 (0-255) | exactly 0: 1.96% exactly 255: 0.561%
+normalisation constants in data.py: mean 0.2526 std 0.2133 (those were computed after resizing to 512; native-res values above should be close)
+per-image mean brightness: p5 0.016  median 0.250  p95 0.530  | images with >1% saturated pixels: 17.7% | images with >50% black pixels: 3.5%
+train vs val KS statistic per image stat (0 = same, >0.1 = noticeable): mean 0.036, std 0.071, p99 0.059, sat 0.045, zero 0.030
+image-size mix  train: 512x512 74.5%, 256x256 24.7%, other 0.8%  | val: 512x512 74.8%, 256x256 24.5%, other 0.7%
+class vs per-image mean brightness: eta^2 = 0.428 (share of brightness variance explained by class)
+class vs image size: Cramer V = 0.537   (0 = independent, >0.3 = size leaks the class)
+class x image-size counts:  256x256  512x512  other
+   aircraft           4    1119      59
+   airport            0     650       0
+   bridge           238    1011       0
+   car                0     443       0
+   harbor           373     982       0
+   oil_tank         549     684       0
+   playground         0    1175       0
+   ship            1157      13      17
+   wind_turbine       0     918       0
+
+==============================================================================
+3. SPECKLE / NOISE MODEL  (decides despeckling domain, whitening, log transform)
+==============================================================================
+local-window (7x7) std vs mean, speckle floor (20th pct of std per mean-bin): std ~ mean^0.92
+   exponent ~1  -> multiplicative noise in a linear (amplitude/intensity) scale: std grows with mean
+   exponent ~0  -> roughly additive noise (log/dB-like or heavily compressed 8-bit mapping)
+   in between   -> partially compressed scale (sqrt / gamma stretch)
+coefficient of variation in the calmest windows (mean>0.05): p5 0.08  p10 0.09  p25 0.12
+   rough reference for fully developed speckle in a LINEAR scale: single-look amplitude ~0.52, single-look intensity ~1.0, L-look intensity ~1/sqrt(L). 8-bit files are usually stretched, so use this only as a clue.
+speckle lag correlation (low-texture pixels, mean over images)   [x = along columns, y = along rows]
+   512x512  (n=376)  lag1 x 0.69  y 0.67  | lag2 x 0.39  y 0.36
+   256x256  (n=91)  lag1 x 0.44  y 0.48  | lag2 x 0.15  y 0.14
+   other    (n=3)  lag1 x 0.53  y 0.46  | lag2 x 0.21  y 0.10
+   ~0.0-0.1 = nearly independent pixels | 0.3+ = correlated speckle or an upsampled image (filters that assume i.i.d. speckle suffer)
+
+==============================================================================
+4. BOXES  (decides small-object handling, anchors, NMS)
+==============================================================================
+boxes: 32533 | per-image count: min 1 median 2 max 41 | images with exactly 1 box: 45%
+box size at 512 input (sqrt(w*h)): p10 6.9  median 15.9  p90 79.0  max 510   [slide says median 15.9, 50% below one 16-px ViT patch]
+   max side at 512: median 18.3 | native resolution sqrt(w*h): median 15.0
+   boxes smaller than  8px at 512:  18.4%
+   boxes smaller than 12px at 512:  40.1%
+   boxes smaller than 16px at 512:  50.5%
+   boxes smaller than 24px at 512:  57.7%
+   boxes smaller than 32px at 512:  62.4%
+aspect ratio w/h: median 1.00 | p5 0.59 p95 2.05 | more elongated than 3:1 either way: 2.5%
+boxes touching an image border: 9.5%
+per class (512 scale):  boxes   imgs  median-size  p10   p90   <16px
+   aircraft        2532   1182      76.4   49.0  106.8    1.9%
+   airport          919    650     146.0   77.5  247.4    0.0%
+   bridge          3984   1249       9.9    7.0   25.7   82.7%
+   car             4089    443      41.4   31.0   56.4    0.0%
+   harbor          2650   1355      42.9   23.2  216.8    1.7%
+   oil_tank        5580   1233      11.5    7.0   60.9   57.5%
+   playground      2610   1175      14.8   10.7   19.5   64.6%
+   ship            1544   1187      55.1   31.0   98.7    0.5%
+   wind_turbine    8625    918       8.3    5.5   15.0   94.2%
+crowding: boxes overlapping another box with IoU>0.3: 0.6%, IoU>0.5: 0.2% (of boxes in multi-box images) | box area / image area: median 0.9%  p95 19.1%
+   (NMS in train.py uses 0.5 at RoI level and 0.7 at RPN; IoU>0.5 overlaps between true boxes get suppressed)
+anchor coverage [default (0.5,1,2)] best centred-shape IoU per box: median 0.79 | >=0.7: 86.9% | 0.5-0.7: 7.7% | <0.5: 5.4%
+anchor coverage [wide (0.2..5)] best centred-shape IoU per box: median 0.79 | >=0.7: 88.4% | 0.5-0.7: 7.0% | <0.5: 4.5%
+   upper bound (anchors on a stride grid are offset from the box centre, so real IoUs are lower, esp. for tiny boxes)
+
+==============================================================================
+5. OBJECT CONTRAST  (baseline to check a filter does not erase targets)
+==============================================================================
+1806 boxes measured. TCR = 20log10(max in box / mean of surrounding ring), in dB
+   TCR median 9.7 dB | p10 3.6 | p90 19.9
+   mean-in-box / mean-around: median 1.28 | boxes with ratio < 1.2 (hard, barely brighter than surroundings): 44.7%
+   by class (median TCR dB | median ratio):
+      aircraft        20.3 |  1.34   (n=114)
+      airport          8.5 |  0.83   (n=58)
+      bridge           4.8 |  0.95   (n=194)
+      car             15.3 |  1.93   (n=190)
+      harbor          10.5 |  1.12   (n=137)
+      oil_tank         6.0 |  1.18   (n=230)
+      playground       5.4 |  0.82   (n=162)
+      ship            20.9 |  3.74   (n=93)
+      wind_turbine    10.4 |  1.51   (n=628)
+   size  0-8px: median TCR   7.7 dB  ratio 1.11 (n=339)
+   size  8-16px: median TCR   8.6 dB  ratio 1.25 (n=706)
+   size 16-32px: median TCR   9.0 dB  ratio 1.12 (n=170)
+   size 32-infpx: median TCR  14.8 dB  ratio 1.45 (n=591)
+
+==============================================================================
+6. WHAT THIS SUGGESTS (hints, not verdicts: confirm with an ablation)
+==============================================================================
+- 0.68% of pixels are saturated at 255: the bright tail is already clipped; percentile-clipping the top adds little, gamma/log mainly helps the dark/mid range.
+- Noise std scales with local mean (exponent 0.92): multiplicative speckle in a nearly linear scale. A log transform (makes speckle additive) is a principled option to test.
+- Speckle is spatially correlated (lag-1 > 0.3). Despeckling filters that assume i.i.d. speckle (Lee, Kuan) are less effective; compare a 256x256 group vs a 512x512 group: a much higher value in one suggests that group was upsampled.
+- Lag correlation differs a lot between image-size groups: the groups have different resolution/processing history; consider whether stretching 256->512 hides that from the model.
+- 50% of boxes are under 16 px at 512: keep any filter window <=3x3 (or none); a 7x7 filter is as large as the object.
+- 45% of boxes are barely brighter than their surroundings: smoothing will hurt these; compare TCR/ratio before and after any filter and reject filters that lower them.
+- 5.4% of boxes have no anchor with IoU>=0.5 (default ratios): try --anchor-profile wide.
+- Class and image size are strongly linked (Cramer V 0.54): the model can read class from resampling blur even after stretching to 512. Treat classification gains with suspicion; consider a size-aware holdout.
+- Brightness alone explains 43% of between-class variance: global intensity transforms change a class cue, not just noise.
+- Duplicates / near-duplicates exist inside train: a random 90/10 split puts copies on both sides and inflates local scores; group duplicates before splitting.
+- Normalisation: train mean/std at native res = 0.2657/0.2056 vs 0.2526/0.2133 in data.py. Recompute after ANY intensity transform and apply it identically in make_submission.py.
