@@ -126,22 +126,47 @@ level-specific RPN prediction outputs (or an equivalent implementation); do
 not add 6 pixels to every level just to preserve equal anchor counts. Keep the
 experiment within the model parameter limits and record the actual anchor
 configuration in the resulting checkpoint and evaluation metadata. The
-training code currently accepts only the existing anchor profiles, so custom
-anchor support must be implemented before running this plan. This is a planned
-experiment, not a trained result.
+`small_extreme` profile now implements this configuration with separate RPN
+prediction outputs. The TerraMind experiment remains planned, not a trained
+result. New CNN and ViT jobs using these anchors are documented in
+[the experiment record](../../../docs/SMALL_ANCHOR_CNN_VIT_20261015.md).
 
-## ViT 48-epoch comparison — running, not submitted
+## ViT 48-epoch comparison — completed, not submitted
 
 Slurm array **325636** compares pretrained ViT + MoE-LoRA with box-loss
 weights 1 and 2. Both tasks use seed 0, 48 epochs, photometric augmentation,
 large anchors, and the same data split and schedule. Logs are
-`runs/vit48-325636_0.out` and `runs/vit48-325636_1.out`; results and ZIPs will be
-written under the matching `vit48-325636` directories when the tasks finish.
+`runs/vit48-325636_0.out` and `runs/vit48-325636_1.out`; results and original ZIPs
+are under the matching `vit48-325636` directories. Both jobs completed. Copies of
+the ZIPs, local score metadata and inference records are also stored here:
+
+| ZIP | Box loss | Selected epoch | Local macro F1 | Local mAP | Local Delta m |
+|---|---:|---:|---:|---:|---:|
+| [ViT weight 1](vit_48ep_boxloss1_photometric_large_anchors_seed0_calibrated.zip) | 1 | 48 | 93.44% | 32.74% | +12.72 |
+| [ViT weight 2](vit_48ep_boxloss2_photometric_large_anchors_seed0_calibrated.zip) | 2 | 44 | 92.11% | 33.44% | +13.34 |
+
+Both selected calibration power 0 (no class-based score adjustment). These are
+single-seed local results, not official scores. Weight 2 improves mAP by 0.70
+points and overall Delta m by 0.62, while F1 falls 1.33 points. This is a
+provisional task tradeoff, not a repeated-seed improvement claim. TerraMind's
+matching large-anchor selected checkpoint reaches 93.45% F1 / 35.54% mAP /
++18.08 Delta m, ahead overall on this holdout. Longer ViT training improved
+detection compared with historical 24-epoch runs, but anchors, augmentation and
+schedule also differ, so this comparison does not isolate epoch count.
+
+The completed paired box review is in [the findings](../../../reports/vit-terramind-48/FINDINGS.md),
+with a [filtered overlay gallery](../../../reports/vit-terramind-48/gallery/index.html)
+and [contact sheet](../../../reports/vit-terramind-48/comparison-contact-sheet.jpg).
+Identical annotations were verified across all three models (939 images,
+3,281 objects). At confidence 0.3 and matching IoU 0.5, TerraMind matches
+2,436 objects versus ViT loss 2's 2,350; at IoU 0.75 the counts are 1,469
+versus 1,324. Both missed objects and box accuracy contribute. These are
+diagnostic counts, not a COCO AP decomposition or proof of the underlying cause.
 
 The original frozen ImageNet-pretrained ViT backbone was recovered from the
 existing 24-epoch ViT checkpoint because the cluster's offline cache lacked
 the Hub weights. `extract_frozen_vit_backbone.py` reproduces
 `checkpoints/vit_pretrained_base_seed0.pt`; strict loading confirmed all 150
-backbone tensors match. The two running models each have 107,186,713 total
+backbone tensors match. The two completed models each have 107,186,713 total
 parameters and 21,145,369 trainable parameters. Keep these runs as experiments;
 no submission has been selected or uploaded.

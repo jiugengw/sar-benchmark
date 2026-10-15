@@ -42,10 +42,11 @@ def diagnose(image, truth, predictions, threshold, match_iou):
         else:
             kind = 'background'
         counts[kind] += 1
-        tagged.append({**pred, 'kind': kind})
+        tagged.append({**pred, 'kind': kind, 'matched_gt_index': best if kind == 'matched' else None})
     missed = set(range(len(truth))) - used
     counts['missed'] = len(missed)
     counts['missed_small'] = len(missed & small)
+    counts['matched_small'] = len(small & used)
     return {'counts': dict(counts), 'missed_indices': sorted(missed), 'predictions': tagged}
 
 
@@ -94,11 +95,14 @@ def write_report(args):
         if not ann.get('iscrowd', 0):
             annotations[ann['image_id']].append(ann)
     models, totals, reviews, per_class, scores = [], {}, {}, {}, {}
-    for run in args.runs:
+    labels = getattr(args, 'labels', None)
+    if labels is not None and len(labels) != len(args.runs):
+        raise ValueError('--labels must contain one name per run.')
+    for run_index, run in enumerate(args.runs):
         other_gt = json.loads((run / 'instances_val_holdout.json').read_text())
         if other_gt['images'] != images or other_gt['annotations'] != ground_truth['annotations']:
             raise ValueError(f'{run} does not use the same holdout and annotations.')
-        name = run.name
+        name = labels[run_index] if labels else run.name
         if name in models:
             raise ValueError('Run directory names must be unique.')
         models.append(name)
@@ -212,6 +216,7 @@ document.querySelectorAll('select').forEach(select=>select.addEventListener('cha
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--runs', nargs='+', type=Path, required=True)
+    parser.add_argument('--labels', nargs='+', help='optional unique display names, one per run')
     parser.add_argument('--data', type=Path, default=Path('data/course-data'))
     parser.add_argument('--out', type=Path, default=Path('reports/detection-review'))
     parser.add_argument('--score-threshold', type=float, default=0.3)

@@ -18,6 +18,8 @@ from sarbench.metrics import classification_metrics, detection_metrics
 from sarbench.model import MultiTaskModel
 from sarbench.optim import parameter_groups
 from sarbench.inference import calibrate_detections
+from sarbench.reporting import ComputeTracker, provenance
+from sarbench.loss_weighting import TaskUncertaintyWeighting
 
 # Validation reference: mean ViT + LoRA scores over seeds 0, 1 and 2.
 VAL_REFERENCE_F1 = 0.9331
@@ -27,10 +29,10 @@ VAL_REFERENCE_MAP = 0.2613
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--data', type=Path, default=Path(__file__).resolve().parents[1] / 'dataset' / 'SARFact-Course-20K')
-    p.add_argument('--backbone', required=True, choices=['vit', 'terramind'])
+    p.add_argument('--backbone', required=True, choices=['vit', 'terramind', 'resnet34'])
     p.add_argument('--init', required=True, choices=['pretrained', 'scratch'])
     p.add_argument('--backbone-weights', type=Path,
-                   help='local pretrained ViT backbone state dict; avoids a Hub download')
+                   help='local pretrained ViT backbone or torchvision ResNet-34 state dict')
     p.add_argument('--adapt', required=True, choices=['full', 'lora', 'moelora'])
     p.add_argument('--unfreeze-last', type=int, default=0,
                    help='also train the last N encoder blocks with pretrained LoRA/MoE-LoRA (default: 0)')
@@ -50,17 +52,21 @@ def parse_args():
     p.add_argument('--split-seed', type=int, default=0, help='fixed cross-validation partition seed')
     p.add_argument('--photometric', action='store_true', help='training-only mild brightness/contrast jitter')
     p.add_argument('--select-best', action='store_true', help='save the evaluated epoch with highest local Delta m')
-    p.add_argument('--anchor-profile', choices=['default', 'wide', 'large'], default='default')
+    p.add_argument('--anchor-profile', choices=['default', 'wide', 'large', 'small_extreme'], default='default')
     p.add_argument('--geometry', choices=['stretch', 'pad'], default='stretch')
     p.add_argument('--class-sampling', choices=['uniform', 'sqrt-balanced'], default='uniform')
     p.add_argument('--box-loss-weight', type=float, default=1.0,
                    help='multiplier for RoI box regression loss; classification and RPN losses unchanged')
+    p.add_argument('--loss-weighting', choices=['fixed', 'uncertainty'], default='fixed',
+                   help='learn classification versus total detection weights using two training-only log variances')
     p.add_argument('--out', type=Path, default=Path('runs'))
     p.add_argument('--results', type=Path, default=Path('results'),
                    help='parent folder for saved JSON results, organized by configuration and seed')
     p.add_argument('--checkpoints', type=Path, default=Path('checkpoints'),
                    help='parent folder for preserved model weights and configuration, organized by seed')
     args = p.parse_args()
+    if args.backbone == 'resnet34' and (args.adapt != 'full' or args.unfreeze_last):
+        p.error('ResNet-34 uses --adapt full and does not support transformer adapters or --unfreeze-last')
     if args.folds < 2 or (args.fold is not None and not 0 <= args.fold < args.folds):
         p.error('--folds must be >= 2 and --fold must be in [0, --folds)')
     if not math.isfinite(args.box_loss_weight) or args.box_loss_weight <= 0:
@@ -104,27 +110,42 @@ def lr_factor(step, warmup, total):
     return 0.5 * (1 + math.cos(math.pi * (step - warmup) / max(total - warmup, 1)))  # --epochs 1: no decay phase
 
 
-def train_one_epoch(model, loader, optimizer, schedule, epoch, log_file, box_loss_weight=1.0):
+def train_one_epoch(model, loader, optimizer, schedule, epoch, log_file, box_loss_weight=1.0,
+                    task_weighting=None):
     """One pass over the training set; the loss is cross-entropy plus the four Faster R-CNN losses."""
     model.train()
     start, seen = time.time(), 0
+    totals = {}
+    examples = 0
     for step, (images, labels, targets) in enumerate(loader, 1):
         targets = [{'boxes': t['boxes'].cuda(), 'labels': t['labels'].cuda()} for t in targets]
         with torch.autocast('cuda', dtype=torch.bfloat16):  # bf16 has fp32's range: no loss scaling needed
             logits, _, det_losses = model(images.cuda(), targets)
             losses = {'classification': F.cross_entropy(logits, labels.cuda()), **det_losses}
-        loss = sum(value * (box_loss_weight if name == 'loss_box_reg' else 1.0)
-                   for name, value in losses.items())
+        detection_loss = sum(value * (box_loss_weight if name == 'loss_box_reg' else 1.0)
+                             for name, value in det_losses.items())
+        loss = (losses['classification'] + detection_loss if task_weighting is None
+                else task_weighting(losses['classification'], detection_loss))
+        if not torch.isfinite(loss):
+            raise FloatingPointError(f'Non-finite training objective at epoch {epoch}, step {step}')
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         schedule.step()
+        examples += len(images)
+        for name, value in {**losses, 'detection_total': detection_loss, 'objective': loss}.items():
+            totals[name] = totals.get(name, 0.0) + value.detach().item() * len(images)
         seen += len(images)
         if step % 50 == 0 or step == len(loader):
             parts = ' '.join(f'{name} {value.item():.3f}' for name, value in losses.items())
             log(f'epoch {epoch} iter {step}/{len(loader)} loss {loss.item():.3f} ({parts}) '
                 f'lr {optimizer.param_groups[1]["lr"]:.2e} {seen / (time.time() - start):.1f} images/s', log_file)
             start, seen = time.time(), 0
+    stats = {'epoch': epoch, 'mean_losses': {name: value / examples for name, value in totals.items()},
+             'task_weights': task_weighting.values() if task_weighting is not None else {
+                 'classification_weight': 1.0, 'detection_weight': 1.0}}
+    log(f'epoch {epoch} training summary: {json.dumps(stats)}', log_file)
+    return stats
 
 
 @torch.no_grad()
@@ -175,10 +196,23 @@ def main():
     configuration = f'{args.backbone}_{args.init}_{args.adapt}'
     if args.unfreeze_last:
         configuration += f'_unfreeze{args.unfreeze_last}'
+    if args.loss_weighting != 'fixed':
+        configuration += f'_{args.loss_weighting}'
     run_dir = args.out / configuration
     if args.fold is not None:
         run_dir = args.out / f'fold_{args.fold}' / configuration
     run_dir.mkdir(parents=True, exist_ok=True)
+    report = provenance(vars(args))
+    with ComputeTracker(run_dir / 'compute.json', 'training', report) as compute:
+        train_run(args, run_dir, compute, report)
+    for target in (args.results, args.checkpoints):
+        destination = target / run_dir.name / f'seed_{args.seed}'
+        if args.fold is not None:
+            destination = destination / f'fold_{args.fold}'
+        save_artifacts(run_dir, destination, ('compute.json',))
+
+
+def train_run(args, run_dir, compute, report):
     log_file = open(run_dir / 'log.txt', 'w')
     log(json.dumps(vars(args), default=str), log_file)
 
@@ -225,34 +259,50 @@ def main():
         add_adapters(backbone, args.adapt)  # also freezes the backbone
     unfreeze_last_blocks(backbone, args.unfreeze_last)
     model = MultiTaskModel(backbone, task_routing=args.adapt == 'moelora', anchor_profile=args.anchor_profile)
+    task_weighting = TaskUncertaintyWeighting().cuda() if args.loss_weighting == 'uncertainty' else None
     parameters = sum(p.numel() for p in model.parameters())
-    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    training_only_parameters = sum(p.numel() for p in task_weighting.parameters()) if task_weighting is not None else 0
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad) + training_only_parameters
     log(f'parameters: {parameters:,} total, {trainable:,} trainable', log_file)
-    if args.unfreeze_last and (parameters > 130_000_000 or trainable > 40_000_000):
-        raise ValueError('Partial fine-tuning exceeds the 130M total / 40M trainable parameter budget.')
+    if (args.unfreeze_last or args.backbone == 'resnet34' or args.anchor_profile == 'small_extreme') and (
+            parameters > 130_000_000 or trainable > 40_000_000):
+        raise ValueError('Experiment exceeds the 130M total / 40M trainable parameter budget.')
     model.cuda()
+    compute.update(parameters=parameters, trainable_parameters=trainable,
+                   training_only_parameters=training_only_parameters,
+                   anchor_configuration=model.anchor_configuration)
 
     # Optimizer and schedule: trainable backbone parameters at --backbone-lr, all new modules at --lr
     groups = parameter_groups(model, args.backbone_lr, args.lr,
                               args.unfrozen_lr if args.unfreeze_last else None)
+    if task_weighting is not None:
+        groups.append({'params': list(task_weighting.parameters()), 'lr': args.lr,
+                       'weight_decay': 0.0, 'name': 'task_uncertainty'})
     log('optimizer groups: ' + ', '.join(f'{group["name"]} lr {group["lr"]:.2e}' for group in groups), log_file)
     optimizer = torch.optim.AdamW(groups, lr=args.lr, weight_decay=args.weight_decay)
     warmup, total = len(train_loader), args.epochs * len(train_loader)  # one epoch of warmup
     schedule = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step: lr_factor(step, warmup, total))
 
     # Train, validating every --eval-every epochs; the reported model is the last-epoch model
-    history, start = [], time.time()
+    history, training_history, start = [], [], time.time()
     best_val, best_detections = None, None
     for epoch in range(1, args.epochs + 1):
-        train_one_epoch(model, train_loader, optimizer, schedule, epoch, log_file, args.box_loss_weight)
+        stats = train_one_epoch(model, train_loader, optimizer, schedule, epoch, log_file,
+                                args.box_loss_weight, task_weighting)
+        training_history.append(stats)
+        (run_dir / 'training_history.json').write_text(json.dumps(training_history, indent=2))
+        compute.update(last_completed_training_epoch=epoch, latest_training=stats)
         if epoch % args.eval_every == 0 or epoch == args.epochs:
             val, val_detections = evaluate(model, val_loader, val_gt_path)
             val['delta_m'] = validation_delta_m(val)
+            val['task_weights'] = stats['task_weights']
             history.append({'epoch': epoch, **val})
             log(f'epoch {epoch} val: {headline(val)}', log_file)
             if args.select_best and (best_val is None or val['delta_m'] > best_val['delta_m']):
                 best_val, best_detections = history[-1], val_detections
                 torch.save(model.state_dict(), run_dir / 'best_model.pt')
+                if task_weighting is not None:
+                    torch.save(task_weighting.state_dict(), run_dir / 'best_loss_weighting.pt')
     train_hours = (time.time() - start) / 3600
 
     # Save the trained model before final reporting.
@@ -261,10 +311,19 @@ def main():
         val_detections = best_detections
     else:
         torch.save(model.state_dict(), run_dir / 'model.pt')
+    if task_weighting is not None:
+        torch.save(task_weighting.state_dict(), run_dir / 'final_loss_weighting.pt')
+        if args.select_best:
+            (run_dir / 'best_loss_weighting.pt').replace(run_dir / 'loss_weighting.pt')
+        else:
+            torch.save(task_weighting.state_dict(), run_dir / 'loss_weighting.pt')
     peak_gb = torch.cuda.max_memory_allocated() / 2**30
     log(f'training {train_hours:.2f} h, peak GPU memory {peak_gb:.1f} GB', log_file)
 
-    summary = {'args': vars(args), 'split': split, 'parameters': parameters, 'trainable_parameters': trainable,
+    summary = {'report_metadata': report, 'compute_record': str(run_dir / 'compute.json'),
+               'anchor_configuration': model.anchor_configuration,
+               'args': vars(args), 'split': split, 'parameters': parameters, 'trainable_parameters': trainable,
+               'training_only_parameters': training_only_parameters, 'training_history': training_history,
                'train_hours': train_hours, 'peak_gpu_memory_gb': peak_gb,
                'val_history': history, 'val': best_val if args.select_best else history[-1],
                'final_val': history[-1], 'selection': 'best_local_delta_m' if args.select_best else 'final_epoch',
@@ -274,12 +333,14 @@ def main():
     results_dir = args.results / run_dir.name / f'seed_{args.seed}'
     if args.fold is not None:
         results_dir = results_dir / f'fold_{args.fold}'
-    save_artifacts(run_dir, results_dir, ('metrics.json', 'predictions_val.json', 'instances_val_holdout.json', 'split.json'))
+    save_artifacts(run_dir, results_dir, ('metrics.json', 'predictions_val.json', 'instances_val_holdout.json', 'split.json', 'training_history.json'))
     log(f'saved JSON results: {results_dir}', log_file)
     checkpoint_dir = args.checkpoints / run_dir.name / f'seed_{args.seed}'
     if args.fold is not None:
         checkpoint_dir = checkpoint_dir / f'fold_{args.fold}'
     save_artifacts(run_dir, checkpoint_dir, ('model.pt', 'metrics.json'))
+    if task_weighting is not None:
+        save_artifacts(run_dir, checkpoint_dir, ('loss_weighting.pt', 'final_loss_weighting.pt', 'training_history.json'))
     log(f'saved checkpoint: {checkpoint_dir}', log_file)
 
 

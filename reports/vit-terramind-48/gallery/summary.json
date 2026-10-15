@@ -1,0 +1,385 @@
+{
+  "images": 939,
+  "score_threshold": 0.3,
+  "match_iou": 0.5,
+  "small_definition": "box area below 16x16 pixels after resizing to 512x512",
+  "models": {
+    "TerraMind": {
+      "total": {
+        "objects": 3281,
+        "small_objects": 1704,
+        "background": 1762,
+        "missed": 845,
+        "missed_small": 595,
+        "matched_small": 1109,
+        "localization": 1310,
+        "matched": 2436,
+        "duplicate": 189
+      },
+      "coco_per_class_AP": {
+        "aircraft": 0.4104458502808644,
+        "airport": 0.4935730145195799,
+        "bridge": 0.031933121832328104,
+        "car": 0.5602420180443073,
+        "harbor": 0.45182879408101084,
+        "oil_tank": 0.4412148316406916,
+        "playground": 0.028815283294036393,
+        "ship": 0.39042942308201267,
+        "wind_turbine": 0.39037274475332734
+      },
+      "by_class": {
+        "oil_tank": {
+          "objects": 601,
+          "small_objects": 355,
+          "background": 273,
+          "missed": 143,
+          "missed_small": 117,
+          "matched_small": 238,
+          "matched": 458,
+          "localization": 182,
+          "duplicate": 19
+        },
+        "wind_turbine": {
+          "objects": 923,
+          "small_objects": 909,
+          "localization": 469,
+          "missed": 86,
+          "missed_small": 86,
+          "matched_small": 823,
+          "matched": 837,
+          "background": 243,
+          "duplicate": 72
+        },
+        "car": {
+          "objects": 446,
+          "small_objects": 0,
+          "matched": 430,
+          "localization": 109,
+          "duplicate": 29,
+          "missed": 16,
+          "missed_small": 0,
+          "matched_small": 0,
+          "background": 174
+        },
+        "bridge": {
+          "objects": 359,
+          "small_objects": 278,
+          "matched": 57,
+          "localization": 162,
+          "background": 383,
+          "missed": 302,
+          "missed_small": 263,
+          "matched_small": 15,
+          "duplicate": 11
+        },
+        "airport": {
+          "objects": 93,
+          "small_objects": 0,
+          "localization": 89,
+          "matched": 84,
+          "missed": 9,
+          "missed_small": 0,
+          "matched_small": 0,
+          "background": 21,
+          "duplicate": 13
+        },
+        "aircraft": {
+          "objects": 244,
+          "small_objects": 0,
+          "background": 174,
+          "missed": 25,
+          "missed_small": 0,
+          "matched_small": 0,
+          "matched": 219,
+          "duplicate": 21,
+          "localization": 78
+        },
+        "harbor": {
+          "objects": 213,
+          "small_objects": 3,
+          "matched": 168,
+          "localization": 110,
+          "missed": 45,
+          "missed_small": 1,
+          "matched_small": 2,
+          "background": 148,
+          "duplicate": 15
+        },
+        "playground": {
+          "objects": 252,
+          "small_objects": 159,
+          "background": 293,
+          "missed": 204,
+          "missed_small": 128,
+          "matched_small": 31,
+          "localization": 49,
+          "matched": 48,
+          "duplicate": 5
+        },
+        "ship": {
+          "objects": 150,
+          "small_objects": 0,
+          "matched": 135,
+          "missed": 15,
+          "missed_small": 0,
+          "matched_small": 0,
+          "localization": 62,
+          "duplicate": 4,
+          "background": 53
+        }
+      }
+    },
+    "ViT_loss1": {
+      "total": {
+        "objects": 3281,
+        "small_objects": 1704,
+        "missed": 940,
+        "missed_small": 625,
+        "matched_small": 1079,
+        "matched": 2341,
+        "duplicate": 160,
+        "localization": 1298,
+        "background": 1498
+      },
+      "coco_per_class_AP": {
+        "aircraft": 0.3450730894978583,
+        "airport": 0.4826873325683297,
+        "bridge": 0.021861565698608986,
+        "car": 0.5053873930046201,
+        "harbor": 0.4508388099974002,
+        "oil_tank": 0.40504299250498277,
+        "playground": 0.03751173782656611,
+        "ship": 0.33561426407529843,
+        "wind_turbine": 0.3626829374972786
+      },
+      "by_class": {
+        "oil_tank": {
+          "objects": 601,
+          "small_objects": 355,
+          "missed": 153,
+          "missed_small": 121,
+          "matched_small": 234,
+          "matched": 448,
+          "localization": 232,
+          "background": 175,
+          "duplicate": 21
+        },
+        "wind_turbine": {
+          "objects": 923,
+          "small_objects": 909,
+          "matched": 811,
+          "duplicate": 70,
+          "missed": 112,
+          "missed_small": 112,
+          "matched_small": 797,
+          "localization": 486,
+          "background": 298
+        },
+        "car": {
+          "objects": 446,
+          "small_objects": 0,
+          "matched": 406,
+          "localization": 108,
+          "missed": 40,
+          "missed_small": 0,
+          "matched_small": 0,
+          "background": 168,
+          "duplicate": 12
+        },
+        "bridge": {
+          "objects": 359,
+          "small_objects": 278,
+          "matched": 47,
+          "localization": 137,
+          "missed": 312,
+          "missed_small": 264,
+          "matched_small": 14,
+          "background": 351,
+          "duplicate": 14
+        },
+        "airport": {
+          "objects": 93,
+          "small_objects": 0,
+          "localization": 77,
+          "matched": 79,
+          "missed": 14,
+          "missed_small": 0,
+          "matched_small": 0,
+          "background": 8,
+          "duplicate": 12
+        },
+        "aircraft": {
+          "objects": 244,
+          "small_objects": 0,
+          "background": 114,
+          "localization": 70,
+          "matched": 212,
+          "missed": 32,
+          "missed_small": 0,
+          "matched_small": 0,
+          "duplicate": 14
+        },
+        "harbor": {
+          "objects": 213,
+          "small_objects": 3,
+          "matched": 161,
+          "missed": 52,
+          "missed_small": 1,
+          "matched_small": 2,
+          "localization": 59,
+          "background": 64,
+          "duplicate": 4
+        },
+        "playground": {
+          "objects": 252,
+          "small_objects": 159,
+          "background": 281,
+          "missed": 204,
+          "missed_small": 127,
+          "matched_small": 32,
+          "localization": 69,
+          "matched": 48,
+          "duplicate": 3
+        },
+        "ship": {
+          "objects": 150,
+          "small_objects": 0,
+          "matched": 129,
+          "localization": 60,
+          "missed": 21,
+          "missed_small": 0,
+          "matched_small": 0,
+          "duplicate": 10,
+          "background": 39
+        }
+      }
+    },
+    "ViT_loss2": {
+      "total": {
+        "objects": 3281,
+        "small_objects": 1704,
+        "missed": 931,
+        "missed_small": 629,
+        "matched_small": 1075,
+        "matched": 2350,
+        "localization": 1404,
+        "duplicate": 155,
+        "background": 1764,
+        "wrong_class": 1
+      },
+      "coco_per_class_AP": {
+        "aircraft": 0.3799081261661515,
+        "airport": 0.5187471372974102,
+        "bridge": 0.021048939408643486,
+        "car": 0.49786762651019245,
+        "harbor": 0.46462668856350714,
+        "oil_tank": 0.40185575405885177,
+        "playground": 0.034760148392988174,
+        "ship": 0.32259906814038347,
+        "wind_turbine": 0.36815067861143114
+      },
+      "by_class": {
+        "oil_tank": {
+          "objects": 601,
+          "small_objects": 355,
+          "missed": 142,
+          "missed_small": 112,
+          "matched_small": 243,
+          "matched": 459,
+          "localization": 272,
+          "background": 279,
+          "duplicate": 20
+        },
+        "wind_turbine": {
+          "objects": 923,
+          "small_objects": 909,
+          "matched": 801,
+          "missed": 122,
+          "missed_small": 122,
+          "matched_small": 787,
+          "duplicate": 69,
+          "localization": 535,
+          "background": 339
+        },
+        "car": {
+          "objects": 446,
+          "small_objects": 0,
+          "matched": 410,
+          "localization": 102,
+          "duplicate": 20,
+          "missed": 36,
+          "missed_small": 0,
+          "matched_small": 0,
+          "background": 165
+        },
+        "bridge": {
+          "objects": 359,
+          "small_objects": 278,
+          "matched": 44,
+          "localization": 135,
+          "background": 403,
+          "missed": 315,
+          "missed_small": 267,
+          "matched_small": 11,
+          "duplicate": 10
+        },
+        "airport": {
+          "objects": 93,
+          "small_objects": 0,
+          "localization": 79,
+          "matched": 80,
+          "missed": 13,
+          "missed_small": 0,
+          "matched_small": 0,
+          "background": 9,
+          "duplicate": 7
+        },
+        "aircraft": {
+          "objects": 244,
+          "small_objects": 0,
+          "background": 124,
+          "localization": 70,
+          "matched": 216,
+          "missed": 28,
+          "missed_small": 0,
+          "matched_small": 0,
+          "duplicate": 6
+        },
+        "harbor": {
+          "objects": 213,
+          "small_objects": 3,
+          "matched": 164,
+          "background": 89,
+          "missed": 49,
+          "missed_small": 1,
+          "matched_small": 2,
+          "localization": 74,
+          "duplicate": 7
+        },
+        "playground": {
+          "objects": 252,
+          "small_objects": 159,
+          "background": 314,
+          "missed": 202,
+          "missed_small": 127,
+          "matched_small": 32,
+          "matched": 50,
+          "localization": 73,
+          "duplicate": 9
+        },
+        "ship": {
+          "objects": 150,
+          "small_objects": 0,
+          "matched": 126,
+          "missed": 24,
+          "missed_small": 0,
+          "matched_small": 0,
+          "localization": 64,
+          "duplicate": 7,
+          "background": 42,
+          "wrong_class": 1
+        }
+      }
+    }
+  }
+}

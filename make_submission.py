@@ -6,6 +6,9 @@ Example: python make_submission.py --run runs/terramind-moelora-seed0/terramind_
 import argparse
 import json
 import zipfile
+import time
+
+from sarbench.reporting import ComputeTracker, provenance
 from pathlib import Path
 
 def write_submission(images, preds, size=512, out="submission.zip", geometry='stretch'):
@@ -98,37 +101,63 @@ def main():
     if args.out.exists():
         raise FileExistsError(f'Refusing to overwrite {args.out}')
 
-    # The checkpoint contains all weights; loading it requires no pretrained download.
-    backbone = build_backbone(config['backbone'], pretrained=False)
-    if config['adapt'] != 'full':
-        add_adapters(backbone, config['adapt'])
-    model = MultiTaskModel(backbone, task_routing=config['adapt'] == 'moelora',
-                           anchor_profile=config.get('anchor_profile', 'default'))
-    model.load_state_dict(torch.load(args.run / 'model.pt', map_location='cpu', weights_only=True))
-    model.cuda().eval()
-    geometry = config.get('geometry', 'stretch')
-    loader = DataLoader(SubmissionImages(split_root, images, geometry), batch_size=args.batch_size,
-                        num_workers=args.workers, shuffle=False)
-    predictions = {}
-    with torch.inference_mode():
-        for step, (batch, names) in enumerate(loader, 1):
-            with torch.autocast('cuda', dtype=torch.bfloat16):
-                logits, detections, _ = model(batch.cuda())
-            detections = calibrate_detections(detections, logits, args.class_score_power)
-            labels = logits.argmax(dim=1).tolist()
-            for name, label, detection in zip(names, labels, detections):
-                # Faster R-CNN outputs category IDs 1..9; write_submission expects 0..8.
-                predictions[name] = (label, detection['boxes'].cpu().tolist(),
-                                     (detection['labels'] - 1).cpu().tolist(),
-                                     detection['scores'].cpu().tolist())
-            if step % 20 == 0 or step == len(loader):
-                print(f'prediction batch {step}/{len(loader)}; {len(predictions)}/{len(images)} images', flush=True)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    temporary = args.out.with_suffix('.zip.tmp')
-    write_submission(images, predictions, out=temporary, geometry=geometry)
-    temporary.replace(args.out)
-    print(f'Saved {args.out}: {len(images)} classification rows and '
-          f'{sum(len(prediction[1]) for prediction in predictions.values())} detections', flush=True)
+    with ComputeTracker(args.out.with_suffix('.inference.json'), 'submission_inference',
+                        provenance(config)) as compute:
+        # The checkpoint contains all weights; loading it requires no pretrained download.
+        backbone = build_backbone(config['backbone'], pretrained=False)
+        if config['adapt'] != 'full':
+            add_adapters(backbone, config['adapt'])
+        model = MultiTaskModel(backbone, task_routing=config['adapt'] == 'moelora',
+                               anchor_profile=config.get('anchor_profile', 'default'))
+        model.load_state_dict(torch.load(args.run / 'model.pt', map_location='cpu', weights_only=True))
+        model.cuda().eval()
+        geometry = config.get('geometry', 'stretch')
+        loader = DataLoader(SubmissionImages(split_root, images, geometry), batch_size=args.batch_size,
+                            num_workers=args.workers, shuffle=False)
+        predictions = {}
+        torch.cuda.synchronize()
+        prediction_started = time.perf_counter()
+        model_seconds, timed_images = 0.0, 0
+        with torch.inference_mode():
+            for step, (batch, names) in enumerate(loader, 1):
+                batch = batch.cuda()
+                torch.cuda.synchronize()
+                model_started = time.perf_counter()
+                with torch.autocast('cuda', dtype=torch.bfloat16):
+                    logits, detections, _ = model(batch)
+                torch.cuda.synchronize()
+                # Exclude the first real batch from steady-state model timing.
+                if step > 1:
+                    model_seconds += time.perf_counter() - model_started
+                    timed_images += len(names)
+                detections = calibrate_detections(detections, logits, args.class_score_power)
+                labels = logits.argmax(dim=1).tolist()
+                for name, label, detection in zip(names, labels, detections):
+                    # Faster R-CNN outputs category IDs 1..9; write_submission expects 0..8.
+                    predictions[name] = (label, detection['boxes'].cpu().tolist(),
+                                         (detection['labels'] - 1).cpu().tolist(),
+                                         detection['scores'].cpu().tolist())
+                if step % 20 == 0 or step == len(loader):
+                    print(f'prediction batch {step}/{len(loader)}; {len(predictions)}/{len(images)} images', flush=True)
+        torch.cuda.synchronize()
+        prediction_seconds = time.perf_counter() - prediction_started
+        compute.update(
+            checkpoint=str(args.run), split=args.split, images=len(images), batch_size=args.batch_size,
+            workers=args.workers, precision='bf16 autocast', class_score_power=args.class_score_power,
+            parameters=sum(p.numel() for p in model.parameters()),
+            anchor_configuration=model.anchor_configuration,
+            prediction_wall_seconds=prediction_seconds,
+            prediction_seconds_per_image=prediction_seconds / len(images),
+            prediction_timing_scope='data loading, preprocessing, host-to-device copy, model, calibration, CPU predictions; excludes model loading and ZIP writing',
+            steady_state_model_seconds_per_image=model_seconds / timed_images if timed_images else None,
+            steady_state_timed_images=timed_images,
+            model_timing_scope='synchronized model forward including detector postprocessing; excludes first batch, data loading and host-to-device copy; batch amortized throughput, not batch-1 latency')
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        temporary = args.out.with_suffix('.zip.tmp')
+        write_submission(images, predictions, out=temporary, geometry=geometry)
+        temporary.replace(args.out)
+        print(f'Saved {args.out}: {len(images)} classification rows and '
+              f'{sum(len(prediction[1]) for prediction in predictions.values())} detections', flush=True)
 
 
 if __name__ == '__main__':

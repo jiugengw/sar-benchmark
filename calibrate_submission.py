@@ -13,6 +13,7 @@ from sarbench.backbones import build_backbone
 from sarbench.data import SARMultiTask
 from sarbench.model import MultiTaskModel
 from train import evaluate, make_loader, validation_delta_m
+from sarbench.reporting import ComputeTracker, provenance
 
 
 def main():
@@ -38,24 +39,25 @@ def main():
     gt = json.loads(gt_path.read_text())
     if expected_ids != {im['id'] for im in gt['images']}:
         raise ValueError('Saved holdout does not match the reconstructed validation split')
-    backbone = build_backbone(cfg.backbone, pretrained=False)
-    if cfg.adapt != 'full':
-        add_adapters(backbone, cfg.adapt)
-    model = MultiTaskModel(backbone, task_routing=cfg.adapt == 'moelora',
-                           anchor_profile=config.get('anchor_profile', 'default'))
-    model.load_state_dict(torch.load(args.run / 'model.pt', map_location='cpu', weights_only=True))
-    model.cuda().eval()
-    results = []
-    for power in (0.0, 0.5, 1.0):
-        metrics, detections = evaluate(model, loader, gt_path, power)
-        metrics['delta_m'] = validation_delta_m(metrics)
-        results.append({'class_score_power': power, **metrics})
-        (args.run / f'predictions_calibration_{power}.json').write_text(json.dumps(detections))
-        print(f"power={power}: F1={metrics['macro_f1']:.4f}, mAP={metrics['mAP']:.4f}, Delta m={metrics['delta_m']:+.2f}", flush=True)
-    selected = max(results, key=lambda m: m['delta_m'])
-    (args.run / 'calibration.json').write_text(json.dumps({'trials': results, 'selected': selected}, indent=2))
-    del model
-    torch.cuda.empty_cache()
+    with ComputeTracker(args.run / 'calibration_compute.json', 'calibration', provenance(config)):
+        backbone = build_backbone(cfg.backbone, pretrained=False)
+        if cfg.adapt != 'full':
+            add_adapters(backbone, cfg.adapt)
+        model = MultiTaskModel(backbone, task_routing=cfg.adapt == 'moelora',
+                               anchor_profile=config.get('anchor_profile', 'default'))
+        model.load_state_dict(torch.load(args.run / 'model.pt', map_location='cpu', weights_only=True))
+        model.cuda().eval()
+        results = []
+        for power in (0.0, 0.5, 1.0):
+            metrics, detections = evaluate(model, loader, gt_path, power)
+            metrics['delta_m'] = validation_delta_m(metrics)
+            results.append({'class_score_power': power, **metrics})
+            (args.run / f'predictions_calibration_{power}.json').write_text(json.dumps(detections))
+            print(f"power={power}: F1={metrics['macro_f1']:.4f}, mAP={metrics['mAP']:.4f}, Delta m={metrics['delta_m']:+.2f}", flush=True)
+        selected = max(results, key=lambda m: m['delta_m'])
+        (args.run / 'calibration.json').write_text(json.dumps({'trials': results, 'selected': selected}, indent=2))
+        del model
+        torch.cuda.empty_cache()
     subprocess.run([sys.executable, 'make_submission.py', '--run', str(args.run), '--data', str(args.data),
                     '--out', str(args.out), '--class-score-power', str(selected['class_score_power'])], check=True)
     args.out.with_suffix('.metrics.json').write_text(json.dumps({

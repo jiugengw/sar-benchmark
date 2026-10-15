@@ -45,10 +45,40 @@ class TerraMind(nn.Module):
         return per_block[-1]  # last block's tokens [B, N, 768]; terratorch already applied encoder_norm
 
 
+class ResNet34(nn.Module):
+    """ImageNet-1k ResNet-34; native stride-4/8/16/32 maps, no classifier."""
+
+    def __init__(self, pretrained, weights_path=None):
+        super().__init__()
+        from torchvision.models import ResNet34_Weights, resnet34
+        from torchvision.models._utils import IntermediateLayerGetter
+
+        network = resnet34(weights=ResNet34_Weights.IMAGENET1K_V1 if pretrained else None)
+        if weights_path is not None:
+            network.load_state_dict(torch.load(weights_path, map_location='cpu', weights_only=True), strict=True)
+        rgb_weight = network.conv1.weight.detach().sum(dim=1, keepdim=True)
+        network.conv1 = nn.Conv2d(1, 64, 7, stride=2, padding=3, bias=False)
+        with torch.no_grad():
+            network.conv1.weight.copy_(rgb_weight)
+        self.body = IntermediateLayerGetter(network, return_layers={
+            'layer1': '0', 'layer2': '1', 'layer3': '2', 'layer4': '3'})
+        self.feature_channels = [64, 128, 256, 512]
+        self.embed_dim = 512
+
+    @property
+    def blocks(self):
+        return [self.body.layer1, self.body.layer2, self.body.layer3, self.body.layer4]
+
+    def forward(self, x):
+        return self.body(x)
+
+
 def build_backbone(name, pretrained, weights_path=None):
     """name: 'vit' or 'terramind'. pretrained=False builds the same architecture with random weights."""
     if weights_path is not None:
+        if name == 'resnet34' and not pretrained:
+            return ResNet34(pretrained=False, weights_path=weights_path)
         if name != 'vit' or pretrained:
             raise ValueError('Local backbone weights are supported only for ViT with pretrained=False.')
         return ViT(pretrained=False, weights_path=weights_path)
-    return {'vit': ViT, 'terramind': TerraMind}[name](pretrained)
+    return {'vit': ViT, 'terramind': TerraMind, 'resnet34': ResNet34}[name](pretrained)

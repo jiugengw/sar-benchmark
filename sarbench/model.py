@@ -10,8 +10,35 @@ from torchvision.models.detection.image_list import ImageList
 from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.rpn import RegionProposalNetwork, RPNHead
 from torchvision.ops import MultiScaleRoIAlign
+from torchvision.ops import FeaturePyramidNetwork
+from torchvision.ops.feature_pyramid_network import LastLevelMaxPool
 
 from .adapters import set_task
+
+
+class VariableAnchorRPNHead(nn.Module):
+    """Share the RPN tower; prediction layers depend on anchors per location."""
+
+    def __init__(self, channels, counts):
+        super().__init__()
+        self.counts = counts
+        self.conv = nn.Sequential(nn.Conv2d(channels, channels, 3, padding=1), nn.ReLU())
+        self.cls_logits = nn.ModuleDict({str(n): nn.Conv2d(channels, n, 1) for n in set(counts)})
+        self.bbox_pred = nn.ModuleDict({str(n): nn.Conv2d(channels, n * 4, 1) for n in set(counts)})
+        for layer in self.modules():
+            if isinstance(layer, nn.Conv2d):
+                nn.init.normal_(layer.weight, std=0.01)
+                nn.init.zeros_(layer.bias)
+
+    def forward(self, features):
+        logits, boxes = [], []
+        if len(features) != len(self.counts):
+            raise ValueError('RPN feature levels do not match anchor configuration')
+        for feature, count in zip(features, self.counts):
+            hidden = self.conv(feature)
+            logits.append(self.cls_logits[str(count)](hidden))
+            boxes.append(self.bbox_pred[str(count)](hidden))
+        return logits, boxes
 
 
 class SimpleFeaturePyramid(nn.Module):
@@ -45,7 +72,9 @@ class MultiTaskModel(nn.Module):
         self.backbone = backbone
         self.task_routing = task_routing  # MoE-LoRA: the backbone runs once per task, with that task's routers
         self.cls_head = nn.Sequential(nn.LayerNorm(backbone.embed_dim), nn.Linear(backbone.embed_dim, num_classes))
-        self.neck = SimpleFeaturePyramid(backbone.embed_dim)
+        self.spatial_backbone = hasattr(backbone, 'feature_channels')
+        self.neck = (FeaturePyramidNetwork(backbone.feature_channels, 256, extra_blocks=LastLevelMaxPool())
+                     if self.spatial_backbone else SimpleFeaturePyramid(backbone.embed_dim))
         # Small objects (median ~16 px at 512 px, 99 % below ~240 px): two anchor scales per octave, from 8 px at
         # stride 4 up to 181 px at stride 64, times 3 aspect ratios = 6 anchors per location.
         sizes = ((8, 11), (16, 23), (32, 45), (64, 91), (128, 181))
@@ -56,12 +85,20 @@ class MultiTaskModel(nn.Module):
         elif anchor_profile == 'large':
             # Isolate scale coverage: extend the coarsest level to larger objects.
             sizes = (*sizes[:4], (181, 256))
+        elif anchor_profile == 'small_extreme':
+            sizes = ((6, 8, 11), *sizes[1:])
+            ratios = (0.25, 0.5, 1.0, 2.0, 4.0)
         elif anchor_profile != 'default':
             raise ValueError(f'Unknown anchor profile: {anchor_profile}')
         anchors = AnchorGenerator(sizes, (ratios,) * 5)
+        self.anchor_configuration = {'sizes': sizes, 'aspect_ratios': (ratios,) * 5,
+                                     'strides': (4, 8, 16, 32, 64)}
+        counts = anchors.num_anchors_per_location()
+        rpn_head = (VariableAnchorRPNHead(256, counts) if len(set(counts)) > 1
+                    else RPNHead(256, counts[0]))
         # Everything else is torchvision's Faster R-CNN default.
         self.rpn = RegionProposalNetwork(
-            anchors, RPNHead(256, len(sizes[0]) * len(ratios)), fg_iou_thresh=0.7, bg_iou_thresh=0.3, batch_size_per_image=256,
+            anchors, rpn_head, fg_iou_thresh=0.7, bg_iou_thresh=0.3, batch_size_per_image=256,
             positive_fraction=0.5, pre_nms_top_n=dict(training=2000, testing=1000),
             post_nms_top_n=dict(training=2000, testing=1000), nms_thresh=0.7)
         self.roi_heads = RoIHeads(
@@ -75,12 +112,16 @@ class MultiTaskModel(nn.Module):
         (logits [B, num_classes], per-image detections (eval mode), the four Faster R-CNN losses (training mode))."""
         set_task(self.backbone, 0)  # 0 = classification, 1 = detection; a no-op without MoE-LoRA
         tokens = self.backbone(images)
-        logits = self.cls_head(tokens.mean(dim=1))
+        pooled = tokens['3'].mean(dim=(-2, -1)) if self.spatial_backbone else tokens.mean(dim=1)
+        logits = self.cls_head(pooled)
         if self.task_routing:
             set_task(self.backbone, 1)
             tokens = self.backbone(images)
-        h, w = images.shape[-2] // 16, images.shape[-1] // 16  # one token per 16 x 16 patch
-        features = self.neck(tokens.transpose(1, 2).unflatten(2, (h, w)))  # tokens as a [B, 768, h, w] map
+        if self.spatial_backbone:
+            features = self.neck(tokens)
+        else:
+            h, w = images.shape[-2] // 16, images.shape[-1] // 16
+            features = self.neck(tokens.transpose(1, 2).unflatten(2, (h, w)))
         # Precision rule: the box coder casts anchors to the dtype of the regression output, so in bf16 every
         # coordinate near 512 would snap to a 2 px grid. RPN and RoIHeads therefore run in fp32.
         with torch.autocast(images.device.type, enabled=False):
