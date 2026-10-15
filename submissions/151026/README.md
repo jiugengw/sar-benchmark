@@ -49,3 +49,7 @@ and `detection.json` with COCO detections. Adjacent `.metrics.json` files record
 local scores, selected epochs, calibration settings, and checkpoint provenance.
 Original job paths inside those records are retained; only this submission
 folder was renamed.
+
+The later TerraMind 48-epoch candidates and the running ViT comparison are
+preserved under [`tests-no-submit/`](tests-no-submit/README.md). They have not
+been uploaded; see that README for settings and local scores.

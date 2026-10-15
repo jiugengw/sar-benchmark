@@ -1,5 +1,6 @@
 """The two ViT-B/16 backbones, built for 512 px input: images [B, 1, 512, 512] -> patch tokens [B, 1024, 768]."""
 import timm
+import torch
 from terratorch.registry import BACKBONE_REGISTRY
 from torch import nn
 
@@ -7,11 +8,14 @@ from torch import nn
 class ViT(nn.Module):
     """timm ViT-B/16 pretrained on ImageNet-21k."""
 
-    def __init__(self, pretrained: bool):
+    def __init__(self, pretrained: bool, weights_path=None):
         super().__init__()
         # in_chans=1: timm sums the RGB patch-embedding weights; img_size=512: it resamples the position embedding
         self.vit = timm.create_model('vit_base_patch16_224.augreg_in21k', pretrained=pretrained,
                                      img_size=512, in_chans=1, num_classes=0)
+        if weights_path is not None:
+            state = torch.load(weights_path, map_location='cpu', weights_only=True)
+            self.vit.load_state_dict(state, strict=True)
         self.embed_dim = 768
 
     @property
@@ -41,6 +45,10 @@ class TerraMind(nn.Module):
         return per_block[-1]  # last block's tokens [B, N, 768]; terratorch already applied encoder_norm
 
 
-def build_backbone(name, pretrained):
+def build_backbone(name, pretrained, weights_path=None):
     """name: 'vit' or 'terramind'. pretrained=False builds the same architecture with random weights."""
+    if weights_path is not None:
+        if name != 'vit' or pretrained:
+            raise ValueError('Local backbone weights are supported only for ViT with pretrained=False.')
+        return ViT(pretrained=False, weights_path=weights_path)
     return {'vit': ViT, 'terramind': TerraMind}[name](pretrained)

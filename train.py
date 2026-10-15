@@ -29,6 +29,8 @@ def parse_args():
     p.add_argument('--data', type=Path, default=Path(__file__).resolve().parents[1] / 'dataset' / 'SARFact-Course-20K')
     p.add_argument('--backbone', required=True, choices=['vit', 'terramind'])
     p.add_argument('--init', required=True, choices=['pretrained', 'scratch'])
+    p.add_argument('--backbone-weights', type=Path,
+                   help='local pretrained ViT backbone state dict; avoids a Hub download')
     p.add_argument('--adapt', required=True, choices=['full', 'lora', 'moelora'])
     p.add_argument('--unfreeze-last', type=int, default=0,
                    help='also train the last N encoder blocks with pretrained LoRA/MoE-LoRA (default: 0)')
@@ -198,7 +200,9 @@ def main():
     log(f'data: {len(train_indices)} train, {len(val_indices)} validation images', log_file)
 
     # Model: adapters are created on the CPU, so they are added before .cuda()
-    backbone = build_backbone(args.backbone, pretrained=args.init == 'pretrained')
+    backbone = build_backbone(args.backbone,
+                              pretrained=args.init == 'pretrained' and args.backbone_weights is None,
+                              weights_path=args.backbone_weights)
     if args.adapt != 'full':
         add_adapters(backbone, args.adapt)  # also freezes the backbone
     unfreeze_last_blocks(backbone, args.unfreeze_last)
