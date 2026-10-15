@@ -29,6 +29,43 @@ The matching `.metrics.json` files record the checkpoint path, calibration,
 and local scores. The 48-epoch validation score was slightly lower than the
 selected epoch-46 score for both runs.
 
+### Holdout predictions and weak-class review
+
+The saved per-image predictions are now included here:
+
+- [Large-anchor predictions](terramind_48ep_boxloss_photometric_large_anchors_seed0_predictions_val.json)
+- [Default-anchor predictions](terramind_48ep_boxloss_photometric_seed0_predictions_val.json)
+- [Shared holdout annotations](terramind_48ep_instances_val_holdout.json)
+
+For the selected large-anchor checkpoint, the weak AP is a mix of missed small
+objects and poor box overlap. On the 939-image holdout, bridge has 359 boxes,
+including 278 below 16×16 pixels; playground has 252 boxes, including 159
+below that size. In a diagnostic greedy match at confidence 0.3 and IoU 0.5,
+302 bridge boxes and 204 playground boxes were unmatched. Of the small boxes,
+263 bridge and 128 playground boxes were unmatched. At confidence 0.05, the
+diagnostic also marked 622 bridge predictions and 215 playground predictions
+as having IoU from 0.1 to below 0.5, indicating localization errors among
+predictions that overlap an object. These counts are for error review, not COCO
+AP; confidence thresholds change the match counts.
+
+The image-level classifier also swaps the classes: in the selected holdout
+confusion matrix, 8 of 123 true bridge images were predicted as playground, and
+14 of 109 true playground images were predicted as bridge. This is separate
+from the detector's box and category errors.
+
+Example overlays use orange for missed ground-truth boxes, green for matched
+ground truth, purple for poorly localized predictions, red for false
+positives, and blue for matched predictions:
+
+| Bridge examples | Playground examples |
+|---|---|
+| [Image 3015](weak-class-review/bridge_3015.jpg) · [Image 5344](weak-class-review/bridge_5344.jpg) | [Image 5995](weak-class-review/playground_5995.jpg) · [Image 4361](weak-class-review/playground_4361.jpg) |
+
+The audit supports testing smaller anchors for small-object recall. Since many
+predictions also have loose overlap, a separate higher box-loss experiment
+could test localization; the current model already uses box-loss weight 2.
+Change one factor per run and compare on the same holdout.
+
 ## ViT 48-epoch comparison — running, not submitted
 
 Slurm array **325636** compares pretrained ViT + MoE-LoRA with box-loss
