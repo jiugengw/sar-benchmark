@@ -110,21 +110,25 @@ and 27.57%/+1.12. Thus, the theoretical shape-fit gains for wide anchors did
 not translate into a clear overall-score gain, and the large-anchor result
 was mixed across local and official evaluation.
 
-### Next planned anchor experiment — not run
+### Next planned anchor experiment — single 90/10 holdout, not run
 
-Test one TerraMind 48-epoch model with the default anchor sizes and ratios,
-adding aspect ratios 0.25 and 4 plus a 6-pixel anchor size on the finest
-(stride-4) feature level. This combines the wide and tall shapes with the
-smallest scale suggested by the labeled-box coverage check. Compare it with
-the existing 48-epoch default-anchor run on the same holdout and metrics.
+Run one 48-epoch TerraMind + MoE-LoRA model using the existing 90/10 split,
+with the default anchor sizes and ratios plus ratios 0.25 and 4 and a 6-pixel
+size on the finest (stride-4) feature level. Keep box-loss weight 2,
+photometric augmentation, and all other training settings the same. Compare
+its holdout metrics with the existing 48-epoch default-anchor run, which used
+the same split. This is one training run; do not run 5-fold evaluation for
+this experiment.
 
 The current shared RPN head assumes the same number of anchors at every
 feature level. Putting the 6-pixel size only on stride 4 therefore needs
 level-specific RPN prediction outputs (or an equivalent implementation); do
 not add 6 pixels to every level just to preserve equal anchor counts. Keep the
 experiment within the model parameter limits and record the actual anchor
-configuration in the resulting checkpoint and submission metadata. This is a
-planned experiment, not a trained result.
+configuration in the resulting checkpoint and evaluation metadata. The
+training code currently accepts only the existing anchor profiles, so custom
+anchor support must be implemented before running this plan. This is a planned
+experiment, not a trained result.
 
 ## ViT 48-epoch comparison — running, not submitted
 
