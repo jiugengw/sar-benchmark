@@ -66,6 +66,50 @@ predictions also have loose overlap, a separate higher box-loss experiment
 could test localization; the current model already uses box-loss weight 2.
 Change one factor per run and compare on the same holdout.
 
+### Anchor-shape coverage precheck
+
+Before training another detector, we compared anchor shapes with the labeled
+training boxes. Each box was resized to a 512-pixel image and compared with
+candidate anchor shapes at the same center. The table reports the percentage
+of boxes whose best shape match has IoU at least 0.7. The `narrow-only` profile
+adds the tall-thin aspect ratio (5); `wide` adds both extreme ratios (0.2 and
+5); `+6 px` adds a 6-pixel size to the default size set; and `wide + 6 px`
+combines the wide ratios with that added size.
+
+| Class | Training boxes | Default | Large | Wide | Narrow-only | Default + 6 px | Wide + 6 px |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Aircraft | 2,532 | 99.5% | 91.0% | 99.6% | 99.5% | 99.5% | 99.6% |
+| Airport | 919 | 52.2% | 45.5% | 75.2% | 61.7% | 52.2% | 75.2% |
+| Bridge | 3,984 | 88.0% | 87.9% | 90.0% | 88.5% | 94.8% | 96.8% |
+| Car | 4,089 | 99.6% | 99.6% | 99.7% | 99.6% | 99.6% | 99.7% |
+| Harbor | 2,650 | 85.2% | 86.5% | 87.0% | 86.0% | 85.2% | 87.0% |
+| Oil tank | 5,580 | 92.6% | 92.6% | 92.9% | 92.8% | 97.9% | 98.3% |
+| Playground | 2,610 | 97.0% | 97.0% | 97.0% | 97.0% | 97.0% | 97.1% |
+| Ship | 1,544 | 84.0% | 80.4% | 93.0% | 89.3% | 84.0% | 93.0% |
+| Wind turbine | 8,625 | 74.7% | 74.7% | 74.7% | 74.7% | 92.4% | 92.4% |
+
+This rough shape-only check suggests wide aspect ratios fit airport and ship
+boxes better, while adding a 6-pixel size helps bridge, oil-tank, and
+wind-turbine box shapes. The combination improves the theoretical match for
+both groups. Playground box shapes already match well, so this check does not
+explain their weak detection. The large profile does not improve shape coverage
+consistently.
+
+These are not detector recall or AP measurements. The calculation assumes a
+perfectly centered anchor and compares sizes and ratios without accounting for
+feature-map stride, anchor locations, or training assignments. In particular,
+it treats candidate shapes as a pool and does not simulate putting the 6-pixel
+size only on the finest feature level. It is a prioritization aid; only a
+trained-model comparison can establish whether the change helps.
+
+The trained 24-epoch anchor experiments provide a separate check: on the
+official scores, default anchors reached mAP 28.04% and Delta m +2.89; large
+anchors reached 27.71% and +1.98; wide anchors reached 28.16% and +2.38. On the
+local holdout, the corresponding mAP/Delta m were 27.22%/+0.66, 27.42%/+1.30,
+and 27.57%/+1.12. Thus, the theoretical shape-fit gains for wide anchors did
+not translate into a clear overall-score gain, and the large-anchor result
+was mixed across local and official evaluation.
+
 ## ViT 48-epoch comparison — running, not submitted
 
 Slurm array **325636** compares pretrained ViT + MoE-LoRA with box-loss
