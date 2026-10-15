@@ -44,7 +44,8 @@ class SARMultiTask(Dataset):
     An item is (image [1, size, size], label 0..8, target), target = {'boxes': XYXY on the resized
     image, 'labels': 1..9, 'image_id': COCO id, 'orig_size': (h, w)}."""
 
-    def __init__(self, root, train=False, size=512, limit=None, indices=None, geometry='stretch'):
+    def __init__(self, root, train=False, size=512, limit=None, indices=None, geometry='stretch',
+                 photometric=False):
         self.root = Path(root)
         self.geometry = geometry
         self.image_root = self.root / 'train'
@@ -58,12 +59,14 @@ class SARMultiTask(Dataset):
         for ann in coco['annotations']:
             self.annotations[ann['image_id']].append(ann)
         flips = [v2.RandomHorizontalFlip(), v2.RandomVerticalFlip()] if train else []
+        appearance = [v2.ColorJitter(brightness=0.15, contrast=0.15)] if train and photometric else []
         self.transform = v2.Compose([
             v2.ToImage(),
             v2.ConvertBoundingBoxFormat('XYXY'),  # COCO [x, y, w, h] -> [x1, y1, x2, y2]
             ResizePad(size) if geometry == 'pad' else v2.Resize((size, size)),
             *flips,  # overhead imagery has no canonical "up"
             v2.ToDtype(torch.float32, scale=True),
+            *appearance,
             v2.Normalize([MEAN], [STD]),
         ])
 

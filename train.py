@@ -17,6 +17,7 @@ from sarbench.data import SARMultiTask, collate, to_original_xywh
 from sarbench.metrics import classification_metrics, detection_metrics
 from sarbench.model import MultiTaskModel
 from sarbench.optim import parameter_groups
+from sarbench.inference import calibrate_detections
 
 # Validation reference: mean ViT + LoRA scores over seeds 0, 1 and 2.
 VAL_REFERENCE_F1 = 0.9331
@@ -42,6 +43,8 @@ def parse_args():
     p.add_argument('--workers', type=int, default=8)
     p.add_argument('--limit', type=int, help='use the first N labeled training images before splitting (quick checks)')
     p.add_argument('--seed', type=int, default=0)
+    p.add_argument('--photometric', action='store_true', help='training-only mild brightness/contrast jitter')
+    p.add_argument('--select-best', action='store_true', help='save the evaluated epoch with highest local Delta m')
     p.add_argument('--anchor-profile', choices=['default', 'wide', 'large'], default='default')
     p.add_argument('--geometry', choices=['stretch', 'pad'], default='stretch')
     p.add_argument('--class-sampling', choices=['uniform', 'sqrt-balanced'], default='uniform')
@@ -74,7 +77,8 @@ def log(message, file):
 
 def make_loader(args, indices, train):
     """Build a loader over selected rows from the labeled course training set."""
-    dataset = SARMultiTask(args.data, train=train, limit=args.limit, indices=indices, geometry=args.geometry)
+    dataset = SARMultiTask(args.data, train=train, limit=args.limit, indices=indices, geometry=args.geometry,
+                           photometric=getattr(args, 'photometric', False))
     sampler = None
     if train and args.class_sampling == 'sqrt-balanced':
         labels = torch.tensor([int(row['label']) for row in dataset.rows])
@@ -117,13 +121,14 @@ def train_one_epoch(model, loader, optimizer, schedule, epoch, log_file, box_los
 
 
 @torch.no_grad()
-def evaluate(model, loader, gt_json):
+def evaluate(model, loader, gt_json, class_score_power=0.0):
     """Classification and COCO detection metrics on one split, and the detections in COCO result format."""
     model.eval()
     labels, predicted, detections, image_ids = [], [], [], []
     for images, y, targets in loader:
         with torch.autocast('cuda', dtype=torch.bfloat16):
             logits, outputs, _ = model(images.cuda())
+        outputs = calibrate_detections(outputs, logits, class_score_power)
         labels += y.tolist()
         predicted += logits.argmax(dim=1).tolist()
         for target, out in zip(targets, outputs):
@@ -215,6 +220,7 @@ def main():
 
     # Train, validating every --eval-every epochs; the reported model is the last-epoch model
     history, start = [], time.time()
+    best_val, best_detections = None, None
     for epoch in range(1, args.epochs + 1):
         train_one_epoch(model, train_loader, optimizer, schedule, epoch, log_file, args.box_loss_weight)
         if epoch % args.eval_every == 0 or epoch == args.epochs:
@@ -222,16 +228,25 @@ def main():
             val['delta_m'] = validation_delta_m(val)
             history.append({'epoch': epoch, **val})
             log(f'epoch {epoch} val: {headline(val)}', log_file)
+            if args.select_best and (best_val is None or val['delta_m'] > best_val['delta_m']):
+                best_val, best_detections = history[-1], val_detections
+                torch.save(model.state_dict(), run_dir / 'best_model.pt')
     train_hours = (time.time() - start) / 3600
 
     # Save the trained model before final reporting.
-    torch.save(model.state_dict(), run_dir / 'model.pt')
+    if args.select_best:
+        (run_dir / 'best_model.pt').replace(run_dir / 'model.pt')
+        val_detections = best_detections
+    else:
+        torch.save(model.state_dict(), run_dir / 'model.pt')
     peak_gb = torch.cuda.max_memory_allocated() / 2**30
     log(f'training {train_hours:.2f} h, peak GPU memory {peak_gb:.1f} GB', log_file)
 
     summary = {'args': vars(args), 'parameters': parameters, 'trainable_parameters': trainable,
                'train_hours': train_hours, 'peak_gpu_memory_gb': peak_gb,
-               'val_history': history, 'val': history[-1], 'test': None}
+               'val_history': history, 'val': best_val if args.select_best else history[-1],
+               'final_val': history[-1], 'selection': 'best_local_delta_m' if args.select_best else 'final_epoch',
+               'test': None}
     (run_dir / 'metrics.json').write_text(json.dumps(summary, indent=2, default=str))
     (run_dir / 'predictions_val.json').write_text(json.dumps(val_detections))
     results_dir = args.results / run_dir.name / f'seed_{args.seed}'

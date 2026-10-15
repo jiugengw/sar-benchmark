@@ -1,5 +1,11 @@
 # Model submission ZIPs
 
+The new [151026/](151026/README.md) folder contains three ready-to-upload
+submissions from longer training: baseline, stronger box loss, and stronger box
+loss with photometric augmentation. See that folder's README for experiment
+rationale, local results, and upload guidance. Task 3's older-model calibration
+artifacts are kept in its `tests-no-submit/` subfolder.
+
 Each ZIP is a separate model's predictions for all 1,426 course validation images. Upload one ZIP at a time to
 Codabench. These are predictions on `data/course-data/val/`, separate from the labeled training holdout used for
 local metrics.

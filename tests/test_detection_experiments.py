@@ -86,3 +86,13 @@ def test_training_and_submission_geometry_match(tmp_path):
         torch.testing.assert_close(tensor, inference_transform(geometry)(image))
         restored = to_original_xywh(target['boxes'], target['orig_size'], geometry=geometry)
         torch.testing.assert_close(restored.as_subclass(torch.Tensor), torch.tensor([[10., 20., 30., 40.]]))
+    # Appearance augmentation changes training pixels, preserves transformed boxes,
+    # and is disabled for validation even when requested.
+    torch.manual_seed(0)
+    plain, _, plain_target = SARMultiTask(tmp_path, train=True)[0]
+    torch.manual_seed(0)
+    jittered, _, jittered_target = SARMultiTask(tmp_path, train=True, photometric=True)[0]
+    assert not torch.equal(plain, jittered)
+    torch.testing.assert_close(plain_target['boxes'], jittered_target['boxes'])
+    validation, _, _ = SARMultiTask(tmp_path, train=False, photometric=True)[0]
+    torch.testing.assert_close(validation, inference_transform()(image))

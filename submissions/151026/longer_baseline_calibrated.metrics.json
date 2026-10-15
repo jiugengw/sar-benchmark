@@ -1,0 +1,128 @@
+{
+  "checkpoint": "runs/overnight-improve-324156/longer_baseline/terramind_pretrained_moelora",
+  "selected_epoch": 36,
+  "local_metrics": {
+    "class_score_power": 0.0,
+    "accuracy": 0.9052183173588925,
+    "macro_f1": 0.9106638943654808,
+    "balanced_accuracy": 0.9118162698777402,
+    "confusion_matrix": [
+      [
+        121,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        59,
+        2,
+        0,
+        0,
+        3,
+        2,
+        0,
+        0
+      ],
+      [
+        0,
+        5,
+        94,
+        0,
+        6,
+        4,
+        12,
+        2,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        49,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        2,
+        0,
+        121,
+        2,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        5,
+        0,
+        3,
+        118,
+        2,
+        4,
+        1
+      ],
+      [
+        0,
+        2,
+        18,
+        0,
+        5,
+        4,
+        80,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        1,
+        0,
+        3,
+        0,
+        117,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        91
+      ]
+    ],
+    "mAP": 0.31750702105095063,
+    "AP50": 0.6217725741109672,
+    "AP75": 0.2740392025847947,
+    "per_class_AP": {
+      "aircraft": 0.3844859467651617,
+      "airport": 0.3895463937420619,
+      "bridge": 0.030857937725560187,
+      "car": 0.5555202534099217,
+      "harbor": 0.38155483055714123,
+      "oil_tank": 0.39422301548684974,
+      "playground": 0.022740389946054394,
+      "ship": 0.3670931702043341,
+      "wind_turbine": 0.33154125162147086
+    },
+    "delta_m": 9.553031389785732
+  },
+  "official_score": null,
+  "selection_note": "Chosen using labeled training holdout only; no official validation labels used."
+}

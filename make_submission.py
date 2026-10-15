@@ -75,6 +75,7 @@ def main():
     from sarbench.adapters import add_adapters
     from sarbench.backbones import build_backbone
     from sarbench.model import MultiTaskModel
+    from sarbench.inference import calibrate_detections
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run', type=Path, required=True, help='folder containing metrics.json and model.pt')
@@ -83,6 +84,7 @@ def main():
     parser.add_argument('--out', type=Path, required=True, help='submission ZIP path')
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--workers', type=int, default=8)
+    parser.add_argument('--class-score-power', type=float, default=0.0)
     args = parser.parse_args()
     config = json.loads((args.run / 'metrics.json').read_text())['args']
     split_root = args.data / args.split
@@ -112,6 +114,7 @@ def main():
         for step, (batch, names) in enumerate(loader, 1):
             with torch.autocast('cuda', dtype=torch.bfloat16):
                 logits, detections, _ = model(batch.cuda())
+            detections = calibrate_detections(detections, logits, args.class_score_power)
             labels = logits.argmax(dim=1).tolist()
             for name, label, detection in zip(names, labels, detections):
                 # Faster R-CNN outputs category IDs 1..9; write_submission expects 0..8.
