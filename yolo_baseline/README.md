@@ -28,3 +28,7 @@ The results include COCO mAP, AP50/AP75, AP small, AR small, per-class AP for ev
 ## Matched 100-epoch YOLO26 P2 comparison
 
 `sbatch/yolo26_all_p2_100.sbatch` trains YOLO26s, YOLO26m, and YOLO26l with a stride-4 P2 level, up to two scales concurrently. Every run uses the same 8,453/939 split, 512 × 512 inputs, batch size 16, seed 0, 100 detector epochs, and classifier/evaluation stages as YOLO11s-P2. The shared pretrained backbone, P3 neck, P4/P5 neck, and P3-P5 detection heads transfer from the matching official YOLO26 scale; the new P2 branch starts with random weights. Training code is in `train_yolo26s_p2.py`; each run saves under `runs/yolo26<scale>-100-p2-<job-id>/` and `results/yolo26<scale>-100-p2-<job-id>/seed_0/`.
+
+`sbatch/yolo11n_p2_100.sbatch` trains YOLO11n-P2 for 100 epochs using the local official YOLO11n checkpoint. `sbatch/yolo26n_p2_100.sbatch` trains YOLO26n-P2 for 100 epochs and resolves the official YOLO26n checkpoint through Ultralytics on the compute node because it is not staged in `pretrained/`.
+
+The unqueued 200-epoch detector templates are `sbatch/yolo11_p2_200.sbatch` and `sbatch/yolo26_p2_200.sbatch`. Each accepts one `MODEL_SCALE` and runs only that selected model; both keep the separate image classifier at 100 epochs and package a submission ZIP after evaluation.

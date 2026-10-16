@@ -59,3 +59,16 @@ python -u yolo_baseline/run_experiment.py \
     --eval-only
 
 python reports/training-comparison/build_comparison.py
+
+PACKAGE_DIR="submissions/161026/tests-no-submit/${MODEL_NAME}-100-p2-${SLURM_JOB_ID}"
+mkdir -p "$PACKAGE_DIR/scoring_result"
+touch "$PACKAGE_DIR/scoring_result/.gitkeep"
+python -u yolo_baseline/make_submission.py \
+    --weights "$RUN_ROOT/train/weights/best.pt" \
+    --classifier-checkpoint "$RUN_ROOT/image_classifier.pt" \
+    --box-class-policy native_detector_classes \
+    --data data/course-data \
+    --classes data/yolo11s-sar-512/conversion_manifest.json \
+    --out "$PACKAGE_DIR/${MODEL_NAME}_100_p2_${SLURM_JOB_ID}.zip" \
+    --batch 16 --workers 4
+cp "$RESULT_ROOT/metrics.json" "$PACKAGE_DIR/${MODEL_NAME}_100_p2_${SLURM_JOB_ID}.metrics.json"

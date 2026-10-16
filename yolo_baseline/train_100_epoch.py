@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train matched 100-epoch YOLO11s standard or P2 detection models."""
+"""Train matched 100-epoch YOLO11 standard or P2 detection models."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def set_seed(seed: int) -> None:
 
 
 def build_class_adapted_standard(weights: Path, class_names: list[str], config_path: Path):
-    """Build the 9-class YOLO11s model and transfer its official pretrained weights."""
+    """Build a 9-class YOLO11 model and transfer its official pretrained weights."""
     from ultralytics import YOLO
 
     source = YOLO(str(weights))
@@ -81,7 +81,8 @@ def transfer_standard_weights_to_p2(standard_model, p2_model) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--variant", choices=("standard", "p2"), required=True)
-    parser.add_argument("--weights", type=Path, default=Path("pretrained/yolo11s.pt"))
+    parser.add_argument("--scale", choices=("n", "s", "m", "l", "x"), default="s")
+    parser.add_argument("--weights", type=Path)
     parser.add_argument("--dataset-yaml", type=Path, default=Path("data/yolo11s-sar-512/dataset.yaml"))
     parser.add_argument("--classes", type=Path, default=Path("data/yolo11s-sar-512/conversion_manifest.json"))
     parser.add_argument("--train-output", type=Path, required=True)
@@ -94,6 +95,8 @@ def main() -> None:
 
     if not torch.cuda.is_available():
         raise RuntimeError("YOLO training requires the allocated CUDA GPU")
+    if args.weights is None:
+        args.weights = Path(f"pretrained/yolo11{args.scale}.pt")
     if not args.weights.is_file():
         raise FileNotFoundError(args.weights)
     class_names = json.loads(args.classes.read_text())["classes"]
@@ -103,13 +106,16 @@ def main() -> None:
     set_seed(0)
 
     standard_model = build_class_adapted_standard(
-        args.weights, class_names, args.train_output / "yolo11s_9class.yaml"
+        args.weights, class_names, args.train_output / f"yolo11{args.scale}_9class.yaml"
     )
     if args.variant == "standard":
         model = standard_model
     else:
-        p2_yaml = Path(__file__).with_name("yolo11s_p2.yaml")
-        model = YOLO(str(p2_yaml), task="detect")
+        p2_config = yaml.safe_load(Path(__file__).with_name("yolo11s_p2.yaml").read_text())
+        p2_config["scale"] = args.scale
+        p2_config_path = args.train_output / f"yolo11{args.scale}_p2.yaml"
+        p2_config_path.write_text(yaml.safe_dump(p2_config, sort_keys=False))
+        model = YOLO(str(p2_config_path), task="detect")
         model.model.names = dict(enumerate(class_names))
         transfer_standard_weights_to_p2(standard_model, model)
         del standard_model
@@ -117,7 +123,8 @@ def main() -> None:
     parameter_count = sum(parameter.numel() for parameter in model.model.parameters())
     training_settings = {
         "variant": args.variant,
-        "architecture": "YOLO11s-P2 (stride 4/8/16/32)" if args.variant == "p2" else "YOLO11s (stride 8/16/32)",
+        "scale": args.scale,
+        "architecture": f"YOLO11{args.scale}-P2 (stride 4/8/16/32)" if args.variant == "p2" else f"YOLO11{args.scale} (stride 8/16/32)",
         "pretrained_weights": str(args.weights),
         "classes": class_names,
         "epochs": args.epochs,

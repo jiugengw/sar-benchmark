@@ -7,6 +7,7 @@ import argparse
 import copy
 import json
 import random
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -69,7 +70,7 @@ def transfer_standard_weights_to_p2(standard_model, p2_model) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scale", choices=("s", "m", "l"), default="s")
+    parser.add_argument("--scale", choices=("n", "s", "m", "l"), default="s")
     parser.add_argument("--weights", type=Path)
     parser.add_argument(
         "--p2-yaml",
@@ -89,8 +90,6 @@ def main() -> None:
 
     if not torch.cuda.is_available():
         raise RuntimeError("YOLO training requires the allocated CUDA GPU")
-    if not args.weights.is_file():
-        raise FileNotFoundError(args.weights)
     if not args.p2_yaml.is_file():
         raise FileNotFoundError(args.p2_yaml)
     class_names = json.loads(args.classes.read_text())["classes"]
@@ -99,7 +98,17 @@ def main() -> None:
     args.train_output.mkdir(parents=True, exist_ok=True)
     set_seed(0)
 
-    source = YOLO(str(args.weights))
+    if args.weights.is_file():
+        source = YOLO(str(args.weights))
+    elif args.scale == "n" and args.weights.name == "yolo26n.pt":
+        # YOLO26n is available from Ultralytics but is not staged in this repo.
+        # Resolve the official asset once and keep a local copy for evaluation.
+        source = YOLO("yolo26n.pt")
+        downloaded_weights = Path(source.ckpt_path)
+        args.weights = args.train_output / "pretrained_yolo26n.pt"
+        shutil.copy2(downloaded_weights, args.weights)
+    else:
+        raise FileNotFoundError(args.weights)
     standard_config = copy.deepcopy(source.model.yaml)
     standard_config["nc"] = len(class_names)
     standard_config_path = args.train_output / f"yolo26{args.scale}_9class.yaml"
