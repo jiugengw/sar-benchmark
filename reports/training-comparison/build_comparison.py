@@ -20,6 +20,8 @@ REVIEW_IMAGES = HERE / "images"
 REVIEW_THRESHOLD = 0.3
 REVIEW_IOU = 0.5
 REVIEW_EXAMPLES = 48
+F1_REFERENCE = 0.9331
+MAP_REFERENCE = 0.2613
 
 ERROR_FIELDS = ("objects", "matched", "missed", "missed_small", "wrong_class", "duplicate", "localization", "background")
 ERROR_WEIGHTS = {"missed_small": 3, "missed": 1, "wrong_class": 2, "duplicate": 1, "localization": 1}
@@ -58,10 +60,19 @@ def load_metrics(entry: dict[str, Any]) -> tuple[dict[str, Any] | None, str | No
         return None, None, None
     scores = data.get("val") or data.get("final_val") or data
     keys = ("epoch", "accuracy", "macro_f1", "balanced_accuracy", "mAP", "AP50", "AP75", "AP_small",
-            "AR_small", "delta_m",
+            "AR_small", "delta_m", "combined_delta_m",
             "per_class_AP", "image_classification", "detection_derived_image_classification",
             "detection_class_policies")
-    return {key: scores[key] for key in keys if key in scores}, str(path.relative_to(ROOT)), path
+    selected = {key: scores[key] for key in keys if key in scores}
+    if "delta_m" not in selected:
+        if "combined_delta_m" in selected:
+            selected["delta_m"] = selected["combined_delta_m"]
+        elif "macro_f1" in selected and "mAP" in selected:
+            selected["delta_m"] = 100.0 * 0.5 * (
+                (float(selected["macro_f1"]) - F1_REFERENCE) / F1_REFERENCE
+                + (float(selected["mAP"]) - MAP_REFERENCE) / MAP_REFERENCE
+            )
+    return selected, str(path.relative_to(ROOT)), path
 
 
 def read_log(entry: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:

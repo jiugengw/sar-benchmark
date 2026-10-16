@@ -32,3 +32,66 @@ The results include COCO mAP, AP50/AP75, AP small, AR small, per-class AP for ev
 `sbatch/yolo11n_p2_100.sbatch` trains YOLO11n-P2 for 100 epochs using the local official YOLO11n checkpoint. `sbatch/yolo26n_p2_100.sbatch` trains YOLO26n-P2 for 100 epochs and resolves the official YOLO26n checkpoint through Ultralytics on the compute node because it is not staged in `pretrained/`.
 
 The unqueued 200-epoch detector templates are `sbatch/yolo11_p2_200.sbatch` and `sbatch/yolo26_p2_200.sbatch`. Each accepts one `MODEL_SCALE` and runs only that selected model; both keep the separate image classifier at 100 epochs and package a submission ZIP after evaluation.
+
+## SAR classification and detection experiment plan
+
+This plan tracks the proposed comparison of classification macro-F1, detection COCO mAP, and the benchmark's combined `Δm`. Keep the existing YOLO11s-P2 checkpoints, settings, metrics, and logs as the E1 baseline; write every new run to a unique run directory.
+
+### Confirmed E1 implementation
+
+E1 is the 100-epoch YOLO11s-P2 detector followed by a separately trained image-classification head. The detector starts from `pretrained/yolo11s.pt`, transfers compatible backbone, neck, and P3-P5 detection weights, and initializes the new P2 branch randomly. The saved detector is frozen while the classifier is trained from the same image labels.
+
+`train_image_head.py` hooks the inputs to YOLO's final `Detect` module. For P2, these are the four stride-4/8/16/32 maps. It global-average-pools each map, concatenates the channel vectors, and feeds a `LayerNorm + Dropout(0.2) + Linear` head. E1 artifacts are under `runs/yolo11s-100-p2-328058/` and `results/yolo11s-100-p2-328058/seed_0/`; its submission ZIP is `submissions/yolo11s_100_p2_328058/yolo11s_100_p2_328058.zip`. Local holdout scores are macro-F1 **89.30%**, mAP **36.31%**, and `Δm` **+17.34%** against the repository's fixed references. The value is a one-seed local comparison, not an official benchmark score. The saved classifier currently uses the fixed final epoch; future experiments should select a best-validation checkpoint using the combined metric.
+
+### Metric and controls
+
+Use the benchmark formula already documented in the repository:
+
+```text
+Δm = 100 × ½ × [(macro-F1 − 93.31%) / 93.31% + (mAP − 26.13%) / 26.13%]
+```
+
+Report scores in percentage points when applying this form. The fixed references are from the TA's validation benchmark. A score computed on the project's 939-image labeled holdout is a **local comparison value**, not an official benchmark score; keep its split label beside the result. Apply the same formula and evaluation implementation to every experiment.
+
+Hold constant the saved 8,453/939 image-ID split, 512 × 512 grayscale inputs where supported, nine-class mapping, and seed 0 for controlled comparisons. Record pretrained checkpoint paths and hashes, architecture and stride levels, total/trainable parameters, learning-rate groups, augmentations, epochs, per-class F1/AP, peak VRAM, and GPU-hours. Use architecture-appropriate optimizers and schedules. Select and preserve the best validation checkpoint by `Δm`, while reporting both task metrics so negative transfer is visible.
+
+Every completed experiment must also create its own course-format prediction ZIP for all 1,426 official validation images, with the matching metrics file and experiment notes beside it under `submissions/`. ZIP creation is packaging only; it does not submit the model.
+
+### Phase 1 — YOLO26s-P2 training strategies
+
+The requested grouping is one Phase 1 Slurm job bundle for E2, E3, and conditional E4. The user selected uninterrupted execution within each bundle, so the job runs E2 then E3 and proceeds to E4 when its predeclared mAP criterion is met. Run each stage in a distinct output directory and retain its best checkpoint, logs, metrics, and submission ZIP.
+
+| ID | Run | Implementation and comparison |
+|---|---|---|
+| E1 | Existing YOLO26s sequential baseline | Use the completed 100-epoch YOLO26s-P2 detector and frozen-feature classifier at `runs/yolo26s-100-p2-328338/` as the Phase 1 reference. |
+| E2 | Joint fine-tuning | Initialize both trained YOLO26s-P2 E1 heads. Unfreeze the shared backbone and neck; apply detection plus weighted classification loss, with a lower learning rate for shared pretrained layers than either head. Train for 15 epochs and select by validation `Δm`. |
+| E3 | Joint from initialization | Start from official pretrained YOLO26s weights, transfer matching layers and P3-P5 detection heads into YOLO26s-P2, randomly initialize P2 and the classifier, and train both tasks together for 100 epochs. Compare against E1 and E2. |
+| E4 | Extended sequential | Continue from the YOLO26s-P2 E1 final detector weights only if its validation mAP curve suggests further improvement, then train 100 more epochs and retrain the classifier on frozen features. This completed E1 checkpoint has no optimizer state, so E4 initializes a fresh optimizer; it is a 200-epoch cumulative weight continuation, not an optimizer-state resume. |
+
+Joint training must align each detector batch with image-level labels, omit classification loss for samples without valid class labels, and verify that gradients from both losses reach the shared backbone. E4's automatic continuation gate is: continue only when E1 mAP50-95 increased by at least 0.5 percentage points over its final 10 training epochs. The YOLO26s-P2 E1 run improved from 36.962% at epoch 91 to 38.070% at epoch 100 (+1.108 points), so it passes the gate.
+
+### Phase 2 — architecture comparison
+
+The requested grouping is one architecture-comparison Slurm job bundle. The user selected uninterrupted execution, in the listed priority order. E5 (YOLO26m-P2) is already running as array task `328337_1`; wait for that result and reuse its completed artifacts and ZIP rather than launching a duplicate.
+
+| ID | Architecture | Priority | Plan |
+|---|---|---|---|
+| E5 | YOLO26m + P2 | High | Use the matching pretrained checkpoint; confirm stride-4 features feed detection. Reuse the current run if it completes successfully. |
+| E6 | YOLO26n + P2 | Medium | Use the matching pretrained checkpoint and confirm P2 use. |
+| E7 | RT-DETR + P2 | Medium | First validate the standard pretrained detector, then add P2 and verify stride-4 detection use. Adapt feature extraction and classifier dimensions to RT-DETR. |
+| E8 | Deformable DETR + P2 | Medium | First validate the standard pretrained detector, then add P2 and verify stride-4 detection use. Adapt feature extraction and classifier dimensions to Deformable DETR. |
+| E9 | YOLO11n + P2 | Optional | Use the matching pretrained checkpoint and the same sequential evaluation method. |
+
+Each architecture starts with sequential detector training, frozen detector features, and a separately trained classifier. Do not assume YOLO hooks or feature dimensions transfer to either DETR implementation. The RT-DETR and Deformable DETR stages must save their standard-pretrained validation results before training their P2 variants.
+
+An additional completed comparison run, YOLO26s-P2 array task `328337_0`, scored **90.10% macro-F1**, **37.47% mAP**, and **+19.97% local Δm** on the saved 939-image holdout. That is above the E1 YOLO11s-P2 result (**89.30%**, **36.31%**, **+17.34%**) by 0.81 F1 points, 1.15 mAP points, and 2.64 Δm points. The metrics are at `results/yolo26s-100-p2-328338/seed_0/metrics.json`; the saved `best_weights` points to that run's trained detector. YOLO26s is an additional result, not E5: E5 is YOLO26m-P2 array task `328337_1`, which remains the run to reuse. Array element `_2` (YOLO26l) was cancelled before starting and is not part of the E5-E9 bundle.
+
+### Phase 3 — optimize the leading architecture
+
+Choose the best one or two architectures by validation `Δm`. For each, compare sequential training, joint training from pretrained initialization, and joint fine-tuning after sequential training. Keep both task metrics in the comparison to identify gains or negative transfer.
+
+### Execution gates and outputs
+
+Before expensive training, add configurable shared pipeline support for sequential and joint strategies, then validate a small batch: label alignment, actual P2 feature capture, both-loss gradient flow for joint training, checkpoint save/reload, metric calculation, and ZIP contents. The two requested Slurm bundles run their listed experiments uninterrupted after this smoke check. E4 remains conditional on the stated trend gate. Every completed experiment writes its own metrics, logs, best checkpoint, and course-format submission ZIP before the bundle advances.
+
+The Phase 1 bundle is `sbatch/sar_phase1_yolo26s_p2.sbatch`. The Phase 2 bundle is `sbatch/sar_phase2_architectures.sbatch`: it packages the completed E5 artifacts, then trains E6 YOLO26n-P2, E7 RT-DETR-L-P2, E8 Deformable DETR-R50-P2, and E9 YOLO11n-P2 in that order. Both request the same Blackwell GPU and the student partition's 24-hour maximum. Phase 2 waits for E5 only and does not depend on Phase 1 results.

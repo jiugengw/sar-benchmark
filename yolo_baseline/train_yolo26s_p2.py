@@ -8,6 +8,7 @@ import copy
 import json
 import random
 import shutil
+import time
 from pathlib import Path
 
 import numpy as np
@@ -149,6 +150,8 @@ def main() -> None:
     (args.train_output / "benchmark_settings.json").write_text(json.dumps(training_settings, indent=2) + "\n")
     print(json.dumps(training_settings, indent=2), flush=True)
 
+    torch.cuda.reset_peak_memory_stats()
+    started = time.perf_counter()
     model.train(
         data="data/yolo11s-sar-512/dataset.yaml",
         epochs=args.epochs,
@@ -168,6 +171,21 @@ def main() -> None:
         val=True,
         cache=False,
     )
+    torch.cuda.synchronize()
+    elapsed = time.perf_counter() - started
+    compute = {
+        "gpu_name": torch.cuda.get_device_name(0),
+        "gpu_hours": elapsed / 3600.0,
+        "wall_seconds": elapsed,
+        "peak_vram_allocated_gib": torch.cuda.max_memory_allocated(0) / 1024**3,
+        "peak_vram_reserved_gib": torch.cuda.max_memory_reserved(0) / 1024**3,
+        "total_parameters": sum(parameter.numel() for parameter in model.model.parameters()),
+        "trainable_parameters": sum(parameter.numel() for parameter in model.model.parameters()
+                                     if parameter.requires_grad),
+        "best_weights": str(args.train_output / "train/weights/best.pt"),
+    }
+    (args.train_output / "compute.json").write_text(json.dumps(compute, indent=2) + "\n")
+    print(json.dumps(compute, indent=2), flush=True)
 
 
 if __name__ == "__main__":

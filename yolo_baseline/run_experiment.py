@@ -34,13 +34,32 @@ CONFIDENCE = 0.25
 MATCH_IOU = 0.5
 MAP_CONFIDENCE = 0.001
 IMAGE_SIZE = 512
+F1_REFERENCE = 0.9331
+MAP_REFERENCE = 0.2613
+
+
+def combined_delta_m(macro_f1: float, map_score: float) -> float:
+    """Benchmark mean relative change versus the fixed ViT + LoRA validation reference."""
+    return 100.0 * 0.5 * (
+        (macro_f1 - F1_REFERENCE) / F1_REFERENCE
+        + (map_score - MAP_REFERENCE) / MAP_REFERENCE
+    )
 
 
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
+    if path.is_file():
+        with path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+    elif path.is_dir():
+        for child in sorted(item for item in path.rglob("*") if item.is_file()):
+            digest.update(child.relative_to(path).as_posix().encode("utf-8"))
+            with child.open("rb") as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    digest.update(chunk)
+    else:
+        raise FileNotFoundError(path)
     return digest.hexdigest()
 
 
@@ -318,11 +337,14 @@ def main() -> None:
     parser.add_argument("--classifier-checkpoint", type=Path,
                         help="supervised image-classification head trained from labels.csv")
     parser.add_argument("--model-label", help="display name for this architecture in the reports")
+    parser.add_argument("--architecture", choices=("yolo", "rtdetr", "deformable_detr"), default="yolo",
+                        help="Ultralytics detector family used for inference and feature extraction")
     parser.add_argument("--eval-only", action="store_true",
                         help="Evaluate an existing train-output/train/weights/best.pt checkpoint without retraining")
     args = parser.parse_args()
 
-    from ultralytics import YOLO, __version__ as ultralytics_version
+    from ultralytics import __version__ as ultralytics_version
+    from detector_support import detection_head, feature_maps_from_hook, load_detector
 
     if not torch.cuda.is_available():
         raise RuntimeError("YOLO baseline must run on the allocated CUDA GPU")
@@ -330,7 +352,7 @@ def main() -> None:
     device = torch.device("cuda:0")
     args.train_output.mkdir(parents=True, exist_ok=True)
     args.results_output.mkdir(parents=True, exist_ok=True)
-    if not args.weights.is_file():
+    if not args.weights.exists():
         raise FileNotFoundError(f"Missing local pretrained weights: {args.weights}")
     model_name = args.model_label or args.weights.stem.replace("yolo", "YOLO")
 
@@ -347,11 +369,13 @@ def main() -> None:
         raise FileNotFoundError("A converted validation image is missing")
 
     train_dir = args.train_output
+    # In eval-only mode, --weights remains the recorded pretrained source. The
+    # trained checkpoint must come from the existing train-output directory.
     best_weights = train_dir / "train" / "weights" / "best.pt"
     training_seconds = None
     parameter_counts = None
     if not args.eval_only:
-        model = YOLO(str(args.weights))
+        model = load_detector(args.weights, args.architecture)
         parameter_counts = (
             sum(parameter.numel() for parameter in model.model.parameters()),
             sum(parameter.numel() for parameter in model.model.parameters() if parameter.requires_grad),
@@ -379,31 +403,40 @@ def main() -> None:
         del model
         gc.collect()
         torch.cuda.empty_cache()
-    if not best_weights.is_file():
+    if not best_weights.exists():
         raise FileNotFoundError(f"YOLO training completed without best.pt at {best_weights}")
 
     # Collect all holdout detections with a low score floor for full COCO AP.
-    detector = YOLO(str(best_weights))
+    detector = load_detector(best_weights, args.architecture)
     classifier_head = None
     classifier_payload = None
     classifier_predictions: dict[int, int] = {}
     classifier_probabilities: dict[int, float] = {}
     classifier_feature_batches: list[torch.Tensor] = []
     classifier_hook = None
+    classifier_embedded = False
     if args.classifier_checkpoint:
         from image_head import load_classifier_head, pool_detection_features
 
         if not args.classifier_checkpoint.is_file():
             raise FileNotFoundError(args.classifier_checkpoint)
-        classifier_head, classifier_payload = load_classifier_head(args.classifier_checkpoint, device)
+        embedded_head = getattr(detector.model, "image_classifier", None)
+        if embedded_head is not None:
+            classifier_payload = torch.load(args.classifier_checkpoint, map_location="cpu", weights_only=True)
+            embedded_head.load_state_dict(classifier_payload["state_dict"], strict=True)
+            classifier_head = embedded_head.to(device).eval()
+            classifier_embedded = True
+        else:
+            classifier_head, classifier_payload = load_classifier_head(args.classifier_checkpoint, device)
         classifier_head.eval()
         if classifier_payload.get("class_names") != names:
             raise ValueError("Image-classifier and detector class names differ")
 
-        def capture_classifier_features(_module, inputs):
-            classifier_feature_batches.append(pool_detection_features(inputs[0]).detach())
+        def capture_classifier_features(_module, inputs, output):
+            features = feature_maps_from_hook(args.architecture, inputs, output)
+            classifier_feature_batches.append(pool_detection_features(features).detach())
 
-        classifier_hook = detector.model.model[-1].register_forward_pre_hook(capture_classifier_features)
+        classifier_hook = detection_head(detector.model).register_forward_hook(capture_classifier_features)
     if parameter_counts is None:
         # Ultralytics loads inference checkpoints with gradients disabled. The runner
         # trains every layer and does not pass a freeze option, so in eval-only mode
@@ -412,6 +445,10 @@ def main() -> None:
         trainable_parameters = total_parameters
     else:
         total_parameters, trainable_parameters = parameter_counts
+    if classifier_head is not None and not classifier_embedded:
+        classifier_parameters = sum(parameter.numel() for parameter in classifier_head.parameters())
+        total_parameters += classifier_parameters
+        trainable_parameters += classifier_parameters
     predict_args = dict(imgsz=IMAGE_SIZE, conf=MAP_CONFIDENCE, iou=0.7, max_det=300,
                         device=0, batch=1, workers=0, stream=True, verbose=False, save=False)
     # Warm up before measuring the shared-holdout pipeline speed.
@@ -605,6 +642,7 @@ def main() -> None:
         "precision_recall_at_conf_0_25_iou_0_50": yolo_pr,
         "accuracy": yolo_cls["accuracy"],
         "macro_f1": yolo_cls["macro_f1"],
+        "combined_delta_m": combined_delta_m(yolo_cls["macro_f1"], yolo_det_metrics["mAP"]),
         "balanced_accuracy": yolo_cls["balanced_accuracy"],
         "image_classification": yolo_cls,
         "speed": yolo_speed,
@@ -612,12 +650,22 @@ def main() -> None:
     if classifier_head is not None:
         result_val["detection_derived_image_classification"] = yolo_derived_cls
         result_val["detection_class_policies"] = detection_class_policies
+    settings_file = train_dir / "train" / "args.yaml"
+    if not settings_file.is_file():
+        settings_file = next(
+            (candidate for candidate in (
+                train_dir / "experiment_config.json",
+                train_dir / "benchmark_settings.json",
+            ) if candidate.is_file()),
+            settings_file,
+        )
     report_metadata = {
         "python": platform.python_version(),
         "libraries": {"torch": torch.__version__, "ultralytics": ultralytics_git},
         "git_commit": git_revision(),
         "configuration": {
             "backbone": model_name,
+            "detector_architecture": args.architecture,
             "adapt": "native pretrained backbone, neck, and detection head",
             "training_scheme": "full fine-tuning; no LoRA and no frozen layers",
             "total_parameters": total_parameters,
@@ -670,7 +718,7 @@ def main() -> None:
             "ultralytics_version": ultralytics_git,
             "torch_version": torch.__version__,
             "cuda_name": torch.cuda.get_device_name(device),
-            "settings_file": str(train_dir / "train" / "args.yaml"),
+            "settings_file": str(settings_file),
         },
         "split": {"train_images": len(split["train_image_ids"]), "validation_images": len(image_ids),
                   "source": str(args.split)},

@@ -22,9 +22,18 @@ CLASSIFICATION_CONFIDENCE = 0.25
 
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
+    if path.is_file():
+        with path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+    elif path.is_dir():
+        for child in sorted(item for item in path.rglob("*") if item.is_file()):
+            digest.update(child.relative_to(path).as_posix().encode("utf-8"))
+            with child.open("rb") as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    digest.update(chunk)
+    else:
+        raise FileNotFoundError(path)
     return digest.hexdigest()
 
 
@@ -42,6 +51,8 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True, help="output ZIP; existing files are not overwritten")
     parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--architecture", choices=("yolo", "rtdetr", "deformable_detr"), default="yolo",
+                        help="Ultralytics detector family used by the checkpoint")
     parser.add_argument("--classifier-checkpoint", type=Path,
                         help="optional supervised image-classification head trained on detector features")
     parser.add_argument("--box-class-policy", choices=(
@@ -50,11 +61,11 @@ def main() -> None:
     args = parser.parse_args()
 
     import torch
-    from ultralytics import YOLO
+    from detector_support import detection_head, feature_maps_from_hook, load_detector
 
     if not torch.cuda.is_available():
         raise RuntimeError("YOLO submission prediction requires the allocated CUDA GPU")
-    if not args.weights.is_file():
+    if not args.weights.exists():
         raise FileNotFoundError(args.weights)
     if args.classifier_checkpoint and not args.classifier_checkpoint.is_file():
         raise FileNotFoundError(args.classifier_checkpoint)
@@ -87,7 +98,7 @@ def main() -> None:
     if temporary_zip.exists():
         raise FileExistsError(f"Refusing to overwrite temporary archive {temporary_zip}")
 
-    detector = YOLO(str(args.weights))
+    detector = load_detector(args.weights, args.architecture)
     if model_names(detector.names) != class_names:
         raise ValueError(f"Checkpoint classes {model_names(detector.names)} do not match {class_names}")
     device = torch.device("cuda:0")
@@ -97,16 +108,23 @@ def main() -> None:
     if args.classifier_checkpoint:
         from image_head import load_classifier_head, pool_detection_features
 
-        classifier_head, classifier_payload = load_classifier_head(args.classifier_checkpoint, device)
+        embedded_head = getattr(detector.model, "image_classifier", None)
+        if embedded_head is not None:
+            classifier_payload = torch.load(args.classifier_checkpoint, map_location="cpu", weights_only=True)
+            embedded_head.load_state_dict(classifier_payload["state_dict"], strict=True)
+            classifier_head = embedded_head.to(device).eval()
+        else:
+            classifier_head, classifier_payload = load_classifier_head(args.classifier_checkpoint, device)
         if classifier_payload.get("class_names") != class_names:
             raise ValueError("Image-classifier and detector class names differ")
 
-        def capture_classifier_features(_module, inputs):
-            classifier_feature_batches.append(pool_detection_features(inputs[0]).detach().cpu())
+        def capture_classifier_features(_module, inputs, output):
+            feature_maps = feature_maps_from_hook(args.architecture, inputs, output)
+            classifier_feature_batches.append(pool_detection_features(feature_maps).detach().cpu())
 
         # Register before Ultralytics creates its predictor on the first call;
         # predictor setup can replace the model object and lose later hooks.
-        classifier_hook = detector.model.model[-1].register_forward_pre_hook(
+        classifier_hook = detection_head(detector.model).register_forward_hook(
             capture_classifier_features
         )
 

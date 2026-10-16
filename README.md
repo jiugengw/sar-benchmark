@@ -6,6 +6,8 @@ training holdout; the TA's original benchmark scores are retained below as refer
 
 **Detection experiment results:** see the [submission comparison](submissions/README.md#detection-experiments) for the changes tested, local scores, and ready-to-upload ZIPs.
 
+**YOLO SAR experiment plan:** see the [YOLO11s-P2 strategy and architecture plan](yolo_baseline/README.md#sar-classification-and-detection-experiment-plan) for the confirmed E1 feature path, grouped E2-E9 runs, metric controls, and per-experiment submission ZIP requirement.
+
 **Current 48-epoch TerraMind comparison:** [select runs and compare metrics](reports/training-comparison/index.html). The report includes the completed 326894 baseline, the two running 327063 variants, and the queued fixed-weight run.
 
 ![One SAR image, one shared backbone, two heads: a class and the boxes](docs/task_pipeline.png)

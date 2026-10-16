@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import copy
 import json
 import random
 import time
@@ -16,6 +17,7 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset, TensorDataset
 
 from image_head import ImageClassifierHead, classification_metrics, pool_detection_features
+from detector_support import detection_head, feature_maps_from_hook, load_detector
 
 
 class ImageLabels(Dataset):
@@ -39,22 +41,28 @@ class ImageLabels(Dataset):
         return tensor, int(label)
 
 
-def extract_features(detector, loader: DataLoader, device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
+def extract_features(detector, loader: DataLoader, device: torch.device,
+                     architecture: str = "yolo") -> tuple[torch.Tensor, torch.Tensor]:
     captured: list[torch.Tensor] = []
 
-    def capture(_module, inputs):
-        captured.append(pool_detection_features(inputs[0]).detach().cpu())
+    def capture(_module, inputs, output):
+        feature_maps = feature_maps_from_hook(architecture, inputs, output)
+        captured.append(pool_detection_features(feature_maps).detach().cpu())
 
-    handle = detector.model.model[-1].register_forward_pre_hook(capture)
+    handle = detection_head(detector.model).register_forward_hook(capture)
     features, labels = [], []
     try:
         detector.model.eval()
         with torch.inference_mode():
             for images, targets in loader:
                 captured.clear()
-                detector.model(images.to(device, non_blocking=True))
+                images = images.to(device, non_blocking=True)
+                if architecture == "deformable_detr":
+                    detector.model(**detector.prepare_batch(images))
+                else:
+                    detector.model(images)
                 if len(captured) != 1 or captured[0].shape[0] != len(targets):
-                    raise RuntimeError("Could not capture one set of YOLO FPN features per image batch")
+                    raise RuntimeError(f"Could not capture one set of {architecture} feature maps per image batch")
                 features.append(captured.pop())
                 labels.append(targets.clone())
     finally:
@@ -72,9 +80,8 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch", type=int, default=32)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--architecture", choices=("yolo", "rtdetr", "deformable_detr"), default="yolo")
     args = parser.parse_args()
-
-    from ultralytics import YOLO
 
     if not torch.cuda.is_available():
         raise RuntimeError("The classification head requires the allocated CUDA GPU")
@@ -109,11 +116,13 @@ def main() -> None:
         pin_memory=True,
     )
 
-    detector = YOLO(str(args.detector_checkpoint))
+    detector = load_detector(args.detector_checkpoint, args.architecture)
     detector.model.to(device).eval()
+    torch.cuda.reset_peak_memory_stats(device)
+    total_start = time.perf_counter()
     start = time.perf_counter()
-    train_features, train_targets = extract_features(detector, train_loader, device)
-    val_features, val_targets = extract_features(detector, val_loader, device)
+    train_features, train_targets = extract_features(detector, train_loader, device, args.architecture)
+    val_features, val_targets = extract_features(detector, val_loader, device, args.architecture)
     extraction_seconds = time.perf_counter() - start
     del detector
     torch.cuda.empty_cache()
@@ -133,6 +142,10 @@ def main() -> None:
     loader = DataLoader(batch, batch_size=args.batch, shuffle=True, generator=generator)
 
     training_start = time.perf_counter()
+    best_metrics = None
+    best_state = None
+    best_epoch = 0
+    validation_history = []
     for epoch in range(1, args.epochs + 1):
         head.train()
         epoch_losses = []
@@ -143,15 +156,34 @@ def main() -> None:
             loss.backward()
             optimizer.step()
             epoch_losses.append(float(loss.detach()))
+        head.eval()
+        with torch.inference_mode():
+            predictions = head(val_features).argmax(dim=1).cpu().tolist()
+        epoch_metrics = classification_metrics(val_targets.cpu().tolist(), predictions, class_names)
+        validation_history.append({
+            "epoch": epoch,
+            "train_loss": sum(epoch_losses) / max(1, len(epoch_losses)),
+            "macro_f1": epoch_metrics["macro_f1"],
+        })
+        if best_metrics is None or epoch_metrics["macro_f1"] > best_metrics["macro_f1"]:
+            best_metrics = epoch_metrics
+            best_state = {key: value.detach().cpu().clone() for key, value in head.state_dict().items()}
+            best_epoch = epoch
         if epoch == 1 or epoch % 10 == 0 or epoch == args.epochs:
-            mean_loss = sum(epoch_losses) / max(1, len(epoch_losses))
-            print(f"image-head epoch {epoch}/{args.epochs}: train loss={mean_loss:.4f}", flush=True)
+            print(
+                f"image-head epoch {epoch}/{args.epochs}: train loss={validation_history[-1]['train_loss']:.4f} "
+                f"val macro-F1={epoch_metrics['macro_f1']:.4f} best={best_metrics['macro_f1']:.4f} at {best_epoch}",
+                flush=True,
+            )
     head_training_seconds = time.perf_counter() - training_start
 
-    head.eval()
-    with torch.inference_mode():
-        predictions = head(val_features).argmax(dim=1).cpu().tolist()
-    val_metrics = classification_metrics(val_targets.cpu().tolist(), predictions, class_names)
+    if best_state is None or best_metrics is None:
+        raise RuntimeError("Classifier training produced no validation checkpoint")
+    head.load_state_dict(best_state, strict=True)
+    val_metrics = best_metrics
+    total_seconds = time.perf_counter() - total_start
+    peak_vram_allocated_gib = torch.cuda.max_memory_allocated(device) / 1024**3
+    peak_vram_reserved_gib = torch.cuda.max_memory_reserved(device) / 1024**3
     args.output.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "format": "sar-yolo-image-head-v1",
@@ -160,20 +192,27 @@ def main() -> None:
         "class_names": class_names,
         "dropout": 0.2,
         "state_dict": head.state_dict(),
-        "feature_source": "global average pooling of every feature map passed to YOLO's final Detect module",
+        "feature_source": f"global average pooling of every feature map passed to the {args.architecture} terminal detection module",
         "supervision": "data/course-data/train/labels.csv image labels on the saved 8453/939 TerraMind split",
         "architecture": "LayerNorm + Dropout(0.2) + Linear(feature_dim, 9)",
         "training": {
             "epochs": args.epochs,
-            "checkpoint_selection": "fixed final epoch; holdout was not used for checkpoint selection",
+            "checkpoint_selection": "best validation macro-F1; with a fixed detector this maximizes the combined delta_m",
+            "best_epoch": best_epoch,
             "optimizer": "AdamW",
             "learning_rate": 1e-3,
             "weight_decay": 1e-4,
             "class_weighting": "inverse training frequency",
             "seed": 0,
             "batch_size": args.batch,
+            "architecture": args.architecture,
             "feature_extraction_seconds": extraction_seconds,
             "head_training_seconds": head_training_seconds,
+            "wall_seconds": total_seconds,
+            "gpu_hours": total_seconds / 3600.0,
+            "peak_vram_allocated_gib": peak_vram_allocated_gib,
+            "peak_vram_reserved_gib": peak_vram_reserved_gib,
+            "validation_history": validation_history,
         },
         "holdout": val_metrics,
     }

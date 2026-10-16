@@ -24,9 +24,9 @@ class ImageClassifierHead(nn.Module):
 
 
 def pool_detection_features(feature_maps) -> torch.Tensor:
-    """Global-average-pool every FPN feature map and concatenate channels."""
+    """Pool every multi-scale detection feature map and concatenate channels."""
     if not isinstance(feature_maps, (tuple, list)) or not feature_maps:
-        raise ValueError("YOLO detection head did not receive a feature-map list")
+        raise ValueError("Detection head did not receive a feature-map list")
     return torch.cat([feature.float().mean(dim=(2, 3)) for feature in feature_maps], dim=1)
 
 

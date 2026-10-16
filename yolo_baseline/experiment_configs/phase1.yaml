@@ -1,0 +1,49 @@
+seed: 0
+architecture_family: yolo26
+architecture: YOLO26s-P2
+image_size: 512
+batch_size: 16
+workers: 4
+dataset_yaml: data/yolo11s-sar-512/dataset.yaml
+dataset_root: data/yolo11s-sar-512
+classes: data/yolo11s-sar-512/conversion_manifest.json
+data_root: data/course-data
+split: runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json
+classification_loss_weight: 0.5
+shared_lr_scale: 0.1
+optimizer: AdamW
+lr0: 0.001
+lrf: 0.01
+weight_decay: 0.0005
+augmentation:
+  mosaic: 0.0
+  mixup: 0.0
+  copy_paste: 0.0
+experiments:
+  E2:
+    name: yolo26s-p2-joint-finetune
+    strategy: joint_finetune
+    detector_checkpoint: runs/yolo26s-100-p2-328338/train/weights/best.pt
+    classifier_checkpoint: runs/yolo26s-100-p2-328338/image_classifier.pt
+    pretrained_weights: null
+    epochs: 15
+  E3:
+    name: yolo26s-p2-joint-from-init
+    strategy: joint_from_init
+    detector_checkpoint: null
+    classifier_checkpoint: null
+    pretrained_weights: pretrained/yolo26s.pt
+    p2_model_yaml: runs/yolo26s-100-p2-328338/yolo26s_p2.yaml
+    epochs: 100
+  E4:
+    name: yolo26s-p2-continue-to-200
+    strategy: sequential_continue
+    detector_checkpoint: runs/yolo26s-100-p2-328338/train/weights/last.pt
+    classifier_checkpoint: null
+    source_epochs: 100
+    epochs_total: 200
+    continuation_gate:
+      source_results_csv: runs/yolo26s-100-p2-328338/train/results.csv
+      metric: metrics/mAP50-95(B)
+      recent_window_epochs: 10
+      minimum_improvement_percentage_points: 0.5
