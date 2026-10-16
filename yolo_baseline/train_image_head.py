@@ -159,7 +159,7 @@ def main() -> None:
         "num_classes": len(class_names),
         "class_names": class_names,
         "dropout": 0.2,
-        "state_dict": best_state,
+        "state_dict": head.state_dict(),
         "feature_source": "global average pooling of every feature map passed to YOLO's final Detect module",
         "supervision": "data/course-data/train/labels.csv image labels on the saved 8453/939 TerraMind split",
         "architecture": "LayerNorm + Dropout(0.2) + Linear(feature_dim, 9)",
