@@ -1,5 +1,14 @@
 # Task 3 — calibration tests, not planned submissions
 
+The later small-anchor ResNet34 and TerraMind jobs have also completed. Their
+ZIPs and score/inference metadata are in `small48-resnet34-326077/` and
+`small48-terramind-326154/`. See the
+[overnight results](../../../docs/SMALL_ANCHOR_CNN_VIT_20261015.md#completed-overnight-results--16-october-2026)
+for the comparison and follow-up jobs. TerraMind reached local mAP 36.26% and
+Delta m +18.96; ResNet34 reached 32.19% and +11.93 after calibration. Neither
+ZIP has been uploaded. Earlier references below to these runs as planned
+describe their status before the overnight completion.
+
 These files preserve tests on existing 24-epoch checkpoints. Task 3 did not
 train models. The three new submissions are in the [parent folder](../README.md).
 

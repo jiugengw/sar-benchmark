@@ -1,5 +1,48 @@
 # CNN and ViT small-anchor experiments
 
+## Completed overnight results — 16 October 2026
+
+Jobs **326077** (ResNet34) and **326154** (TerraMind) completed training,
+calibration and submission packaging successfully. Both ran all 48 epochs.
+The table uses the selected checkpoint and selected calibration on the local
+939-image holdout; these are not official leaderboard scores.
+
+| Model | Selected epoch | Macro F1 | mAP | Delta m | Calibration power | Job duration |
+|---|---:|---:|---:|---:|---:|---|
+| ResNet34, small anchors, fixed task weights | 42 | 93.94% | 32.19% | +11.93 | 0.5 | 3h 41m |
+| TerraMind MoE-LoRA, small anchors, uncertainty weighting | 44 | 92.51% | 36.26% | +18.96 | 0 | 6h 43m |
+
+ResNet34 before calibration scored 32.15% mAP and +11.86 Delta m. TerraMind's
+selected calibration leaves detection scores unchanged. Compared with the
+previous 48-epoch large-anchor TerraMind candidate (93.45% F1, 35.54% mAP,
++18.08 Delta m), the new TerraMind model improves mAP by 0.72 percentage points
+and Delta m by 0.88 while F1 falls by 0.93 points. Anchors and task weighting
+both changed, so this does not isolate either change's effect.
+
+Artifacts are archived under `results/small48-resnet34-326077/`,
+`checkpoints/small48-resnet34-326077/`, `results/small48-terramind-326154/`
+and `checkpoints/small48-terramind-326154/`. Results include holdout predictions,
+annotations, split, training history and compute records. Model weights use Git
+LFS. Calibration metrics, inference records and ZIPs are under the corresponding
+`submissions/151026/tests-no-submit/small48-*/` directories. These ZIPs have not
+been uploaded to Codabench.
+
+Additional jobs submitted for comparison:
+
+| Job | Script | Configuration |
+|---|---|---|
+| 326397 | `terramind_64_baseline.sbatch` | 64 epochs, default anchors, box loss 1, fixed task weights, no photometric augmentation |
+| 326398 | `terramind_48_default_uncertainty.sbatch` | 48 epochs, default anchors, box loss 2, uncertainty weighting, photometric augmentation |
+| 326894 | `terramind_48_baseline.sbatch` | 48 epochs, same settings as the 64-epoch baseline |
+
+All use pretrained TerraMind + MoE-LoRA, seed 0, batch size 16, LR 1e-4,
+validation every two epochs and best-checkpoint selection by local Delta m.
+Each script calibrates and packages predictions after training. The baseline
+pair differs in total schedule length: cosine decay reaches zero at its own
+final epoch, so epoch 48 of the 64-epoch run is not equivalent to a standalone
+48-epoch run. These three jobs were unfinished when this record was written;
+their completed artifacts will be archived separately.
+
 ## Updated decision: TerraMind learned weighting replaces the queued ViT run
 
 At the user's request, queued ViT job **326086 was cancelled before training**.

@@ -1,0 +1,128 @@
+{
+  "checkpoint": "runs/small48-terramind-326154/terramind_pretrained_moelora_uncertainty",
+  "selected_epoch": 44,
+  "local_metrics": {
+    "class_score_power": 0.0,
+    "accuracy": 0.9201277955271565,
+    "macro_f1": 0.9251312461425726,
+    "balanced_accuracy": 0.9261815334211785,
+    "confusion_matrix": [
+      [
+        121,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        61,
+        2,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0
+      ],
+      [
+        0,
+        3,
+        94,
+        0,
+        4,
+        2,
+        18,
+        2,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        49,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        3,
+        0,
+        122,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        3,
+        124,
+        3,
+        2,
+        0
+      ],
+      [
+        0,
+        1,
+        11,
+        0,
+        4,
+        7,
+        85,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        1,
+        1,
+        0,
+        3,
+        0,
+        117,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        91
+      ]
+    ],
+    "mAP": 0.3626341867866748,
+    "AP50": 0.6563363479134644,
+    "AP75": 0.3546035346877193,
+    "per_class_AP": {
+      "aircraft": 0.42970489279600904,
+      "airport": 0.5305231328048163,
+      "bridge": 0.03443290806272736,
+      "car": 0.5585773360216688,
+      "harbor": 0.46010016253414304,
+      "oil_tank": 0.44477032929875465,
+      "playground": 0.0333440316329624,
+      "ship": 0.3778531888885906,
+      "wind_turbine": 0.3944016990404011
+    },
+    "delta_m": 18.96338737540308
+  },
+  "official_score": null,
+  "selection_note": "Chosen using labeled training holdout only; no official validation labels used."
+}
