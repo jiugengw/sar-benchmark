@@ -25,6 +25,6 @@ Each run saves under `runs/<model>-baseline-<job-id>/` and `results/<model>-base
 
 The results include COCO mAP, AP50/AP75, AP small, AR small, per-class AP for every box-class policy, and each policy's change from native classes. The comparison page displays these values alongside the classifier head's image-level macro-F1. To use a classifier in a course-format ZIP after choosing a policy, pass `--classifier-checkpoint` and one of `--box-class-policy classifier_class_all_boxes` or `classifier_class_score_weighted` to `make_submission.py`.
 
-## Matched YOLO26s-P2 follow-up
+## Matched 100-epoch YOLO26 P2 comparison
 
-`sbatch/yolo26s_p2_100.sbatch` runs a 100-epoch YOLO26s-P2 model with the same data, split, image size, batch size, seed, and classifier/evaluation stages as YOLO11s-P2. It starts from official YOLO26s weights: the shared backbone, P3 neck, P4/P5 neck, and P3-P5 detection heads transfer to the P2 architecture, while the new P2 branch is initialized from scratch. Training code is in `train_yolo26s_p2.py`; results are saved under `runs/yolo26s-100-p2-<job-id>/` and `results/yolo26s-100-p2-<job-id>/seed_0/`.
+`sbatch/yolo26_all_p2_100.sbatch` trains YOLO26s, YOLO26m, and YOLO26l with a stride-4 P2 level, up to two scales concurrently. Every run uses the same 8,453/939 split, 512 × 512 inputs, batch size 16, seed 0, 100 detector epochs, and classifier/evaluation stages as YOLO11s-P2. The shared pretrained backbone, P3 neck, P4/P5 neck, and P3-P5 detection heads transfer from the matching official YOLO26 scale; the new P2 branch starts with random weights. Training code is in `train_yolo26s_p2.py`; each run saves under `runs/yolo26<scale>-100-p2-<job-id>/` and `results/yolo26<scale>-100-p2-<job-id>/seed_0/`.
