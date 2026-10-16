@@ -1,13 +1,13 @@
 # 48-epoch experiments — 15 October 2026
 
-Submitted array **324733** using `sbatch improve_48.sbatch`. Shell syntax checks
+Submitted array **324733** using `sbatch sbatch/improve_48.sbatch`. Shell syntax checks
 passed and 14 relevant detection/calibration tests passed before submission.
 
 The official Delta m target is now **above 15**. The best previous submission
 (36-epoch box loss + photometric, checkpoint 34) scored macro F1 92.72%,
 mAP 31.92%, and Delta m +10.76 on the official evaluation.
 
-Run `sbatch improve_48.sbatch` from the repository root to launch two tasks:
+Run `sbatch sbatch/improve_48.sbatch` from the repository root to launch two tasks:
 
 | Task | Setup | Question |
 |---|---|---|

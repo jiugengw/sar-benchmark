@@ -1,6 +1,6 @@
 # Overnight detection experiments, 14 October 2026
 
-Active Slurm array: **324156**, submitted using `sbatch overnight_improve.sbatch`.
+Active Slurm array: **324156**, submitted using `sbatch sbatch/overnight_improve.sbatch`.
 Previous array 324152 was cancelled at the user's request; it produced no completed model.
 The user then approved restarting on Blackwell. Each task uses one RTX PRO 6000 Blackwell Max GPU;
 at most two tasks run concurrently. Account access is the student partition.

@@ -31,9 +31,9 @@ Additional jobs submitted for comparison:
 
 | Job | Script | Configuration |
 |---|---|---|
-| 326397 | `terramind_64_baseline.sbatch` | 64 epochs, default anchors, box loss 1, fixed task weights, no photometric augmentation |
-| 326398 | `terramind_48_default_uncertainty.sbatch` | 48 epochs, default anchors, box loss 2, uncertainty weighting, photometric augmentation |
-| 326894 | `terramind_48_baseline.sbatch` | 48 epochs, same settings as the 64-epoch baseline |
+| 326397 | `sbatch/terramind_64_baseline.sbatch` | 64 epochs, default anchors, box loss 1, fixed task weights, no photometric augmentation |
+| 326398 | `sbatch/terramind_48_default_uncertainty.sbatch` | 48 epochs, default anchors, box loss 2, uncertainty weighting, photometric augmentation |
+| 326894 | `sbatch/terramind_48_baseline.sbatch` | 48 epochs, same settings as the 64-epoch baseline |
 
 All use pretrained TerraMind + MoE-LoRA, seed 0, batch size 16, LR 1e-4,
 validation every two epochs and best-checkpoint selection by local Delta m.
@@ -138,8 +138,8 @@ Official CNN source: https://download.pytorch.org/models/resnet34-b627a593.pth
 
 SHA256: `b627a593bcbe140c234610266fe4f8ae95ea42fc881d091c9b6052e6b1d0590f`.
 
-Launch with `sbatch small_anchor_48.sbatch resnet34` or
-`sbatch small_anchor_48.sbatch vit`. Each requests one RTX PRO 6000 Blackwell Max.
+Launch with `sbatch sbatch/small_anchor_48.sbatch resnet34` or
+`sbatch sbatch/small_anchor_48.sbatch vit`. Each requests one RTX PRO 6000 Blackwell Max.
 Use scheduler dependencies when needed to stay within three concurrent GPUs.
 Runtime/peak-memory/provenance records are saved automatically. Calibration and
 submission generation run after training; ZIPs go into `tests-no-submit` and are
