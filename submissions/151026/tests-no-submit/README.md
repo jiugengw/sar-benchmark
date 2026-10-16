@@ -1,5 +1,35 @@
 # Task 3 — calibration tests, not planned submissions
 
+## Default-anchor uncertainty comparison — completed 16 October 2026
+
+Job **326398** completed 48 epochs of pretrained TerraMind + MoE-LoRA with
+default anchors, uncertainty task weighting, box-loss weight 2, photometric
+augmentation, batch size 16 and seed 0. It uses the same local holdout as the
+small-anchor uncertainty run. The selected checkpoint is epoch 48; calibration
+selected class-score power 0.5.
+
+| Configuration | Local macro F1 | Local mAP | Local Delta m |
+|---|---:|---:|---:|
+| Default anchors, uncertainty, calibrated | 92.64% | 35.71% | +17.97 |
+| Small anchors, uncertainty, calibrated | 92.51% | 36.26% | +18.96 |
+| Default anchors, fixed weights, calibrated | 92.99% | 35.26% | +17.29 |
+
+The default-anchor uncertainty model scored 35.65% mAP and +17.86 Delta m
+before calibration. Small anchors improve calibrated mAP by 0.56 percentage
+points and Delta m by 1.00 relative to default anchors with uncertainty, while
+macro F1 falls by 0.13 points. These are single-seed local comparisons, not
+official scores. The small-anchor fixed-weight ablation has not been run.
+
+Ready-to-upload ZIP:
+[terramind_48ep_default_anchors_uncertainty_calibrated.zip](tm-default-uncertainty-326398/terramind_48ep_default_anchors_uncertainty_calibrated.zip).
+Adjacent `.metrics.json` and `.inference.json` files preserve calibrated scores
+and inference provenance. Checkpoints and local holdout artifacts are archived
+under `checkpoints/tm-default-uncertainty-326398/` and
+`results/tm-default-uncertainty-326398/`. The ZIP has not been uploaded to
+Codabench; job duration was 6h 29m, including calibration and packaging.
+
+## Earlier experiment records
+
 The later small-anchor ResNet34 and TerraMind jobs have also completed. Their
 ZIPs and score/inference metadata are in `small48-resnet34-326077/` and
 `small48-terramind-326154/`. See the
