@@ -226,7 +226,7 @@ Accuracy and AP50: [docs/DETAILS.md](docs/DETAILS.md#results-in-full).
 
 ```
 train.py              entry: train + evaluate one configuration
-train.py.old          archived previous version of train.py; not used by training
+archive/train.py.old  archived previous version of train.py; not used by training
 run_all.sh            the eight reference runs (calls train.py)
 make_submission.py    write_submission(): predictions -> submission.zip
 inspect_detections.py saved predictions + correct boxes -> HTML detection report
