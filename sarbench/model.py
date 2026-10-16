@@ -64,10 +64,34 @@ class SimpleFeaturePyramid(nn.Module):
         return OrderedDict(zip(['0', '1', '2', '3', 'pool'], levels))
 
 
+class Stride4DetailBranch(nn.Module):
+    """Encode input pixels directly at stride 4 and fuse them with the ViT pyramid."""
+
+    def __init__(self, channels=256):
+        super().__init__()
+        self.stem = nn.Sequential(
+            nn.Conv2d(1, 32, 3, stride=2, padding=1, bias=False), nn.GroupNorm(8, 32), nn.GELU(),
+            nn.Conv2d(32, 64, 3, stride=2, padding=1, bias=False), nn.GroupNorm(8, 64), nn.GELU(),
+            nn.Conv2d(64, 64, 3, padding=1, bias=False), nn.GroupNorm(8, 64), nn.GELU())
+        self.fuse = nn.Sequential(nn.Conv2d(channels + 64, channels, 1, bias=False),
+                                  nn.GroupNorm(32, channels), nn.GELU(),
+                                  nn.Conv2d(channels, channels, 3, padding=1, bias=False),
+                                  nn.GroupNorm(32, channels))
+
+    def forward(self, image, pyramid):
+        details = self.stem(image)
+        base = pyramid['0']
+        if details.shape[-2:] != base.shape[-2:]:
+            details = F.interpolate(details, size=base.shape[-2:], mode='bilinear', align_corners=False)
+        pyramid['0'] = base + self.fuse(torch.cat((base, details), dim=1))
+        return pyramid
+
+
 class MultiTaskModel(nn.Module):
     """backbone tokens -> classification logits (mean token -> LayerNorm -> Linear) and Faster R-CNN detections."""
 
-    def __init__(self, backbone, task_routing: bool, num_classes=9, anchor_profile='default'):
+    def __init__(self, backbone, task_routing: bool, num_classes=9, anchor_profile='default',
+                 detail_branch=False):
         super().__init__()
         self.backbone = backbone
         self.task_routing = task_routing  # MoE-LoRA: the backbone runs once per task, with that task's routers
@@ -75,6 +99,9 @@ class MultiTaskModel(nn.Module):
         self.spatial_backbone = hasattr(backbone, 'feature_channels')
         self.neck = (FeaturePyramidNetwork(backbone.feature_channels, 256, extra_blocks=LastLevelMaxPool())
                      if self.spatial_backbone else SimpleFeaturePyramid(backbone.embed_dim))
+        self.detail_branch = Stride4DetailBranch() if detail_branch and not self.spatial_backbone else None
+        if detail_branch and self.spatial_backbone:
+            raise ValueError('The stride-4 detail branch is currently for transformer backbones only.')
         # Small objects (median ~16 px at 512 px, 99 % below ~240 px): two anchor scales per octave, from 8 px at
         # stride 4 up to 181 px at stride 64, times 3 aspect ratios = 6 anchors per location.
         sizes = ((8, 11), (16, 23), (32, 45), (64, 91), (128, 181))
@@ -122,6 +149,8 @@ class MultiTaskModel(nn.Module):
         else:
             h, w = images.shape[-2] // 16, images.shape[-1] // 16
             features = self.neck(tokens.transpose(1, 2).unflatten(2, (h, w)))
+        if self.detail_branch is not None:
+            features = self.detail_branch(images, features)
         # Precision rule: the box coder casts anchors to the dtype of the regression output, so in bf16 every
         # coordinate near 512 would snap to a 2 px grid. RPN and RoIHeads therefore run in fp32.
         with torch.autocast(images.device.type, enabled=False):

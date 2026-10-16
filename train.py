@@ -55,6 +55,10 @@ def parse_args():
     p.add_argument('--anchor-profile', choices=['default', 'wide', 'large', 'small_extreme'], default='default')
     p.add_argument('--geometry', choices=['stretch', 'pad'], default='stretch')
     p.add_argument('--class-sampling', choices=['uniform', 'sqrt-balanced'], default='uniform')
+    p.add_argument('--small-object-sampling', action='store_true',
+                   help='upweight training images with objects below 16x16 px at 512 px, capped at 2x')
+    p.add_argument('--detail-branch', action='store_true',
+                   help='fuse a shallow stride-4 image branch into the detector pyramid')
     p.add_argument('--box-loss-weight', type=float, default=1.0,
                    help='multiplier for RoI box regression loss; classification and RPN losses unchanged')
     p.add_argument('--loss-weighting', choices=['fixed', 'uncertainty'], default='fixed',
@@ -91,12 +95,19 @@ def log(message, file):
 def make_loader(args, indices, train):
     """Build a loader over selected rows from the labeled course training set."""
     dataset = SARMultiTask(args.data, train=train, limit=args.limit, indices=indices, geometry=args.geometry,
-                           photometric=getattr(args, 'photometric', False))
+                           photometric=getattr(args, 'photometric', False),
+                           small_object_sampling=train and getattr(args, 'small_object_sampling', False))
     sampler = None
     if train and args.class_sampling == 'sqrt-balanced':
         labels = torch.tensor([int(row['label']) for row in dataset.rows])
         counts = torch.bincount(labels, minlength=9).clamp_min(1)
         weights = counts[labels].double().rsqrt()
+        sampler = WeightedRandomSampler(weights, len(dataset), replacement=True,
+                                         generator=torch.Generator().manual_seed(args.seed))
+    elif train and args.small_object_sampling:
+        # 1x for images without tiny objects, rising linearly to 2x at four boxes.
+        counts = torch.tensor(dataset.small_object_counts, dtype=torch.float64)
+        weights = 1.0 + counts.clamp(max=4) / 4.0
         sampler = WeightedRandomSampler(weights, len(dataset), replacement=True,
                                          generator=torch.Generator().manual_seed(args.seed))
     return DataLoader(dataset, args.batch_size, shuffle=train and sampler is None, sampler=sampler,
@@ -198,6 +209,8 @@ def main():
         configuration += f'_unfreeze{args.unfreeze_last}'
     if args.loss_weighting != 'fixed':
         configuration += f'_{args.loss_weighting}'
+    if args.detail_branch:
+        configuration += '_detail'
     run_dir = args.out / configuration
     if args.fold is not None:
         run_dir = args.out / f'fold_{args.fold}' / configuration
@@ -258,13 +271,15 @@ def train_run(args, run_dir, compute, report):
     if args.adapt != 'full':
         add_adapters(backbone, args.adapt)  # also freezes the backbone
     unfreeze_last_blocks(backbone, args.unfreeze_last)
-    model = MultiTaskModel(backbone, task_routing=args.adapt == 'moelora', anchor_profile=args.anchor_profile)
+    model = MultiTaskModel(backbone, task_routing=args.adapt == 'moelora', anchor_profile=args.anchor_profile,
+                           detail_branch=args.detail_branch)
     task_weighting = TaskUncertaintyWeighting().cuda() if args.loss_weighting == 'uncertainty' else None
     parameters = sum(p.numel() for p in model.parameters())
     training_only_parameters = sum(p.numel() for p in task_weighting.parameters()) if task_weighting is not None else 0
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad) + training_only_parameters
     log(f'parameters: {parameters:,} total, {trainable:,} trainable', log_file)
-    if (args.unfreeze_last or args.backbone == 'resnet34' or args.anchor_profile == 'small_extreme') and (
+    if (args.unfreeze_last or args.backbone == 'resnet34' or args.anchor_profile == 'small_extreme'
+            or args.detail_branch) and (
             parameters > 130_000_000 or trainable > 40_000_000):
         raise ValueError('Experiment exceeds the 130M total / 40M trainable parameter budget.')
     model.cuda()

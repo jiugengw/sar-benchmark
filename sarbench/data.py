@@ -45,7 +45,7 @@ class SARMultiTask(Dataset):
     image, 'labels': 1..9, 'image_id': COCO id, 'orig_size': (h, w)}."""
 
     def __init__(self, root, train=False, size=512, limit=None, indices=None, geometry='stretch',
-                 photometric=False):
+                 photometric=False, small_object_sampling=False):
         self.root = Path(root)
         self.geometry = geometry
         self.image_root = self.root / 'train'
@@ -58,6 +58,18 @@ class SARMultiTask(Dataset):
         self.annotations = defaultdict(list)  # COCO image id -> its boxes
         for ann in coco['annotations']:
             self.annotations[ann['image_id']].append(ann)
+        # Count boxes that remain tiny at the 512 px training resolution. This is
+        # used only by the optional image sampler; labels and boxes are untouched.
+        self.small_object_counts = None
+        if small_object_sampling:
+            self.small_object_counts = []
+            for row in self.rows:
+                info = self.coco_images[row['file_name']]
+                scale_x = size / info['width'] if geometry == 'stretch' else min(size / info['width'], size / info['height'])
+                scale_y = size / info['height'] if geometry == 'stretch' else scale_x
+                self.small_object_counts.append(sum(
+                    (ann['bbox'][2] * scale_x) * (ann['bbox'][3] * scale_y) < 16 ** 2
+                    for ann in self.annotations[info['id']]))
         flips = [v2.RandomHorizontalFlip(), v2.RandomVerticalFlip()] if train else []
         appearance = [v2.ColorJitter(brightness=0.15, contrast=0.15)] if train and photometric else []
         self.transform = v2.Compose([
