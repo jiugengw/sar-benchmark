@@ -396,6 +396,7 @@ def main() -> None:
         if not args.classifier_checkpoint.is_file():
             raise FileNotFoundError(args.classifier_checkpoint)
         classifier_head, classifier_payload = load_classifier_head(args.classifier_checkpoint, device)
+        classifier_head.eval()
         if classifier_payload.get("class_names") != names:
             raise ValueError("Image-classifier and detector class names differ")
 
@@ -436,7 +437,8 @@ def main() -> None:
         if classifier_head is not None:
             if len(classifier_feature_batches) != 1 or classifier_feature_batches[0].shape[0] != 1:
                 raise RuntimeError("The image-classification head did not receive exactly one feature vector per image")
-            logits = classifier_head(classifier_feature_batches.pop(0).to(device))
+            with torch.inference_mode():
+                logits = classifier_head(classifier_feature_batches.pop(0).to(device))
             probabilities = torch.softmax(logits[0], dim=0).detach().cpu().tolist()
             predicted_class = int(max(range(len(probabilities)), key=probabilities.__getitem__))
             classifier_predictions[image_id] = predicted_class

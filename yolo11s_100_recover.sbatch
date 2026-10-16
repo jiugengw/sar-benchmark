@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=sar-yolo11s-recover
 #SBATCH --partition=student
-#SBATCH --dependency=afterany:328058
 #SBATCH --gres=gpu:rtx_pro_6000_blackwell_max:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
