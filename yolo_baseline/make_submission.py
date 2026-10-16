@@ -104,6 +104,12 @@ def main() -> None:
         def capture_classifier_features(_module, inputs):
             classifier_feature_batches.append(pool_detection_features(inputs[0]).detach().cpu())
 
+        # Register before Ultralytics creates its predictor on the first call;
+        # predictor setup can replace the model object and lose later hooks.
+        classifier_hook = detector.model.model[-1].register_forward_pre_hook(
+            capture_classifier_features
+        )
+
     detections: list[dict] = []
     labels_by_id: dict[int, int] = {}
     image_by_temp_stem: dict[str, dict] = {}
@@ -134,9 +140,6 @@ def main() -> None:
                 conf=0.001, iou=0.7, max_det=300, stream=True, verbose=False, save=False,
             ))
             classifier_feature_batches.clear()
-            classifier_hook = detector.model.model[-1].register_forward_pre_hook(
-                capture_classifier_features
-            )
 
         predictions = detector.predict(
             source=str(temp_root),

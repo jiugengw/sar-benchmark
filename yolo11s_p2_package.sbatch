@@ -20,9 +20,10 @@ export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 export PYTHONPATH="${SLURM_SUBMIT_DIR}/yolo_baseline${PYTHONPATH:+:${PYTHONPATH}}"
 
-PACKAGE_DIR="submissions/161026/tests-no-submit/yolo11s-100-p2-328058"
-mkdir -p "$PACKAGE_DIR/scoring_result"
-touch "$PACKAGE_DIR/scoring_result/.gitkeep"
+P2_PACKAGE_DIR="submissions/161026/tests-no-submit/yolo11s-100-p2-328058"
+STANDARD_PACKAGE_DIR="submissions/161026/tests-no-submit/yolo11s-100-standard-328063"
+mkdir -p "$P2_PACKAGE_DIR/scoring_result" "$STANDARD_PACKAGE_DIR/scoring_result"
+touch "$P2_PACKAGE_DIR/scoring_result/.gitkeep" "$STANDARD_PACKAGE_DIR/scoring_result/.gitkeep"
 
 python -u yolo_baseline/make_submission.py \
     --weights runs/yolo11s-100-p2-328058/train/weights/best.pt \
@@ -30,8 +31,20 @@ python -u yolo_baseline/make_submission.py \
     --box-class-policy native_detector_classes \
     --data data/course-data \
     --classes data/yolo11s-sar-512/conversion_manifest.json \
-    --out "$PACKAGE_DIR/yolo11s_100_p2_328058.zip" \
+    --out "$P2_PACKAGE_DIR/yolo11s_100_p2_328058.zip" \
     --batch 16 --workers 4
 
 cp results/yolo11s-100-p2-328058/seed_0/metrics.json \
-    "$PACKAGE_DIR/yolo11s_100_p2_328058.metrics.json"
+    "$P2_PACKAGE_DIR/yolo11s_100_p2_328058.metrics.json"
+
+python -u yolo_baseline/make_submission.py \
+    --weights runs/yolo11s-100-standard-328063/train/weights/best.pt \
+    --classifier-checkpoint runs/yolo11s-100-standard-328063/image_classifier.pt \
+    --box-class-policy native_detector_classes \
+    --data data/course-data \
+    --classes data/yolo11s-sar-512/conversion_manifest.json \
+    --out "$STANDARD_PACKAGE_DIR/yolo11s_100_standard_328063.zip" \
+    --batch 16 --workers 4
+
+cp results/yolo11s-100-standard-328063/seed_0/metrics.json \
+    "$STANDARD_PACKAGE_DIR/yolo11s_100_standard_328063.metrics.json"
