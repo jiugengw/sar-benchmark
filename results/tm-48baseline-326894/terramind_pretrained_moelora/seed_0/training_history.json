@@ -1,0 +1,770 @@
+[
+  {
+    "epoch": 1,
+    "mean_losses": {
+      "classification": 1.515771493775794,
+      "loss_objectness": 0.15527433979853955,
+      "loss_rpn_box_reg": 0.006319293847725573,
+      "loss_classifier": 0.2572398527347871,
+      "loss_box_reg": 0.06820935776667518,
+      "detection_total": 0.4870428440346036,
+      "objective": 2.002814335469366
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 2,
+    "mean_losses": {
+      "classification": 0.6987536222881415,
+      "loss_objectness": 0.03155674743001685,
+      "loss_rpn_box_reg": 0.005469010683689053,
+      "loss_classifier": 0.1144752892395963,
+      "loss_box_reg": 0.10179813581413169,
+      "detection_total": 0.25329918267422846,
+      "objective": 0.9520528028381656
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 3,
+    "mean_losses": {
+      "classification": 0.6055126580545553,
+      "loss_objectness": 0.027722474828619836,
+      "loss_rpn_box_reg": 0.0050393075918661765,
+      "loss_classifier": 0.10632090368708619,
+      "loss_box_reg": 0.10377043061682026,
+      "detection_total": 0.2428531168615072,
+      "objective": 0.8483657727900954
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 4,
+    "mean_losses": {
+      "classification": 0.5280531399435903,
+      "loss_objectness": 0.025061539618994065,
+      "loss_rpn_box_reg": 0.004745410994525109,
+      "loss_classifier": 0.09924466143617063,
+      "loss_box_reg": 0.10563845179404759,
+      "detection_total": 0.23469006334072626,
+      "objective": 0.7627432016907225
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 5,
+    "mean_losses": {
+      "classification": 0.4696118472159212,
+      "loss_objectness": 0.02280935611036858,
+      "loss_rpn_box_reg": 0.004521128182881939,
+      "loss_classifier": 0.0932972566867515,
+      "loss_box_reg": 0.10493406894029872,
+      "detection_total": 0.2255618100644117,
+      "objective": 0.6951736580841812
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 6,
+    "mean_losses": {
+      "classification": 0.4123496328051184,
+      "loss_objectness": 0.021340390912131645,
+      "loss_rpn_box_reg": 0.004327442349791553,
+      "loss_classifier": 0.0881369951281705,
+      "loss_box_reg": 0.10470225850967885,
+      "detection_total": 0.21850708726734913,
+      "objective": 0.6308567203545196
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 7,
+    "mean_losses": {
+      "classification": 0.36979551245781794,
+      "loss_objectness": 0.019792538174585268,
+      "loss_rpn_box_reg": 0.004221058772919497,
+      "loss_classifier": 0.0855833290447346,
+      "loss_box_reg": 0.10417038851357996,
+      "detection_total": 0.2137673139558041,
+      "objective": 0.5835628266815714
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 8,
+    "mean_losses": {
+      "classification": 0.3258741398623014,
+      "loss_objectness": 0.018531965939963792,
+      "loss_rpn_box_reg": 0.00405807114210331,
+      "loss_classifier": 0.08200556332835796,
+      "loss_box_reg": 0.10318398475206267,
+      "detection_total": 0.2077795850106644,
+      "objective": 0.5336537251691205
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 9,
+    "mean_losses": {
+      "classification": 0.29482025991850713,
+      "loss_objectness": 0.01759589475696457,
+      "loss_rpn_box_reg": 0.003911330225711869,
+      "loss_classifier": 0.07901988968766117,
+      "loss_box_reg": 0.10230518872658487,
+      "detection_total": 0.20283230347321976,
+      "objective": 0.4976525624186474
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 10,
+    "mean_losses": {
+      "classification": 0.25144361540028204,
+      "loss_objectness": 0.016616014817919758,
+      "loss_rpn_box_reg": 0.0038264872530554806,
+      "loss_classifier": 0.07669530926153503,
+      "loss_box_reg": 0.10213241970796112,
+      "detection_total": 0.19927023086768697,
+      "objective": 0.4507138464742196
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 11,
+    "mean_losses": {
+      "classification": 0.2250338952865429,
+      "loss_objectness": 0.015665820934073215,
+      "loss_rpn_box_reg": 0.003722945192198179,
+      "loss_classifier": 0.07391829268475136,
+      "loss_box_reg": 0.1009872143628272,
+      "detection_total": 0.19429427345931058,
+      "objective": 0.4193281691548289
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 12,
+    "mean_losses": {
+      "classification": 0.197301115253873,
+      "loss_objectness": 0.014968296612505922,
+      "loss_rpn_box_reg": 0.0036408520002003133,
+      "loss_classifier": 0.07093759887312681,
+      "loss_box_reg": 0.09825502085880346,
+      "detection_total": 0.18780176822256087,
+      "objective": 0.385102883459026
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 13,
+    "mean_losses": {
+      "classification": 0.17926901239735635,
+      "loss_objectness": 0.01448116868696459,
+      "loss_rpn_box_reg": 0.0035878516983802304,
+      "loss_classifier": 0.06926302681723868,
+      "loss_box_reg": 0.09770837635521097,
+      "detection_total": 0.1850404234083675,
+      "objective": 0.3643094353967484
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 14,
+    "mean_losses": {
+      "classification": 0.15769888861502585,
+      "loss_objectness": 0.013832017866169421,
+      "loss_rpn_box_reg": 0.0034945357463411933,
+      "loss_classifier": 0.06659564821255161,
+      "loss_box_reg": 0.09635972484151217,
+      "detection_total": 0.18028192687063518,
+      "objective": 0.33798081515160566
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 15,
+    "mean_losses": {
+      "classification": 0.1425076683611471,
+      "loss_objectness": 0.013079819227611223,
+      "loss_rpn_box_reg": 0.003383461436853152,
+      "loss_classifier": 0.06491805239586411,
+      "loss_box_reg": 0.0953125259055092,
+      "detection_total": 0.17669385909244434,
+      "objective": 0.3192015280317981
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 16,
+    "mean_losses": {
+      "classification": 0.12402476014420223,
+      "loss_objectness": 0.012675368056125656,
+      "loss_rpn_box_reg": 0.003315404379383606,
+      "loss_classifier": 0.0629946039018935,
+      "loss_box_reg": 0.09409986948996596,
+      "detection_total": 0.17308524629639038,
+      "objective": 0.29711000684956806
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 17,
+    "mean_losses": {
+      "classification": 0.10531910938382055,
+      "loss_objectness": 0.012096952260361152,
+      "loss_rpn_box_reg": 0.003252132472217587,
+      "loss_classifier": 0.061072134086592275,
+      "loss_box_reg": 0.09241707541650532,
+      "detection_total": 0.1688382939239317,
+      "objective": 0.2741574036427028
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 18,
+    "mean_losses": {
+      "classification": 0.09789594124037916,
+      "loss_objectness": 0.011777041160157679,
+      "loss_rpn_box_reg": 0.0031754866230674947,
+      "loss_classifier": 0.06030778866360403,
+      "loss_box_reg": 0.09250202365937944,
+      "detection_total": 0.16776234028918438,
+      "objective": 0.2656582816597923
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 19,
+    "mean_losses": {
+      "classification": 0.08786842364129915,
+      "loss_objectness": 0.011317256977566808,
+      "loss_rpn_box_reg": 0.003111471025022883,
+      "loss_classifier": 0.058290985416311156,
+      "loss_box_reg": 0.09074335979573418,
+      "detection_total": 0.16346307301061558,
+      "objective": 0.2513314965672991
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 20,
+    "mean_losses": {
+      "classification": 0.07211890587785688,
+      "loss_objectness": 0.010924227537267113,
+      "loss_rpn_box_reg": 0.0030591834488315015,
+      "loss_classifier": 0.05665565043287659,
+      "loss_box_reg": 0.08897296898309386,
+      "detection_total": 0.15961203040610428,
+      "objective": 0.23173093656160612
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 21,
+    "mean_losses": {
+      "classification": 0.07000485346942882,
+      "loss_objectness": 0.010529510703964247,
+      "loss_rpn_box_reg": 0.002954022224299944,
+      "loss_classifier": 0.054822250105961534,
+      "loss_box_reg": 0.08763169766302703,
+      "detection_total": 0.15593748039925268,
+      "objective": 0.22594233388719115
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 22,
+    "mean_losses": {
+      "classification": 0.06036221447793969,
+      "loss_objectness": 0.010087584661985099,
+      "loss_rpn_box_reg": 0.0028908472932867666,
+      "loss_classifier": 0.05317801267779481,
+      "loss_box_reg": 0.08597429340497482,
+      "detection_total": 0.15213073777557337,
+      "objective": 0.21249295245623795
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 23,
+    "mean_losses": {
+      "classification": 0.047692821940432936,
+      "loss_objectness": 0.009816674787135138,
+      "loss_rpn_box_reg": 0.002846346006372398,
+      "loss_classifier": 0.05232988202878953,
+      "loss_box_reg": 0.08562343454700834,
+      "detection_total": 0.1506163371387747,
+      "objective": 0.19830915873909255
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 24,
+    "mean_losses": {
+      "classification": 0.041569623471674345,
+      "loss_objectness": 0.009594565161576458,
+      "loss_rpn_box_reg": 0.0027844391973069127,
+      "loss_classifier": 0.05086550170393311,
+      "loss_box_reg": 0.0841884351178244,
+      "detection_total": 0.14743294116732328,
+      "objective": 0.18900256456319614
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 25,
+    "mean_losses": {
+      "classification": 0.03877231135292757,
+      "loss_objectness": 0.009199442643476994,
+      "loss_rpn_box_reg": 0.0027158526390070165,
+      "loss_classifier": 0.04952148776635833,
+      "loss_box_reg": 0.0827084545089721,
+      "detection_total": 0.14414523759988812,
+      "objective": 0.18291754919255993
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 26,
+    "mean_losses": {
+      "classification": 0.033731321145920416,
+      "loss_objectness": 0.008875751145132036,
+      "loss_rpn_box_reg": 0.002680206894657525,
+      "loss_classifier": 0.048534085254203524,
+      "loss_box_reg": 0.08131858369686555,
+      "detection_total": 0.1414086271972469,
+      "objective": 0.17513994837489816
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 27,
+    "mean_losses": {
+      "classification": 0.030086673181859883,
+      "loss_objectness": 0.008692065461922256,
+      "loss_rpn_box_reg": 0.002612036317802294,
+      "loss_classifier": 0.047098493083869014,
+      "loss_box_reg": 0.07996088125258526,
+      "detection_total": 0.13836347629836956,
+      "objective": 0.16845014942202866
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 28,
+    "mean_losses": {
+      "classification": 0.02588214264187665,
+      "loss_objectness": 0.008413082137237848,
+      "loss_rpn_box_reg": 0.0025753331224171966,
+      "loss_classifier": 0.045915011321826335,
+      "loss_box_reg": 0.07861132785108517,
+      "detection_total": 0.13551475432205945,
+      "objective": 0.16139689724247624
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 29,
+    "mean_losses": {
+      "classification": 0.019049546160973665,
+      "loss_objectness": 0.008201351966063263,
+      "loss_rpn_box_reg": 0.0025210818634709476,
+      "loss_classifier": 0.04456801005047157,
+      "loss_box_reg": 0.07711741719939194,
+      "detection_total": 0.13240786101089544,
+      "objective": 0.15145740671882993
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 30,
+    "mean_losses": {
+      "classification": 0.012920770224319976,
+      "loss_objectness": 0.00787104072525939,
+      "loss_rpn_box_reg": 0.002486029549467792,
+      "loss_classifier": 0.04398084088752753,
+      "loss_box_reg": 0.07628607620459456,
+      "detection_total": 0.13062398738372005,
+      "objective": 0.1435447572977828
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 31,
+    "mean_losses": {
+      "classification": 0.015823181671446074,
+      "loss_objectness": 0.007649559461970336,
+      "loss_rpn_box_reg": 0.0024331164893009035,
+      "loss_classifier": 0.04297342876100856,
+      "loss_box_reg": 0.07545572827444208,
+      "detection_total": 0.12851183289369153,
+      "objective": 0.1443350145051878
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 32,
+    "mean_losses": {
+      "classification": 0.012665535167862674,
+      "loss_objectness": 0.007487981314865078,
+      "loss_rpn_box_reg": 0.002395309542187493,
+      "loss_classifier": 0.04251316051935037,
+      "loss_box_reg": 0.07443905153208114,
+      "detection_total": 0.12683550274493383,
+      "objective": 0.13950103810802938
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 33,
+    "mean_losses": {
+      "classification": 0.007648011882928586,
+      "loss_objectness": 0.007348564808191589,
+      "loss_rpn_box_reg": 0.0023639242160631464,
+      "loss_classifier": 0.041501699845568465,
+      "loss_box_reg": 0.07336269072085658,
+      "detection_total": 0.12457687976771976,
+      "objective": 0.13222489162079049
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 34,
+    "mean_losses": {
+      "classification": 0.008119658183927842,
+      "loss_objectness": 0.007140272861179354,
+      "loss_rpn_box_reg": 0.0023260615922444075,
+      "loss_classifier": 0.04029684313506286,
+      "loss_box_reg": 0.07204975802167117,
+      "detection_total": 0.12181293559641326,
+      "objective": 0.12993259337312807
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 35,
+    "mean_losses": {
+      "classification": 0.007149047094541744,
+      "loss_objectness": 0.006979489697022902,
+      "loss_rpn_box_reg": 0.0022873391049580117,
+      "loss_classifier": 0.03973225376531385,
+      "loss_box_reg": 0.0706750743816509,
+      "detection_total": 0.1196741570132337,
+      "objective": 0.12682320391209495
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 36,
+    "mean_losses": {
+      "classification": 0.005530784867043296,
+      "loss_objectness": 0.0068350163253488505,
+      "loss_rpn_box_reg": 0.0022616610049707385,
+      "loss_classifier": 0.039103471956407614,
+      "loss_box_reg": 0.07039645174160154,
+      "detection_total": 0.118596601095564,
+      "objective": 0.12412738605080365
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 37,
+    "mean_losses": {
+      "classification": 0.004046340517836379,
+      "loss_objectness": 0.006717565844677663,
+      "loss_rpn_box_reg": 0.002244003061500422,
+      "loss_classifier": 0.038186147404019544,
+      "loss_box_reg": 0.0690226863232799,
+      "detection_total": 0.11617040280003696,
+      "objective": 0.1202167435241256
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 38,
+    "mean_losses": {
+      "classification": 0.004832938932239271,
+      "loss_objectness": 0.006606642806543737,
+      "loss_rpn_box_reg": 0.0022161253001082566,
+      "loss_classifier": 0.03788804074386429,
+      "loss_box_reg": 0.06832937916788592,
+      "detection_total": 0.11504018798736684,
+      "objective": 0.11987312665958595
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 39,
+    "mean_losses": {
+      "classification": 0.0032447895241652994,
+      "loss_objectness": 0.006575139399847519,
+      "loss_rpn_box_reg": 0.0021775250117527295,
+      "loss_classifier": 0.037358611043400276,
+      "loss_box_reg": 0.06774391611694486,
+      "detection_total": 0.11385519178177667,
+      "objective": 0.11709998137997718
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 40,
+    "mean_losses": {
+      "classification": 0.0026273901866171383,
+      "loss_objectness": 0.0064314355045018475,
+      "loss_rpn_box_reg": 0.0021814839069056262,
+      "loss_classifier": 0.03698717331339463,
+      "loss_box_reg": 0.06702980347833562,
+      "detection_total": 0.11262989628918563,
+      "objective": 0.11525728633477676
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 41,
+    "mean_losses": {
+      "classification": 0.002416097030514359,
+      "loss_objectness": 0.006343521906380159,
+      "loss_rpn_box_reg": 0.0021667773122931735,
+      "loss_classifier": 0.03650247484095651,
+      "loss_box_reg": 0.06660171069877326,
+      "detection_total": 0.11161448499968979,
+      "objective": 0.11403058186009496
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 42,
+    "mean_losses": {
+      "classification": 0.0019744258652667395,
+      "loss_objectness": 0.006278851910542856,
+      "loss_rpn_box_reg": 0.0021505164136950577,
+      "loss_classifier": 0.03622608888648846,
+      "loss_box_reg": 0.06595860923269466,
+      "detection_total": 0.11061406622451395,
+      "objective": 0.11258849193644245
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 43,
+    "mean_losses": {
+      "classification": 0.0021861905841789033,
+      "loss_objectness": 0.0062377514292236026,
+      "loss_rpn_box_reg": 0.0021264739723368866,
+      "loss_classifier": 0.035942833465640256,
+      "loss_box_reg": 0.06586356447826937,
+      "detection_total": 0.11017062300220123,
+      "objective": 0.11235681360048273
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 44,
+    "mean_losses": {
+      "classification": 0.0019492735372525509,
+      "loss_objectness": 0.006180468298492116,
+      "loss_rpn_box_reg": 0.0021309325310855435,
+      "loss_classifier": 0.036018183121476866,
+      "loss_box_reg": 0.06542692921009484,
+      "detection_total": 0.10975651320752683,
+      "objective": 0.11170578682234368
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 45,
+    "mean_losses": {
+      "classification": 0.0018382558565262666,
+      "loss_objectness": 0.0061238449352014335,
+      "loss_rpn_box_reg": 0.0021182661127157163,
+      "loss_classifier": 0.03565857647583779,
+      "loss_box_reg": 0.06505427424622177,
+      "detection_total": 0.10895496167354467,
+      "objective": 0.11079321740668695
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 46,
+    "mean_losses": {
+      "classification": 0.0016745833775777127,
+      "loss_objectness": 0.006078329767868526,
+      "loss_rpn_box_reg": 0.0021333167128551145,
+      "loss_classifier": 0.03573933556124147,
+      "loss_box_reg": 0.06522257064817207,
+      "detection_total": 0.10917355271740932,
+      "objective": 0.11084813615277464
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 47,
+    "mean_losses": {
+      "classification": 0.0016502196529579877,
+      "loss_objectness": 0.005995662217733018,
+      "loss_rpn_box_reg": 0.0021176933266944848,
+      "loss_classifier": 0.03549184033943114,
+      "loss_box_reg": 0.06483448780085911,
+      "detection_total": 0.1084396836850173,
+      "objective": 0.11008990322427328
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  },
+  {
+    "epoch": 48,
+    "mean_losses": {
+      "classification": 0.0017463969829078338,
+      "loss_objectness": 0.006036004290291214,
+      "loss_rpn_box_reg": 0.0021122267224372984,
+      "loss_classifier": 0.03545535358979436,
+      "loss_box_reg": 0.06473045789280911,
+      "detection_total": 0.10833404255233459,
+      "objective": 0.11008043947088554
+    },
+    "task_weights": {
+      "classification_weight": 1.0,
+      "detection_weight": 1.0
+    }
+  }
+]

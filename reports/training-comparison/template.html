@@ -60,7 +60,7 @@
   <h1>__TITLE__</h1>
   <p class="subtle">Generated __GENERATED_AT__. Select completed or running runs below to compare their local validation metrics.</p>
   <div class="note">
-    <strong>Metric status:</strong> Completed runs use their selected checkpoint metrics. Running runs show the latest validation found in the log and are provisional. All reported scores use the labeled training holdout, not the official leaderboard.
+    <strong>Metric status:</strong> Detection mAP uses each detector's native box classes. YOLO runs with an image classifier also show the fixed-holdout results after assigning its class to every box, with and without score weighting. Image macro-F1 comes from the supervised image-classification head. All reported scores use the labeled training holdout, not the official leaderboard.
   </div>
 
   <section aria-labelledby="runs-heading">
@@ -140,6 +140,8 @@
     ["mAP", "mAP"],
     ["AP50", "AP50"],
     ["AP75", "AP75"],
+    ["AP small", "AP_small"],
+    ["AR small", "AR_small"],
     ["Δm", "delta_m"]
   ];
   const selected = new Set(runs.filter(r => r.compare_by_default && r.metrics).map(r => r.job_id));
@@ -168,6 +170,22 @@
   }
   function formatMetric(key, value, run) {
     if (key.startsWith("classAP:")) value = (run.metrics.per_class_AP || {})[key.slice(8)];
+    if (key.startsWith("policy:")) {
+      const [, policy, metric] = key.split(":");
+      value = (run.metrics.detection_class_policies || {})[policy]?.[metric];
+    }
+    if (key.startsWith("policyAP:")) {
+      const [, policy, className] = key.split(":");
+      value = (run.metrics.detection_class_policies || {})[policy]?.per_class_AP?.[className];
+    }
+    if (key.startsWith("policyDelta:")) {
+      const [, policy, metric, ...classNameParts] = key.split(":");
+      const className = classNameParts.join(":");
+      const deltas = (run.metrics.detection_class_policies || {})[policy]?.delta_vs_native;
+      value = className ? deltas?.per_class_AP?.[className] : deltas?.[metric];
+      if (value === undefined || value === null) return "—";
+      return (Number(value) >= 0 ? "+" : "") + (Number(value) * 100).toFixed(2) + " pp";
+    }
     if (value === undefined || value === null || value === "") return "—";
     if (key === "epoch") return String(value) + (run.expected_epochs ? " / " + run.expected_epochs : "");
     if (key === "delta_m") return (Number(value) >= 0 ? "+" : "") + Number(value).toFixed(2);
@@ -196,11 +214,30 @@
     }
     const classes = [...new Set(runs.flatMap(r => Object.keys((r.metrics || {}).per_class_AP || {})))].sort();
     const metricRows = [...baseMetricRows, ...classes.map(name => ["AP · " + name, "classAP:" + name])];
+    const policyLabels = {
+      classifier_class_all_boxes: "Classifier class · all boxes",
+      classifier_class_score_weighted: "Classifier class · score weighted"
+    };
+    const hasPolicyResults = chosen.some(r => r.metrics.detection_class_policies);
+    if (hasPolicyResults) {
+      for (const [policy, label] of Object.entries(policyLabels)) {
+        metricRows.push([label + " · mAP", "policy:" + policy + ":mAP"]);
+        metricRows.push([label + " · AP50", "policy:" + policy + ":AP50"]);
+        metricRows.push([label + " · AP75", "policy:" + policy + ":AP75"]);
+        metricRows.push([label + " · AP small", "policy:" + policy + ":AP_small"]);
+        metricRows.push([label + " · AR small", "policy:" + policy + ":AR_small"]);
+        metricRows.push([label + " · ΔmAP vs native", "policyDelta:" + policy + ":mAP"]);
+        for (const name of classes) {
+          metricRows.push([label + " · AP · " + name, "policyAP:" + policy + ":" + name]);
+          metricRows.push([label + " · Δ AP · " + name + " vs native", "policyDelta:" + policy + ":per_class_AP:" + name]);
+        }
+      }
+    }
     metricRows.forEach(([label, key]) => {
       const tr = document.createElement("tr");
       tr.appendChild(cell("th", label));
       chosen.forEach(r => {
-        const value = key.startsWith("classAP:") ? undefined : r.metrics[key];
+        const value = key.startsWith("classAP:") || key.startsWith("policy") ? undefined : r.metrics[key];
         const td = cell("td", formatMetric(key, value, r), "metric");
         tr.appendChild(td);
       });

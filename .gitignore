@@ -1,6 +1,10 @@
 runs/
 /reports/detection-review/
 /data/course-data/
+/data/yolo11s-sar-512/
+/results/yolo11s-baseline-*/
+/pretrained/
+/weights/
 .venv/
 __pycache__/
 .pytest_cache/

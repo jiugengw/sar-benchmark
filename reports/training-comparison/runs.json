@@ -46,7 +46,7 @@
     {
       "job_id": "327063_1",
       "name": "Stride-4 detail branch",
-      "status": "running",
+      "status": "cancelled",
       "configuration": "Shared targeted recipe: small-object anchors; box-loss weight 2; photometric augmentation; uncertainty weighting; adds a stride-4 detail branch without image sampling.",
       "results_root": "results/targeted-small-327063/detail_branch",
       "log_path": "runs/targeted-small-327063_1.out",
@@ -56,7 +56,7 @@
     {
       "job_id": "327100",
       "name": "Small-anchor fixed-weight ablation",
-      "status": "running",
+      "status": "cancelled",
       "configuration": "Small-object anchors; box-loss weight 2; photometric augmentation; fixed loss weights; no small-object image sampling.",
       "results_root": "results/small-fixed-327100",
       "expected_epochs": 48,

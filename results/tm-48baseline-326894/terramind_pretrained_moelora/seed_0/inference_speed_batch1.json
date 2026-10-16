@@ -1,0 +1,9 @@
+{
+  "batch_size": 1,
+  "images": 939,
+  "wall_seconds": 31.59347265213728,
+  "pipeline_ms_per_image": 33.64587076904929,
+  "pipeline_images_per_second": 29.7213291599484,
+  "scope": "grayscale PNG decode, project mean/std normalization, TerraMind + classification head + RPN/ROI postprocessing; batch size one; GPU warmup of 20 images; includes per-image host and GPU work",
+  "status": "completed"
+}

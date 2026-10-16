@@ -32,3 +32,4 @@ python -u train.py --data data/course-data --backbone terramind --init pretraine
     --checkpoints "$CHECKPOINT_ROOT"
 python -u calibrate_submission.py --run "$RUN_ROOT/terramind_pretrained_moelora" \
     --out "$SUBMISSION_ROOT/terramind_48ep_small_anchors_fixed_calibrated.zip"
+python reports/training-comparison/build_comparison.py || true

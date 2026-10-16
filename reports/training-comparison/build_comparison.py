@@ -57,8 +57,10 @@ def load_metrics(entry: dict[str, Any]) -> tuple[dict[str, Any] | None, str | No
     except (OSError, json.JSONDecodeError):
         return None, None, None
     scores = data.get("val") or data.get("final_val") or data
-    keys = ("epoch", "accuracy", "macro_f1", "balanced_accuracy", "mAP", "AP50", "AP75", "delta_m",
-            "per_class_AP")
+    keys = ("epoch", "accuracy", "macro_f1", "balanced_accuracy", "mAP", "AP50", "AP75", "AP_small",
+            "AR_small", "delta_m",
+            "per_class_AP", "image_classification", "detection_derived_image_classification",
+            "detection_class_policies")
     return {key: scores[key] for key in keys if key in scores}, str(path.relative_to(ROOT)), path
 
 

@@ -41,6 +41,8 @@ def detection_metrics(gt_json, predictions, image_ids):
         'mAP': float(ev.stats[0]),
         'AP50': float(ev.stats[1]),
         'AP75': float(ev.stats[2]),
+        'AP_small': float(ev.stats[3]),
+        'AR_small': float(ev.stats[9]),
         'per_class_AP': {gt.cats[c]['name']: float(precision[:, :, k].mean())  # -1: no boxes of that class
                          for k, c in enumerate(ev.params.catIds)},
     }
