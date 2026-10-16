@@ -1,12 +1,13 @@
 # Model submission ZIPs
 
-The new [151026/](151026/README.md) folder contains three ready-to-upload
-submissions from longer training: baseline, stronger box loss, and stronger box
-loss with photometric augmentation. See that folder's README for experiment
-rationale, local results, and upload guidance. Task 3's older-model calibration
-artifacts, the later TerraMind 48-epoch runs, and the active ViT comparison are
-preserved in its [`tests-no-submit/`](151026/tests-no-submit/README.md)
-subfolder. The later candidates have not been uploaded.
+Submitted models have their own folders directly under `submissions/`, including
+`longer_baseline_calibrated/`, `longer_boxloss_calibrated/`,
+`longer_boxloss_photometric_calibrated/`, `terramind_48ep_gain_mean3_seed0/`,
+`terramind_small_extreme_calibrated/`, and
+`tm_48ep_boxloss_photo_large_anchors_s0_cal/`. Each contains its submission ZIP
+and available metadata or downloaded results. The dated folders retain
+unsubmitted experiments and experiment notes. See [151026/README.md](151026/README.md)
+for the longer-training experiment rationale and local results.
 
 Each ZIP is a separate model's predictions for all 1,426 course validation images. Upload one ZIP at a time to
 Codabench. These are predictions on `data/course-data/val/`, separate from the labeled training holdout used for

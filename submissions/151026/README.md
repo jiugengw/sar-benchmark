@@ -1,7 +1,10 @@
 # Submissions — 15 October 2026
 
-Upload the three ZIPs in this folder separately to Codabench to compare official
-scores. They are tasks 0, 1, and 2 of Slurm job array 324156. All use pretrained
+The three submitted models now live directly under `submissions/`, in
+`longer_baseline_calibrated/`, `longer_boxloss_calibrated/`, and
+`longer_boxloss_photometric_calibrated/`, with their ZIPs, local metrics, and
+downloaded scoring results. This dated folder retains experiment notes and
+unsubmitted artifacts. The models are tasks 0, 1, and 2 of Slurm job array 324156. All use pretrained
 TerraMind + MoE-LoRA, seed 0, and completed 36 training epochs. The best checkpoint
 was selected using the labeled training holdout. Each ZIP uses a single model,
 without ensembling or test-time augmentation.
@@ -15,9 +18,9 @@ the effect of each additional change.
 
 | Task / ZIP | Change and purpose | Selected epoch | Local macro F1 | Local mAP | Local Delta m |
 |---|---|---:|---:|---:|---:|
-| 0: [longer_baseline_calibrated.zip](longer_baseline_calibrated.zip) | Train for 36 rather than 24 epochs to test whether more training helps; box loss weight 1. | 36 | 91.07% | 31.75% | +9.55 |
-| 1: [longer_boxloss_calibrated.zip](longer_boxloss_calibrated.zip) | Double the RoI box-regression loss weight to emphasize accurate object boundaries, keeping the longer schedule. | 36 | 91.71% | 32.26% | +10.88 |
-| 2: [longer_boxloss_photometric_calibrated.zip](longer_boxloss_photometric_calibrated.zip) | Add brightness/contrast augmentation to stronger box loss to improve robustness to image appearance. | 34 | 92.43% | 32.59% | +11.89 |
+| 0: [longer_baseline_calibrated.zip](../longer_baseline_calibrated/longer_baseline_calibrated.zip) | Train for 36 rather than 24 epochs to test whether more training helps; box loss weight 1. | 36 | 91.07% | 31.75% | +9.55 |
+| 1: [longer_boxloss_calibrated.zip](../longer_boxloss_calibrated/longer_boxloss_calibrated.zip) | Double the RoI box-regression loss weight to emphasize accurate object boundaries, keeping the longer schedule. | 36 | 91.71% | 32.26% | +10.88 |
+| 2: [longer_boxloss_photometric_calibrated.zip](../longer_boxloss_photometric_calibrated/longer_boxloss_photometric_calibrated.zip) | Add brightness/contrast augmentation to stronger box loss to improve robustness to image appearance. | 34 | 92.43% | 32.59% | +11.89 |
 
 All three ran through epoch 36; task 2's best checkpoint was at epoch 34.
 Near the end, task 0 still gained a little mAP, task 1 flattened, and task 2
