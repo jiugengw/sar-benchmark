@@ -37,6 +37,21 @@
     .empty { padding:18px; color:var(--muted); text-align:center; }
     .artifact a { color:var(--accent); font-weight:650; }
     .tiny { color:var(--muted); font-size:.82rem; }
+    .review-legend { display:flex; flex-wrap:wrap; gap:8px 16px; margin:12px 0; color:var(--muted); font-size:.85rem; }
+    .review-legend span { white-space:nowrap; }
+    .review-summary { margin:14px 0; }
+    .review-grid { display:grid; gap:18px; margin-top:16px; }
+    .review-card { border:1px solid var(--line); border-radius:10px; padding:16px; background:#fbfdfd; }
+    .review-card h3 { margin:0 0 4px; font-size:1rem; }
+    .review-card > p { margin:4px 0 12px; color:var(--muted); font-size:.83rem; }
+    .review-panels { display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; align-items:flex-start; }
+    .review-panel { flex:0 0 290px; min-width:240px; }
+    .review-panel h4 { margin:0 0 5px; font-size:.92rem; }
+    .review-panel p { min-height:2.5em; margin:0 0 7px; color:var(--muted); font-size:.78rem; }
+    .review-image { position:relative; width:100%; line-height:0; background:#111; }
+    .review-image img { display:block; width:100%; height:auto; }
+    .review-image svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+    .review-empty { padding:18px; color:var(--muted); text-align:center; border:1px dashed var(--line); border-radius:8px; }
     @media (max-width:650px) { body { padding:22px 12px 42px; } th,td { padding:9px; } }
   </style>
 </head>
@@ -83,10 +98,41 @@
       </table>
     </div>
   </section>
+
+  <section aria-labelledby="visual-review-heading">
+    <h2 id="visual-review-heading">Visual detection review</h2>
+    <p class="subtle">Choose runs above to view their boxes side by side on the same labeled images. The gallery uses saved validation predictions at confidence ≥ 0.30; diagnostic box counts are not COCO AP.</p>
+    <div class="review-legend">
+      <span><b style="color:#19854a">Green:</b> matched ground truth</span>
+      <span><b style="color:#c76a11">Orange:</b> missed ground truth</span>
+      <span><b style="color:#2376d1">Blue:</b> matching prediction</span>
+      <span><b style="color:#a66b00">Yellow:</b> duplicate</span>
+      <span><b style="color:#b12bb7">Purple:</b> inaccurate location</span>
+      <span><b style="color:#c62828">Red:</b> wrong class / background</span>
+    </div>
+    <div class="filters">
+      <label class="filter">Image class
+        <select id="review-class"><option value="">All classes</option></select>
+      </label>
+      <label class="filter">Show images with
+        <select id="review-error">
+          <option value="">Any result</option>
+          <option value="missed_small">Missed small objects</option>
+          <option value="missed">Missed objects</option>
+          <option value="wrong_class">Wrong class</option>
+          <option value="duplicate">Duplicates</option>
+          <option value="localization">Inaccurate boxes</option>
+        </select>
+      </label>
+    </div>
+    <div id="review-summary" class="review-summary"></div>
+    <div id="review-grid" class="review-grid"></div>
+  </section>
 </main>
 <script>
   const runs = __RUNS__;
-  const metricRows = [
+  const reviewData = __REVIEW_DATA__;
+  const baseMetricRows = [
     ["Validation epoch", "epoch"],
     ["Accuracy", "accuracy"],
     ["Macro F1", "macro_f1"],
@@ -101,6 +147,9 @@
   const compareHead = document.getElementById("compare-head");
   const compareBody = document.getElementById("compare-body");
   const selectionCount = document.getElementById("selection-count");
+  const reviewGrid = document.getElementById("review-grid");
+  const reviewSummary = document.getElementById("review-summary");
+  const modelReviews = new Map((reviewData.models || []).map(model => [model.job_id, model]));
 
   function cell(tag, text, className) {
     const node = document.createElement(tag);
@@ -118,6 +167,7 @@
     });
   }
   function formatMetric(key, value, run) {
+    if (key.startsWith("classAP:")) value = (run.metrics.per_class_AP || {})[key.slice(8)];
     if (value === undefined || value === null || value === "") return "—";
     if (key === "epoch") return String(value) + (run.expected_epochs ? " / " + run.expected_epochs : "");
     if (key === "delta_m") return (Number(value) >= 0 ? "+" : "") + Number(value).toFixed(2);
@@ -144,11 +194,14 @@
       compareBody.appendChild(tr);
       return;
     }
+    const classes = [...new Set(runs.flatMap(r => Object.keys((r.metrics || {}).per_class_AP || {})))].sort();
+    const metricRows = [...baseMetricRows, ...classes.map(name => ["AP · " + name, "classAP:" + name])];
     metricRows.forEach(([label, key]) => {
       const tr = document.createElement("tr");
       tr.appendChild(cell("th", label));
       chosen.forEach(r => {
-        const td = cell("td", formatMetric(key, r.metrics[key], r), "metric");
+        const value = key.startsWith("classAP:") ? undefined : r.metrics[key];
+        const td = cell("td", formatMetric(key, value, r), "metric");
         tr.appendChild(td);
       });
       compareBody.appendChild(tr);
@@ -168,6 +221,103 @@
     });
     compareBody.appendChild(artifactRow);
   }
+
+  function addSvgRect(svg, bbox, color, strokeWidth) {
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", bbox[0]);
+    rect.setAttribute("y", bbox[1]);
+    rect.setAttribute("width", bbox[2]);
+    rect.setAttribute("height", bbox[3]);
+    rect.setAttribute("fill", "none");
+    rect.setAttribute("stroke", color);
+    rect.setAttribute("stroke-width", String(strokeWidth));
+    rect.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.appendChild(rect);
+  }
+
+  function reviewPanel(title, detail, example, review, groundTruthOnly) {
+    const panel = cell("div", undefined, "review-panel");
+    panel.appendChild(cell("h4", title));
+    panel.appendChild(cell("p", detail));
+    const imageBox = cell("div", undefined, "review-image");
+    const image = document.createElement("img");
+    image.src = example.image_href;
+    image.alt = "Image " + example.id + " with detection boxes";
+    image.loading = "lazy";
+    imageBox.appendChild(image);
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 " + example.width + " " + example.height);
+    svg.setAttribute("preserveAspectRatio", "none");
+    const missed = new Set((review && review.missed_indices) || []);
+    example.truth.forEach((ann, index) => {
+      const color = groundTruthOnly ? "#19854a" : (missed.has(index) ? "#c76a11" : "#19854a");
+      addSvgRect(svg, ann.bbox, color, 2);
+    });
+    if (!groundTruthOnly && review) {
+      const colors = {matched:"#2376d1", duplicate:"#a66b00", wrong_class:"#c62828", localization:"#b12bb7", background:"#c62828"};
+      review.predictions.forEach(prediction => addSvgRect(svg, prediction.bbox, colors[prediction.kind] || "#c62828", 1.5));
+    }
+    imageBox.appendChild(svg);
+    panel.appendChild(imageBox);
+    return panel;
+  }
+
+  function renderGallery() {
+    const chosen = runs.filter(run => selected.has(run.job_id) && modelReviews.has(run.job_id));
+    const imageClass = document.getElementById("review-class").value;
+    const error = document.getElementById("review-error").value;
+    reviewSummary.replaceChildren();
+    reviewGrid.replaceChildren();
+    if (!chosen.length) {
+      reviewSummary.appendChild(cell("p", "Select a run with saved validation predictions to compare its boxes.", "review-empty"));
+      return;
+    }
+    const tableWrap = cell("div", undefined, "table-wrap");
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const header = document.createElement("tr");
+    ["Run", "Bridge AP", "Playground AP", "Matched", "Missed", "Missed small", "Wrong class", "Duplicates", "Inaccurate boxes"].forEach(label => header.appendChild(cell("th", label)));
+    thead.appendChild(header);
+    table.appendChild(thead);
+    const tbody = document.createElement("tbody");
+    chosen.forEach(run => {
+      const model = modelReviews.get(run.job_id);
+      const tr = document.createElement("tr");
+      tr.appendChild(cell("th", model.name + " · " + run.job_id));
+      tr.appendChild(cell("td", formatMetric("classAP:bridge", undefined, run)));
+      tr.appendChild(cell("td", formatMetric("classAP:playground", undefined, run)));
+      ["matched", "missed", "missed_small", "wrong_class", "duplicate", "localization"].forEach(key => tr.appendChild(cell("td", String(model.total[key] || 0))));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    reviewSummary.appendChild(tableWrap);
+    reviewSummary.appendChild(cell("p", "Boxes shown at confidence ≥ " + Number(reviewData.score_threshold).toFixed(2) + "; a box counts as matched at IoU ≥ " + Number(reviewData.match_iou).toFixed(2) + ". Examples are drawn from " + reviewData.holdout_images + " shared holdout images.", "tiny"));
+
+    let shown = 0;
+    (reviewData.examples || []).forEach(example => {
+      if (imageClass && example.category !== imageClass) return;
+      if (error && !chosen.some(run => ((example.reviews[run.job_id] || {}).counts || {})[error] > 0)) return;
+      shown += 1;
+      const card = cell("article", undefined, "review-card");
+      card.appendChild(cell("h3", "Image " + example.id + ": " + example.category + " · " + example.truth.length + " objects"));
+      card.appendChild(cell("p", example.file_name));
+      const panels = cell("div", undefined, "review-panels");
+      panels.appendChild(reviewPanel("Ground truth", "All annotated boxes", example, null, true));
+      chosen.forEach(run => {
+        const review = example.reviews[run.job_id];
+        if (!review) return;
+        const counts = review.counts;
+        const detail = "matched " + (counts.matched || 0) + " · missed " + (counts.missed || 0) + " · wrong class " + (counts.wrong_class || 0) + " · duplicates " + (counts.duplicate || 0) + " · inaccurate boxes " + (counts.localization || 0);
+        panels.appendChild(reviewPanel(modelReviews.get(run.job_id).name, detail, example, review, false));
+      });
+      card.appendChild(panels);
+      reviewGrid.appendChild(card);
+    });
+    if (!shown) reviewGrid.appendChild(cell("p", "No examples match these filters.", "review-empty"));
+    else reviewSummary.appendChild(cell("p", shown + " visual examples shown.", "tiny"));
+  }
+
   function renderRuns() {
     const visible = availableRuns();
     runRows.replaceChildren();
@@ -212,6 +362,7 @@
     const count = runs.filter(r => selected.has(r.job_id) && r.metrics).length;
     selectionCount.textContent = count + " run" + (count === 1 ? "" : "s") + " selected for comparison.";
     renderComparison();
+    renderGallery();
   }
   function render() { renderRuns(); }
   document.getElementById("search").addEventListener("input", render);
@@ -224,6 +375,15 @@
     selected.clear();
     render();
   });
+  const reviewClass = document.getElementById("review-class");
+  [...new Set((reviewData.examples || []).map(example => example.category))].sort().forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    reviewClass.appendChild(option);
+  });
+  reviewClass.addEventListener("change", renderGallery);
+  document.getElementById("review-error").addEventListener("change", renderGallery);
   render();
 </script>
 </body>

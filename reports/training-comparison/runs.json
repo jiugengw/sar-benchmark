@@ -1,5 +1,6 @@
 {
-  "title": "TerraMind 48-epoch baseline and targeted runs",
+  "title": "SAR training comparison and detection review",
+  "discover_results": true,
   "runs": [
     {
       "job_id": "326894",
@@ -11,13 +12,35 @@
       "compare_by_default": true
     },
     {
+      "job_id": "326397",
+      "name": "64-epoch baseline",
+      "status": "completed",
+      "configuration": "Default anchors; box-loss weight 1; fixed loss weights; no photometric augmentation.",
+      "metrics_path": "results/tm-64baseline-326397/terramind_pretrained_moelora/seed_0/metrics.json",
+      "compare_by_default": true
+    },
+    {
+      "job_id": "326398",
+      "name": "Default anchors with uncertainty weighting",
+      "status": "completed",
+      "configuration": "Default anchors; box-loss weight 2; photometric augmentation; uncertainty-based loss weights.",
+      "metrics_path": "results/tm-default-uncertainty-326398/terramind_pretrained_moelora_uncertainty/seed_0/metrics.json",
+      "compare_by_default": true
+    },
+    {
+      "job_id": "326154",
+      "name": "Small-extreme matched control",
+      "status": "completed",
+      "configuration": "Small-extreme anchors; box-loss weight 2; photometric augmentation; uncertainty weighting; no sampling or detail branch.",
+      "metrics_path": "results/small48-terramind-326154/terramind_pretrained_moelora_uncertainty/seed_0/metrics.json",
+      "compare_by_default": true
+    },
+    {
       "job_id": "327063_0",
       "name": "Small-object image sampling",
-      "status": "running",
+      "status": "completed",
       "configuration": "Small-object anchors; box-loss weight 2; photometric augmentation; uncertainty weighting; samples images with tiny objects more often.",
-      "results_root": "results/targeted-small-327063/small_sampling",
-      "log_path": "runs/targeted-small-327063_0.out",
-      "expected_epochs": 48,
+      "metrics_path": "results/targeted-small-327063/small_sampling/terramind_pretrained_moelora_uncertainty/seed_0/metrics.json",
       "compare_by_default": true
     },
     {
@@ -33,11 +56,16 @@
     {
       "job_id": "327100",
       "name": "Small-anchor fixed-weight ablation",
-      "status": "pending",
+      "status": "running",
       "configuration": "Small-object anchors; box-loss weight 2; photometric augmentation; fixed loss weights; no small-object image sampling.",
       "results_root": "results/small-fixed-327100",
       "expected_epochs": 48,
       "compare_by_default": false
     }
-  ]
+  ],
+  "visual_review": {
+    "score_threshold": 0.3,
+    "match_iou": 0.5,
+    "examples": 48
+  }
 }
