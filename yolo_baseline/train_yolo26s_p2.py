@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""Train a YOLO26s detector with a new stride-4 P2 detection level."""
+
+from __future__ import annotations
+
+import argparse
+import copy
+import json
+import random
+from pathlib import Path
+
+import numpy as np
+import torch
+import yaml
+
+
+def set_seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+
+def transfer_standard_weights_to_p2(standard_model, p2_model) -> None:
+    """Transfer semantically matching YOLO26s layers and P3-P5 detection heads."""
+    source = standard_model.model
+    target = p2_model.model
+
+    # The new P2 branch occupies target layers 17-22, shifting the P4/P5
+    # neck layers six positions later than in the standard YOLO26 model.
+    layer_pairs = [(index, index) for index in range(17)]
+    layer_pairs.extend((source_index, source_index + 6) for source_index in range(17, 23))
+    for source_index, target_index in layer_pairs:
+        source_layer = source.model[source_index]
+        target_layer = target.model[target_index]
+        source_state = source_layer.state_dict()
+        target_state = target_layer.state_dict()
+        transferable = {
+            key: value for key, value in source_state.items()
+            if key in target_state and target_state[key].shape == value.shape
+        }
+        target_layer.load_state_dict(transferable, strict=False)
+
+    source_detect = source.model[-1]
+    target_detect = target.model[-1]
+    for attribute in ("cv2", "cv3", "one2one_cv2", "one2one_cv3"):
+        source_layers = getattr(source_detect, attribute, None)
+        target_layers = getattr(target_detect, attribute, None)
+        if source_layers is None or target_layers is None:
+            continue
+        if len(source_layers) != 3 or len(target_layers) != 4:
+            raise RuntimeError(
+                f"Unexpected {attribute} levels: {len(source_layers)} -> {len(target_layers)}"
+            )
+        for source_index, target_index in enumerate((1, 2, 3)):
+            source_module = source_layers[source_index]
+            target_module = target_layers[target_index]
+            source_state = source_module.state_dict()
+            target_state = target_module.state_dict()
+            transferable = {
+                key: value for key, value in source_state.items()
+                if key in target_state and target_state[key].shape == value.shape
+            }
+            target_module.load_state_dict(transferable, strict=False)
+
+    if hasattr(source_detect, "dfl") and hasattr(target_detect, "dfl"):
+        target_detect.dfl.load_state_dict(source_detect.dfl.state_dict(), strict=False)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--weights", type=Path, default=Path("pretrained/yolo26s.pt"))
+    parser.add_argument(
+        "--p2-yaml",
+        type=Path,
+        default=Path(".venv/lib/python3.12/site-packages/ultralytics/cfg/models/26/yolo26-p2.yaml"),
+    )
+    parser.add_argument("--classes", type=Path, default=Path("data/yolo11s-sar-512/conversion_manifest.json"))
+    parser.add_argument("--train-output", type=Path, required=True)
+    parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument("--batch", type=int, default=16)
+    parser.add_argument("--workers", type=int, default=4)
+    args = parser.parse_args()
+
+    from ultralytics import YOLO
+
+    if not torch.cuda.is_available():
+        raise RuntimeError("YOLO training requires the allocated CUDA GPU")
+    if not args.weights.is_file():
+        raise FileNotFoundError(args.weights)
+    if not args.p2_yaml.is_file():
+        raise FileNotFoundError(args.p2_yaml)
+    class_names = json.loads(args.classes.read_text())["classes"]
+    if len(class_names) != 9:
+        raise ValueError(f"Expected the nine original classes, found {class_names}")
+    args.train_output.mkdir(parents=True, exist_ok=True)
+    set_seed(0)
+
+    source = YOLO(str(args.weights))
+    standard_config = copy.deepcopy(source.model.yaml)
+    standard_config["nc"] = len(class_names)
+    standard_config_path = args.train_output / "yolo26s_9class.yaml"
+    standard_config_path.write_text(yaml.safe_dump(standard_config, sort_keys=False))
+    standard_model = YOLO(str(standard_config_path), task="detect")
+    standard_model.model.names = dict(enumerate(class_names))
+    standard_model.model.load(source.model, verbose=True)
+
+    p2_config = yaml.safe_load(args.p2_yaml.read_text())
+    p2_config["nc"] = len(class_names)
+    p2_config["scale"] = "s"
+    p2_config_path = args.train_output / "yolo26s_p2.yaml"
+    p2_config_path.write_text(yaml.safe_dump(p2_config, sort_keys=False))
+    model = YOLO(str(p2_config_path), task="detect")
+    model.model.names = dict(enumerate(class_names))
+    transfer_standard_weights_to_p2(standard_model, model)
+    del source, standard_model
+
+    parameter_count = sum(parameter.numel() for parameter in model.model.parameters())
+    training_settings = {
+        "variant": "p2",
+        "architecture": "YOLO26s-P2 (stride 4/8/16/32)",
+        "pretrained_weights": str(args.weights),
+        "p2_architecture_yaml": str(args.p2_yaml),
+        "classes": class_names,
+        "epochs": args.epochs,
+        "image_size": 512,
+        "batch_size": args.batch,
+        "workers": args.workers,
+        "seed": 0,
+        "optimizer": "auto (Ultralytics default)",
+        "augmentation": "Ultralytics YOLO26 defaults",
+        "trainable_parameters": parameter_count,
+        "split": "runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json",
+        "initialization": "pretrained YOLO26s shared layers and P3-P5 heads; new P2 branch initialized randomly",
+    }
+    (args.train_output / "benchmark_settings.json").write_text(json.dumps(training_settings, indent=2) + "\n")
+    print(json.dumps(training_settings, indent=2), flush=True)
+
+    model.train(
+        data="data/yolo11s-sar-512/dataset.yaml",
+        epochs=args.epochs,
+        imgsz=512,
+        batch=args.batch,
+        workers=args.workers,
+        device=0,
+        pretrained=False,
+        optimizer="auto",
+        patience=args.epochs + 1,
+        seed=0,
+        deterministic=True,
+        project=str(args.train_output.resolve()),
+        name="train",
+        exist_ok=False,
+        plots=True,
+        val=True,
+        cache=False,
+    )
+
+
+if __name__ == "__main__":
+    main()
