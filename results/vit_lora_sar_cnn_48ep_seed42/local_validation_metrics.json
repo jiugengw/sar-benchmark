@@ -1,0 +1,173 @@
+{
+  "experiment": "vit_lora_sar_cnn_48ep_seed42",
+  "split": "local_val",
+  "images": 1408,
+  "image_source": "Original official training images held out before augmentation",
+  "random_augmentation": false,
+  "best_selection": "macro_f1 + mAP",
+  "epoch": 48,
+  "metric_units": "Fractions (multiply by 100 for percent), except counts and seconds",
+  "metrics": {
+    "accuracy": 0.9417613636363636,
+    "macro_f1": 0.9482714302878651,
+    "balanced_accuracy": 0.9488623442196579,
+    "per_class_f1": [
+      1.0,
+      0.9595959595959596,
+      0.8563685636856369,
+      1.0,
+      0.9486552567237164,
+      0.946236559139785,
+      0.8433048433048433,
+      0.9802816901408451,
+      1.0
+    ],
+    "confusion_matrix": [
+      [
+        177,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        95,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0
+      ],
+      [
+        0,
+        2,
+        158,
+        0,
+        7,
+        1,
+        17,
+        2,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        66,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        3,
+        0,
+        194,
+        4,
+        2,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        2,
+        176,
+        5,
+        1,
+        0
+      ],
+      [
+        0,
+        3,
+        19,
+        0,
+        3,
+        3,
+        148,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        3,
+        0,
+        174,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        138
+      ]
+    ],
+    "mAP": 0.29146859418806237,
+    "AP50": 0.5982842282881443,
+    "AP75": 0.24955822594466623,
+    "AP_small": 0.2589631072286315,
+    "AP_medium": 0.38811434260835276,
+    "AP_large": 0.32037084465948823,
+    "per_class_AP": {
+      "aircraft": 0.37303373788229444,
+      "airport": 0.3931318288407229,
+      "bridge": 0.01758163941785863,
+      "car": 0.5387969357697858,
+      "harbor": 0.3665178667973972,
+      "oil_tank": 0.30404214448490585,
+      "playground": 0.010392906036562009,
+      "ship": 0.3672271321530131,
+      "wind_turbine": 0.2524931563100215
+    },
+    "forward_seconds_per_image": 0.005906485765907829
+  },
+  "parameters": {
+    "total": 126038011,
+    "trainable": 39996667,
+    "frozen": 86041344,
+    "total_budget_remaining": 3961989,
+    "trainable_budget_remaining": 3333,
+    "resolved_architecture": {
+      "adaptation": "lora",
+      "lora_rank": 64,
+      "neck_channels": 384,
+      "roi_hidden_dim": 1300,
+      "sar_cnn": true,
+      "cnn_fusion_strides": [
+        4,
+        8
+      ],
+      "cnn_parameters": 110274
+    },
+    "trainable_by_module": {
+      "backbone": 3538944,
+      "cls_head": 8457,
+      "neck": 8781504,
+      "rpn": 1339038,
+      "roi_heads": 26218450,
+      "sar_cnn": 110274
+    }
+  },
+  "official_codabench_scores": null
+}

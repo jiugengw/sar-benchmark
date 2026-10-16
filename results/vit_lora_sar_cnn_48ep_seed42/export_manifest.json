@@ -1,0 +1,122 @@
+{
+  "created_sgt": "2026-10-16T20:51:06.766406+08:00",
+  "experiment": "vit_lora_sar_cnn_48ep_seed42",
+  "checkpoint_epoch": 48,
+  "checkpoint_relative_to_original_workspace": "experiments/02_vit_lora_cnn48/results/run/best.pt",
+  "checkpoint_sha256": "4ee73302dfdebb0f5c78eeb473feac144b4503581bf8b2f13e8f7764c05e2228",
+  "training_config_sha256": "d7f349cd30025b0f47e1cd9fc19968ddeb40664c5fecde03e46adb15adc05be9",
+  "source_experiment": "cv_project/experiments/02_vit_lora_cnn48",
+  "source_fingerprints": {
+    "sar_project/models.py": "dc1dffc629745310c5deddae117d9cba6674d16268bef85774ce4583f0360114",
+    "sar_project/sampling.py": "88e9adb1a1b196336c99a1aba51509063b5283f6574ca2b15294f8bc60a6c025",
+    "sar_project/distributed.py": "2df8947ac1c4e08734713c5a12532d186ec94064db9a726d465d7682fd67288d",
+    "sar_project/data.py": "8ae84465f89a64f33ff84c3257955f57777001d53cf5cff01f0d9da259c86467",
+    "sar_project/common.py": "d4cffc19046f4e8cf53bd461a2ff52754424dcfdcb91e1766c4b809483e41777",
+    "sar_project/submission.py": "263850217fb24d23bf0deaf88b56d640fc6821e342b20b912e64212108076a11",
+    "sar_project/__init__.py": "437e8411c985ef9c1ca6738e0224aaa83554b75acc3cb11eb16a3d85f8e3e030",
+    "sar_project/metrics.py": "e600fb548ad783acf726f72e983b1c9b8cc62479e145a0a816618ed0b7aed377",
+    "sar_project/training_utils.py": "48ba2b5b48cb3dfa20b21cc73a7a8a76e30f74403ee06db673cf4cd0a75b4403",
+    "sar_project/runtime.py": "3e50c0c73a216b3405ac91aff35408d430ddcd8bcdc759c383be5bcd27798156",
+    "scripts/launch.py": "5127b49c7517626956e8d032fb2afb13a26fe17041c80c8608fe3e57aeb84af1",
+    "scripts/training_status.py": "09a1cf6f7240f1f59baf84de4f12db77e6c1f7b9b8235d3a7899922356b1db51",
+    "scripts/record_sources.py": "0ca0460b4c828a9dda3dbfcbeca907759790ea6779bc84b03141710aabf5d559",
+    "scripts/preview_data.py": "a20eb5df23deba6d34f593cfa614dda723aef013fd9b8978c5db9b13fbb7e18b",
+    "scripts/status.py": "672ad4e6e955091c8a1f98e50920a0d91197ac5fac71856659a40575c38d81f6",
+    "scripts/download_data.py": "ddd159fa0bd21ff0f376a21892657d1618c5c8aa1c94438845829aeb744da95e",
+    "scripts/materialize_augmentations.py": "9333d35d59496cbfacf912041520a0bb9249e4384f31823d8a463982bf9a8f65",
+    "scripts/prepare_data.py": "5fd549b4452e7cc21b6cc3a6e733b8396b4d6e9bdb835b0c9ab793a64266db2b",
+    "scripts/train_24ep_2gpu.sbatch": "b3474590af44a9dc0550997d37cd8b934a1d00cf018769cc1c109b3839f49788",
+    "configs/max_budget.yaml": "e752c6e79c5fef8cc43d1377aaf49020db2b54fec4a5418a0a645c1c3cbe68c2",
+    "configs/aug_rot90.yaml": "f20c5d22b2733259ac4dfa2225a93bd2a01e0c021ced94e0ab6aaefedce503b5",
+    "configs/aug_background.yaml": "43b0bcd88b3d12095bea8ebf5398a00fc6d7fa058f443090035b67e797f4f155",
+    "configs/materialize_bbox_safe.yaml": "cd913173583f88d0b3def5681808998af0fe0d88edda332320d1995c139f6951",
+    "configs/train_24ep_2gpu.yaml": "c8ee97da18157b6c60b06387130133890fe11607ecd41ffa7d7fba038be60fe6",
+    "configs/max_budget_sar_expanded.yaml": "81d4254baabdac427dfd65a4925ee936e08ef39d704247cf5b0f0d9002632ccc",
+    "configs/baseline.yaml": "cf1fbf13dcddfbfab494b2119aa2bf7cb00bab4c04afe4f7717ce8d1630192f8",
+    "configs/aug_speckle.yaml": "f6dcf99409c1459d743761c52437a55b04a7f0734e27de5fa424ed05f247c5e2",
+    "configs/aug_intensity.yaml": "d9568d4cbaff6d09b017fffbb500cf0a954273787e4640480ec15ef13e36b635",
+    "configs/max_budget_sar.yaml": "1749d85da57eb231fdb670599b618b4d14447cecffd98312f8b54b620c7e8cf9",
+    "tests/test_model_budget.py": "3b4bbf0202527703adeb2e648c049909a9dd8875c37dd7782458a48b2af0bcfe",
+    "tests/test_data_pipeline.py": "e317fa17193dea69e9e2e8198a66a9e722df78b23108f972facbe58d4288bab1",
+    "tests/distributed_probe.py": "7fccd09c946b1c6983ae1b7ace4b65fff0b8a436a7b02a9d51609ade4212128c",
+    "tests/test_metrics_submission.py": "843cb67c5729909e92f890a884adfdeac4ca7d8a2b53b6d7778a9d7473aae412",
+    "tests/test_materialized_augmentation.py": "fa5a5fea8bb5476899391293e3548c1bad136afd3670ae82bc57b5225bf5f65a",
+    "tests/test_training_stages.py": "af3a3ea9fa73493068133b666aed5cd5e372b1a2c08602b7cf86fad35f51f4fe",
+    "tests/test_sar_cnn.py": "b023664e1cd1fef6b0d77e126a788a6a46844e9850a92446e3706c6c662f7ed0",
+    "train.py": "2683f074f077d41eb8b337d1683e96c6c5882c71e2210a14e8771f76739e0883",
+    "predict.py": "8f7a5b46cfa19e09664195c46f00855d909c02be23d549b79a62c8344c603895",
+    "requirements.txt": "5555afcfd29129a16f8660cfd3ab0ed72a4b54d9ad6791fdfb5d71c3fd28d477",
+    "README.md": "bab04a26438ca83506ff30c0312e84c0c7c41273333d4a20aca631abedd0e6b4",
+    "pytest.ini": "6c6ccf864e8f2d2e0223ee8e39bfde660c12435aa37d81e2b14000a6bee15003",
+    "scripts/setup.sh": "93117e861b3cbdbfed78b552686d94c8859dc970e7d522cc3c2ede1487ffba2a",
+    "reference_paper/数据增强方法.txt": "8fdc049a20c1e5b240a78d8d603c64648582b1853396fe25e820ab6aacc6cb5b",
+    "third_party/cs701-sar-benchmark/sarbench/model.py": "937f61f505562b5814dc0883cb52af2645b422827ba1483aed0760df4fd5fd71",
+    "third_party/cs701-sar-benchmark/sarbench/adapters.py": "d8bafd8f78f46ec4afd8c14b8bab4b8b383b3f41d658ffe08c5796ab3b1181af"
+  },
+  "training_and_local_validation_fingerprints": {
+    "train_expanded.json": "8da4f8d3ceb5f85de6735a2e10752d1222f215aadb72561be5e285a71c291810",
+    "local_val.json": "a80839bae28bf2cac9595f18cbb0c98de720a4f89301c4ad0e583c3ecba07395",
+    "local_val_coco.json": "f920ca806bf070817a3ffe9b7bc0d885995619b806fe0822f1bf8d7d42893f7a"
+  },
+  "prediction_split": "official_val",
+  "official_validation_images": 1426,
+  "official_validation_manifest_sha256": "98d9481ef6cfc7a80428bfdf866839604405a6667ac7e5fc436bbd0f4e2fd793",
+  "training_slurm_job": "10126",
+  "export_slurm_job": "10134",
+  "export_slurm_state": "COMPLETED",
+  "export_slurm_exit_code": "0:0",
+  "export_slurm_elapsed_seconds": 18,
+  "single_checkpoint": true,
+  "views_per_image": 1,
+  "tta": false,
+  "ensemble": false,
+  "tiling": false,
+  "official_codabench_scores": null,
+  "validation_checks": {
+    "status": "passed",
+    "zip_crc": "passed",
+    "root_files": [
+      "classification.csv",
+      "detection.json"
+    ],
+    "images": 1426,
+    "detections": 29290,
+    "max_detections_per_image_class": 100,
+    "exact_official_image_id_coverage": true,
+    "classification_labels": "0..8",
+    "detection_categories": "1..9",
+    "bbox_format": "XYWH, original image pixels",
+    "finite_scores_and_boxes": true,
+    "boxes_within_original_images": true,
+    "at_most_100_detections_per_image_category": true,
+    "credentials_absent": true,
+    "file_hashes_verified": true,
+    "model_parameter_budgets": "passed"
+  },
+  "files": {
+    "README.md": {
+      "bytes": 2674,
+      "sha256": "e21560777819dd05820208e34dc399a4d9e59800bf8de56ab9b37c17237ab98d"
+    },
+    "local_comparison.csv": {
+      "bytes": 366,
+      "sha256": "bbe0bd539237abf904f8ea04e562f4b1e2acb25be92b1c932d99f47ecd9bed06"
+    },
+    "local_validation_metrics.json": {
+      "bytes": 3076,
+      "sha256": "19d5d5df24815254a57def4f02b5250a068391359e6744a2551c926f46362590"
+    },
+    "submission_val.metadata.json": {
+      "bytes": 942,
+      "sha256": "9b143c3b571d1b1ed8e4d853b6bef91e47a87ba87b6d1aca4472f463949c264f"
+    },
+    "submission_val.zip": {
+      "bytes": 1220836,
+      "sha256": "c59092867108898bc07a4d04f953125028d7238d07cbe5f845ea18cc79c9da2e"
+    },
+    "training_config.yaml": {
+      "bytes": 1072,
+      "sha256": "3e0f33896e764e7e2137ebaec64f68b0cc6eb7b48f1035ce1d2ad43c8a75b5d3"
+    }
+  }
+}
