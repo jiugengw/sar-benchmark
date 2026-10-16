@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>__TITLE__</title>
+  <style>
+    :root { color-scheme: light; --ink:#17232b; --muted:#5b6a72; --line:#d7e0e3; --accent:#176b62; --panel:#f4f8f8; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:32px 20px 60px; color:var(--ink); background:#fff; font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { max-width:1180px; margin:auto; }
+    h1 { margin:0 0 8px; font-size:clamp(1.65rem,3vw,2.2rem); letter-spacing:-.025em; }
+    h2 { margin:30px 0 12px; font-size:1.2rem; }
+    p { margin:8px 0; }
+    .subtle { color:var(--muted); }
+    .note { padding:14px 16px; margin:18px 0 22px; border-left:4px solid var(--accent); background:var(--panel); }
+    .filters { display:flex; gap:12px; flex-wrap:wrap; align-items:end; margin:18px 0 10px; }
+    label.filter { display:grid; gap:4px; color:var(--muted); font-size:.82rem; font-weight:650; }
+    input[type="search"], select { min-height:40px; min-width:210px; padding:8px 10px; border:1px solid #b9c7cc; border-radius:7px; background:white; color:var(--ink); font:inherit; }
+    button { min-height:40px; padding:8px 13px; border:1px solid #9aabad; border-radius:7px; background:white; color:var(--ink); font:inherit; cursor:pointer; }
+    button:hover { border-color:var(--accent); }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:9px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px 12px; text-align:left; vertical-align:top; border-bottom:1px solid var(--line); }
+    thead th { background:#f3f7f7; font-size:.82rem; letter-spacing:.02em; white-space:nowrap; }
+    tbody tr:last-child td { border-bottom:0; }
+    .choice-table { min-width:780px; }
+    .compare-table { min-width:600px; }
+    .compare-table th:not(:first-child), .compare-table td:not(:first-child) { text-align:center; min-width:125px; }
+    .run-title { font-weight:700; }
+    .run-id { display:block; color:var(--muted); font-size:.8rem; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.75rem; font-weight:700; text-transform:capitalize; }
+    .badge.completed { background:#e1f4e9; color:#17653a; }
+    .badge.running { background:#fff1cf; color:#765209; }
+    .badge.pending { background:#e9eef0; color:#47565d; }
+    .metric { font-variant-numeric:tabular-nums; font-weight:650; }
+    .empty { padding:18px; color:var(--muted); text-align:center; }
+    .artifact a { color:var(--accent); font-weight:650; }
+    .tiny { color:var(--muted); font-size:.82rem; }
+    @media (max-width:650px) { body { padding:22px 12px 42px; } th,td { padding:9px; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>__TITLE__</h1>
+  <p class="subtle">Generated __GENERATED_AT__. Select completed or running runs below to compare their local validation metrics.</p>
+  <div class="note">
+    <strong>Metric status:</strong> Completed runs use their selected checkpoint metrics. Running runs show the latest validation found in the log and are provisional. All reported scores use the labeled training holdout, not the official leaderboard.
+  </div>
+
+  <section aria-labelledby="runs-heading">
+    <h2 id="runs-heading">Runs</h2>
+    <div class="filters">
+      <label class="filter">Find by job, name, or recipe
+        <input id="search" type="search" placeholder="e.g. sampling, baseline">
+      </label>
+      <label class="filter">Status
+        <select id="status-filter">
+          <option value="all">All statuses</option>
+          <option value="completed">Completed</option>
+          <option value="running">Running</option>
+          <option value="pending">Pending</option>
+        </select>
+      </label>
+      <button id="select-visible" type="button">Select visible runs</button>
+      <button id="clear-selection" type="button">Clear comparison</button>
+    </div>
+    <div class="table-wrap">
+      <table class="choice-table">
+        <thead><tr><th>Compare</th><th>Job</th><th>Status / progress</th><th>Configuration</th></tr></thead>
+        <tbody id="run-rows"></tbody>
+      </table>
+    </div>
+    <p class="tiny" id="selection-count"></p>
+  </section>
+
+  <section aria-labelledby="comparison-heading">
+    <h2 id="comparison-heading">Selected comparison</h2>
+    <div class="table-wrap">
+      <table class="compare-table">
+        <thead id="compare-head"></thead>
+        <tbody id="compare-body"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script>
+  const runs = __RUNS__;
+  const metricRows = [
+    ["Validation epoch", "epoch"],
+    ["Accuracy", "accuracy"],
+    ["Macro F1", "macro_f1"],
+    ["Balanced accuracy", "balanced_accuracy"],
+    ["mAP", "mAP"],
+    ["AP50", "AP50"],
+    ["AP75", "AP75"],
+    ["Δm", "delta_m"]
+  ];
+  const selected = new Set(runs.filter(r => r.compare_by_default && r.metrics).map(r => r.job_id));
+  const runRows = document.getElementById("run-rows");
+  const compareHead = document.getElementById("compare-head");
+  const compareBody = document.getElementById("compare-body");
+  const selectionCount = document.getElementById("selection-count");
+
+  function cell(tag, text, className) {
+    const node = document.createElement(tag);
+    if (text !== undefined && text !== null) node.textContent = text;
+    if (className) node.className = className;
+    return node;
+  }
+  function availableRuns() {
+    const query = document.getElementById("search").value.trim().toLowerCase();
+    const status = document.getElementById("status-filter").value;
+    return runs.filter(r => {
+      const matchesStatus = status === "all" || r.status === status;
+      const haystack = [r.job_id, r.name, r.configuration].join(" ").toLowerCase();
+      return matchesStatus && (!query || haystack.includes(query));
+    });
+  }
+  function formatMetric(key, value, run) {
+    if (value === undefined || value === null || value === "") return "—";
+    if (key === "epoch") return String(value) + (run.expected_epochs ? " / " + run.expected_epochs : "");
+    if (key === "delta_m") return (Number(value) >= 0 ? "+" : "") + Number(value).toFixed(2);
+    return (Number(value) * 100).toFixed(2) + "%";
+  }
+  function renderComparison() {
+    const chosen = runs.filter(r => selected.has(r.job_id) && r.metrics);
+    compareHead.replaceChildren();
+    compareBody.replaceChildren();
+    const header = document.createElement("tr");
+    header.appendChild(cell("th", "Metric"));
+    chosen.forEach(r => {
+      const th = cell("th");
+      th.appendChild(cell("span", r.name, "run-title"));
+      th.appendChild(cell("span", r.job_id + (r.provisional ? " · provisional" : ""), "run-id"));
+      header.appendChild(th);
+    });
+    compareHead.appendChild(header);
+    if (!chosen.length) {
+      const tr = document.createElement("tr");
+      const td = cell("td", "Select one or more runs with available validation metrics.", "empty");
+      td.colSpan = 1;
+      tr.appendChild(td);
+      compareBody.appendChild(tr);
+      return;
+    }
+    metricRows.forEach(([label, key]) => {
+      const tr = document.createElement("tr");
+      tr.appendChild(cell("th", label));
+      chosen.forEach(r => {
+        const td = cell("td", formatMetric(key, r.metrics[key], r), "metric");
+        tr.appendChild(td);
+      });
+      compareBody.appendChild(tr);
+    });
+    const artifactRow = document.createElement("tr");
+    artifactRow.appendChild(cell("th", "Artifact"));
+    chosen.forEach(r => {
+      const td = cell("td");
+      if (r.zip_href) {
+        const a = cell("a", "Submission ZIP");
+        a.href = r.zip_href;
+        td.appendChild(a);
+      } else {
+        td.textContent = r.status === "pending" ? "Not available" : "No ZIP recorded";
+      }
+      artifactRow.appendChild(td);
+    });
+    compareBody.appendChild(artifactRow);
+  }
+  function renderRuns() {
+    const visible = availableRuns();
+    runRows.replaceChildren();
+    visible.forEach(r => {
+      const tr = document.createElement("tr");
+      const selectCell = cell("td");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = selected.has(r.job_id);
+      checkbox.disabled = !r.metrics;
+      checkbox.setAttribute("aria-label", "Compare " + r.name);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) selected.add(r.job_id);
+        else selected.delete(r.job_id);
+        render();
+      });
+      selectCell.appendChild(checkbox);
+      tr.appendChild(selectCell);
+
+      const jobCell = cell("td");
+      jobCell.appendChild(cell("span", r.name, "run-title"));
+      jobCell.appendChild(cell("span", r.job_id, "run-id"));
+      tr.appendChild(jobCell);
+
+      const statusCell = cell("td");
+      statusCell.appendChild(cell("span", r.status, "badge " + r.status));
+      statusCell.appendChild(cell("div", r.status_detail || (r.metrics ? "Validation available" : "Waiting for a run result"), "tiny"));
+      if (r.metrics && r.metrics.epoch !== undefined) {
+        statusCell.appendChild(cell("div", "Latest validation: epoch " + r.metrics.epoch, "tiny"));
+      }
+      tr.appendChild(statusCell);
+      tr.appendChild(cell("td", r.configuration));
+      runRows.appendChild(tr);
+    });
+    if (!visible.length) {
+      const tr = document.createElement("tr");
+      const td = cell("td", "No runs match these filters.", "empty");
+      td.colSpan = 4;
+      tr.appendChild(td);
+      runRows.appendChild(tr);
+    }
+    const count = runs.filter(r => selected.has(r.job_id) && r.metrics).length;
+    selectionCount.textContent = count + " run" + (count === 1 ? "" : "s") + " selected for comparison.";
+    renderComparison();
+  }
+  function render() { renderRuns(); }
+  document.getElementById("search").addEventListener("input", render);
+  document.getElementById("status-filter").addEventListener("change", render);
+  document.getElementById("select-visible").addEventListener("click", () => {
+    availableRuns().filter(r => r.metrics).forEach(r => selected.add(r.job_id));
+    render();
+  });
+  document.getElementById("clear-selection").addEventListener("click", () => {
+    selected.clear();
+    render();
+  });
+  render();
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{
+  "title": "TerraMind 48-epoch baseline and targeted runs",
+  "runs": [
+    {
+      "job_id": "326894",
+      "name": "48-epoch baseline",
+      "status": "completed",
+      "configuration": "Default anchors; box-loss weight 1; fixed loss weights; no photometric augmentation.",
+      "metrics_path": "results/tm-48baseline-326894/terramind_pretrained_moelora/seed_0/metrics.json",
+      "zip_path": "submissions/161026/tests-no-submit/tm-48baseline-326894/terramind_48epoch_baseline_calibrated.zip",
+      "compare_by_default": true
+    },
+    {
+      "job_id": "327063_0",
+      "name": "Small-object image sampling",
+      "status": "running",
+      "configuration": "Small-object anchors; box-loss weight 2; photometric augmentation; uncertainty weighting; samples images with tiny objects more often.",
+      "results_root": "results/targeted-small-327063/small_sampling",
+      "log_path": "runs/targeted-small-327063_0.out",
+      "expected_epochs": 48,
+      "compare_by_default": true
+    },
+    {
+      "job_id": "327063_1",
+      "name": "Stride-4 detail branch",
+      "status": "running",
+      "configuration": "Shared targeted recipe: small-object anchors; box-loss weight 2; photometric augmentation; uncertainty weighting; adds a stride-4 detail branch without image sampling.",
+      "results_root": "results/targeted-small-327063/detail_branch",
+      "log_path": "runs/targeted-small-327063_1.out",
+      "expected_epochs": 48,
+      "compare_by_default": true
+    },
+    {
+      "job_id": "327100",
+      "name": "Small-anchor fixed-weight ablation",
+      "status": "pending",
+      "configuration": "Small-object anchors; box-loss weight 2; photometric augmentation; fixed loss weights; no small-object image sampling.",
+      "results_root": "results/small-fixed-327100",
+      "expected_epochs": 48,
+      "compare_by_default": false
+    }
+  ]
+}
