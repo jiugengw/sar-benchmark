@@ -1,0 +1,24 @@
+{
+  "experiment": "E3",
+  "name": "yolo26s-p2-joint-from-init",
+  "strategy": "joint_from_init",
+  "architecture": "YOLO26s-P2",
+  "pretrained_weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/pretrained/yolo26s.pt",
+  "pretrained_weights_sha256": "646f8bc3fe0a656803d95c294f7852321748cb29d13466a1af8862e2db384a1b",
+  "classification_checkpoint_initialization": "random",
+  "epochs": 100,
+  "image_size": 512,
+  "batch_size": 16,
+  "seed": 0,
+  "optimizer": "AdamW",
+  "head_learning_rate": 0.001,
+  "shared_backbone_neck_learning_rate": 0.0001,
+  "classification_loss_weight": 0.5,
+  "augmentation": {
+    "mosaic": 0.0,
+    "mixup": 0.0,
+    "copy_paste": 0.0
+  },
+  "split": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json",
+  "ultralytics_version": "8.4.178"
+}

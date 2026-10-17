@@ -1,0 +1,12 @@
+{
+  "source": "Slurm accounting plus Ultralytics training log for the completed array task",
+  "slurm_array_task": "328337_1",
+  "gpu_name": null,
+  "wall_seconds": 11301,
+  "gpu_hours": 3.1391666666666667,
+  "peak_vram_gib_observed_console": null,
+  "peak_vram_note": "Maximum Ultralytics GPU_mem value in this task's array log; the original run did not capture the allocator peak.",
+  "total_parameters": 21071016,
+  "trainable_parameters": 21071016,
+  "best_weights": "runs/yolo26m-100-p2-328339/train/weights/best.pt"
+}

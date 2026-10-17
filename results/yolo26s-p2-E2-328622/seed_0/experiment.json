@@ -1,0 +1,750 @@
+{
+  "report_metadata": {
+    "python": "3.12.8",
+    "libraries": {
+      "torch": "2.9.0+cu128",
+      "ultralytics": "8.4.178"
+    },
+    "git_commit": "3f92a9d12a4798d5af87519df1ea1f434c14c60a",
+    "configuration": {
+      "backbone": "YOLO26s-P2 E2 joint fine-tuning",
+      "detector_architecture": "yolo",
+      "adapt": "native pretrained backbone, neck, and detection head",
+      "training_scheme": "full fine-tuning; no LoRA and no frozen layers",
+      "total_parameters": 9678193,
+      "trainable_parameters": 9678193,
+      "epochs": 15,
+      "image_size": 512,
+      "batch_size": 16,
+      "workers": 4,
+      "seed": 0,
+      "pretrained_weights": "runs/yolo26s-p2-E2-328622/train/weights/best.pt",
+      "dataset_yaml": "data/yolo11s-sar-512/dataset.yaml",
+      "split": "runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json",
+      "ultralytics_version": "8.4.178",
+      "validation_image_ids": 939,
+      "precision_recall_confidence": 0.25,
+      "precision_recall_iou": 0.5,
+      "image_classification_head": "runs/yolo26s-p2-E2-328622/image_classifier.pt",
+      "image_classification_training": "supervised from labels.csv; frozen detector features",
+      "evaluated_box_class_policies": [
+        "native_detector_classes",
+        "classifier_class_all_boxes",
+        "classifier_class_score_weighted"
+      ]
+    }
+  },
+  "args": {
+    "backbone": "YOLO26s-P2 E2 joint fine-tuning",
+    "detector_architecture": "yolo",
+    "adapt": "native pretrained backbone, neck, and detection head",
+    "training_scheme": "full fine-tuning; no LoRA and no frozen layers",
+    "total_parameters": 9678193,
+    "trainable_parameters": 9678193,
+    "epochs": 15,
+    "image_size": 512,
+    "batch_size": 16,
+    "workers": 4,
+    "seed": 0,
+    "pretrained_weights": "runs/yolo26s-p2-E2-328622/train/weights/best.pt",
+    "dataset_yaml": "data/yolo11s-sar-512/dataset.yaml",
+    "split": "runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json",
+    "ultralytics_version": "8.4.178",
+    "validation_image_ids": 939,
+    "precision_recall_confidence": 0.25,
+    "precision_recall_iou": 0.5,
+    "image_classification_head": "runs/yolo26s-p2-E2-328622/image_classifier.pt",
+    "image_classification_training": "supervised from labels.csv; frozen detector features",
+    "evaluated_box_class_policies": [
+      "native_detector_classes",
+      "classifier_class_all_boxes",
+      "classifier_class_score_weighted"
+    ]
+  },
+  "val": {
+    "mAP": 0.3808562190150049,
+    "AP50": 0.648362728096975,
+    "AP75": 0.38796623351937465,
+    "AP_small": 0.31022840749361236,
+    "AR_small": 0.4512148183287857,
+    "per_class_AP": {
+      "aircraft": 0.5849523976578959,
+      "airport": 0.577806264594149,
+      "bridge": 0.057500570922533384,
+      "car": 0.6028906187455215,
+      "harbor": 0.4780962031808593,
+      "oil_tank": 0.33578768991781266,
+      "playground": 0.027958539934012663,
+      "ship": 0.4741660221152031,
+      "wind_turbine": 0.28854766406705645
+    },
+    "precision_recall_at_conf_0_25_iou_0_50": {
+      "aircraft": {
+        "precision": 0.7900355871886121,
+        "recall": 0.9098360655737705,
+        "true_positives": 222,
+        "false_positives": 59,
+        "false_negatives": 22
+      },
+      "airport": {
+        "precision": 0.7142857142857143,
+        "recall": 0.8602150537634409,
+        "true_positives": 80,
+        "false_positives": 32,
+        "false_negatives": 13
+      },
+      "bridge": {
+        "precision": 0.47619047619047616,
+        "recall": 0.11142061281337047,
+        "true_positives": 40,
+        "false_positives": 44,
+        "false_negatives": 319
+      },
+      "car": {
+        "precision": 0.8559322033898306,
+        "recall": 0.905829596412556,
+        "true_positives": 404,
+        "false_positives": 68,
+        "false_negatives": 42
+      },
+      "harbor": {
+        "precision": 0.717391304347826,
+        "recall": 0.7746478873239436,
+        "true_positives": 165,
+        "false_positives": 65,
+        "false_negatives": 48
+      },
+      "oil_tank": {
+        "precision": 0.6838235294117647,
+        "recall": 0.46422628951747086,
+        "true_positives": 279,
+        "false_positives": 129,
+        "false_negatives": 322
+      },
+      "playground": {
+        "precision": 0.34285714285714286,
+        "recall": 0.047619047619047616,
+        "true_positives": 12,
+        "false_positives": 23,
+        "false_negatives": 240
+      },
+      "ship": {
+        "precision": 0.7987421383647799,
+        "recall": 0.8466666666666667,
+        "true_positives": 127,
+        "false_positives": 32,
+        "false_negatives": 23
+      },
+      "wind_turbine": {
+        "precision": 0.7587238285144566,
+        "recall": 0.8244853737811484,
+        "true_positives": 761,
+        "false_positives": 242,
+        "false_negatives": 162
+      }
+    },
+    "accuracy": 0.9275825346112886,
+    "macro_f1": 0.934599829770578,
+    "combined_delta_m": 22.957562722227447,
+    "balanced_accuracy": 0.9337370002584121,
+    "image_classification": {
+      "accuracy": 0.9275825346112886,
+      "macro_f1": 0.934599829770578,
+      "balanced_accuracy": 0.9337370002584121,
+      "per_class": {
+        "aircraft": {
+          "precision": 0.983739837398374,
+          "recall": 1.0,
+          "f1": 0.9918032786885246,
+          "support": 121
+        },
+        "airport": {
+          "precision": 0.9538461538461539,
+          "recall": 0.9393939393939394,
+          "f1": 0.9465648854961831,
+          "support": 66
+        },
+        "bridge": {
+          "precision": 0.7941176470588235,
+          "recall": 0.8780487804878049,
+          "f1": 0.833976833976834,
+          "support": 123
+        },
+        "car": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 49
+        },
+        "harbor": {
+          "precision": 0.9739130434782609,
+          "recall": 0.896,
+          "f1": 0.9333333333333333,
+          "support": 125
+        },
+        "oil_tank": {
+          "precision": 0.9318181818181818,
+          "recall": 0.924812030075188,
+          "f1": 0.9283018867924527,
+          "support": 133
+        },
+        "playground": {
+          "precision": 0.7981651376146789,
+          "recall": 0.7981651376146789,
+          "f1": 0.7981651376146789,
+          "support": 109
+        },
+        "ship": {
+          "precision": 0.9915966386554622,
+          "recall": 0.9672131147540983,
+          "f1": 0.979253112033195,
+          "support": 122
+        },
+        "wind_turbine": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 91
+        }
+      },
+      "confusion_matrix": [
+        [
+          121,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          62,
+          2,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          3,
+          108,
+          0,
+          1,
+          0,
+          11,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          49,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          5,
+          0,
+          112,
+          3,
+          3,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          0,
+          1,
+          123,
+          6,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          19,
+          0,
+          1,
+          2,
+          87,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0,
+          118,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          91
+        ]
+      ],
+      "confusion_columns": [
+        "aircraft",
+        "airport",
+        "bridge",
+        "car",
+        "harbor",
+        "oil_tank",
+        "playground",
+        "ship",
+        "wind_turbine"
+      ],
+      "method": "supervised image-classification head trained from labels.csv on frozen YOLO detection features",
+      "prediction_confidence": {
+        "mean_top1_probability": 0.9464005400388005,
+        "minimum_top1_probability": 0.31719037890434265,
+        "maximum_top1_probability": 1.0
+      }
+    },
+    "speed": {
+      "batch_size": 1,
+      "images": 939,
+      "wall_seconds": 8.22171681560576,
+      "pipeline_ms_per_image": 8.755821954851713,
+      "pipeline_images_per_second": 114.20972298847249,
+      "ultralytics_mean_stage_ms_per_image": {
+        "preprocess": 0.18983697508788083,
+        "inference": 7.00556525079825,
+        "postprocess": 0.561519506604622
+      },
+      "scope": "grayscale PNG decode, Ultralytics preprocessing, YOLO forward pass and NMS/postprocessing; batch size one; GPU warmup; pipeline wall time includes per-image host and GPU work"
+    },
+    "detection_derived_image_classification": {
+      "method": "class of highest-confidence detection with score >= 0.25; no qualifying detection is an unknown and counts as incorrect",
+      "confidence_threshold": 0.25,
+      "accuracy": 0.7326943556975506,
+      "macro_f1": 0.8201770719842606,
+      "balanced_accuracy": 0.7607512105385092,
+      "no_detection_images": 241,
+      "per_class": {
+        "aircraft": {
+          "precision": 1.0,
+          "recall": 0.9752066115702479,
+          "f1": 0.9874476987447699
+        },
+        "airport": {
+          "precision": 0.96875,
+          "recall": 0.9393939393939394,
+          "f1": 0.9538461538461539
+        },
+        "bridge": {
+          "precision": 0.975609756097561,
+          "recall": 0.3252032520325203,
+          "f1": 0.4878048780487805
+        },
+        "car": {
+          "precision": 1.0,
+          "recall": 0.9795918367346939,
+          "f1": 0.9896907216494846
+        },
+        "harbor": {
+          "precision": 0.9576271186440678,
+          "recall": 0.904,
+          "f1": 0.9300411522633745
+        },
+        "oil_tank": {
+          "precision": 0.9885057471264368,
+          "recall": 0.6466165413533834,
+          "f1": 0.7818181818181819
+        },
+        "playground": {
+          "precision": 1.0,
+          "recall": 0.1834862385321101,
+          "f1": 0.31007751937984496
+        },
+        "ship": {
+          "precision": 0.9912280701754386,
+          "recall": 0.9262295081967213,
+          "f1": 0.9576271186440678
+        },
+        "wind_turbine": {
+          "precision": 1.0,
+          "recall": 0.967032967032967,
+          "f1": 0.9832402234636871
+        }
+      },
+      "confusion_matrix": [
+        [
+          118,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ],
+        [
+          0,
+          62,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          2,
+          40,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          79
+        ],
+        [
+          0,
+          0,
+          0,
+          48,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          113,
+          0,
+          0,
+          0,
+          0,
+          12
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          86,
+          0,
+          1,
+          0,
+          46
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          2,
+          0,
+          20,
+          0,
+          0,
+          86
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          113,
+          0,
+          7
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          88,
+          3
+        ]
+      ],
+      "confusion_columns": [
+        "aircraft",
+        "airport",
+        "bridge",
+        "car",
+        "harbor",
+        "oil_tank",
+        "playground",
+        "ship",
+        "wind_turbine",
+        "unknown_no_detection"
+      ]
+    },
+    "detection_class_policies": {
+      "native_detector_classes": {
+        "mAP": 0.3808562190150049,
+        "AP50": 0.648362728096975,
+        "AP75": 0.38796623351937465,
+        "AP_small": 0.31022840749361236,
+        "AR_small": 0.4512148183287857,
+        "per_class_AP": {
+          "aircraft": 0.5849523976578959,
+          "airport": 0.577806264594149,
+          "bridge": 0.057500570922533384,
+          "car": 0.6028906187455215,
+          "harbor": 0.4780962031808593,
+          "oil_tank": 0.33578768991781266,
+          "playground": 0.027958539934012663,
+          "ship": 0.4741660221152031,
+          "wind_turbine": 0.28854766406705645
+        }
+      },
+      "classifier_class_all_boxes": {
+        "mAP": 0.37573210037140936,
+        "AP50": 0.6363243207193514,
+        "AP75": 0.38501378526960134,
+        "AP_small": 0.3077397679329235,
+        "AR_small": 0.4373772960148855,
+        "per_class_AP": {
+          "aircraft": 0.5842833511624669,
+          "airport": 0.5771199935486083,
+          "bridge": 0.054081261386600535,
+          "car": 0.6035066640673482,
+          "harbor": 0.45761777234846873,
+          "oil_tank": 0.3321333412885388,
+          "playground": 0.02073058623774269,
+          "ship": 0.4633684728663559,
+          "wind_turbine": 0.2887474604365543
+        },
+        "delta_vs_native": {
+          "mAP": -0.005124118643595521,
+          "AP50": -0.012038407377623628,
+          "AP75": -0.0029524482497733096,
+          "AP_small": -0.0024886395606888434,
+          "AR_small": -0.013837522313900175,
+          "per_class_AP": {
+            "aircraft": -0.0006690464954289821,
+            "airport": -0.0006862710455406429,
+            "bridge": -0.003419309535932849,
+            "car": 0.0006160453218266859,
+            "harbor": -0.020478430832390593,
+            "oil_tank": -0.0036543486292738847,
+            "playground": -0.0072279536962699745,
+            "ship": -0.010797549248847182,
+            "wind_turbine": 0.00019979636949785107
+          }
+        }
+      },
+      "classifier_class_score_weighted": {
+        "mAP": 0.37549261415481655,
+        "AP50": 0.6381760976413002,
+        "AP75": 0.38408563628727765,
+        "AP_small": 0.3081400849973547,
+        "AR_small": 0.4373772960148855,
+        "per_class_AP": {
+          "aircraft": 0.5845297820802015,
+          "airport": 0.5771875003528515,
+          "bridge": 0.054478608761122996,
+          "car": 0.6032311536898141,
+          "harbor": 0.4527683603012863,
+          "oil_tank": 0.33165376087630927,
+          "playground": 0.024469190587612145,
+          "ship": 0.4623673454424101,
+          "wind_turbine": 0.28874782530174065
+        },
+        "delta_vs_native": {
+          "mAP": -0.005363604860188331,
+          "AP50": -0.010186630455674806,
+          "AP75": -0.003880597232096994,
+          "AP_small": -0.0020883224962576774,
+          "AR_small": -0.013837522313900175,
+          "per_class_AP": {
+            "aircraft": -0.0004226155776944074,
+            "airport": -0.0006187642412974759,
+            "bridge": -0.003021962161410388,
+            "car": 0.0003405349442925365,
+            "harbor": -0.025327842879573015,
+            "oil_tank": -0.0041339290415033925,
+            "playground": -0.0034893493464005186,
+            "ship": -0.011798676672792996,
+            "wind_turbine": 0.000200161234684193
+          }
+        }
+      },
+      "comparison_note": "All policies were evaluated on the same fixed holdout; no holdout-based submission policy was selected."
+    }
+  },
+  "baseline_comparison": {
+    "run": "TerraMind + MoE-LoRA + RPN/ROI, job 326894",
+    "detection": {
+      "mAP": 0.34362374347940994,
+      "AP50": 0.6506300990356877,
+      "AP75": 0.31220414953469156,
+      "AP_small": 0.31510998329663775,
+      "AR_small": 0.39527032453723454,
+      "per_class_AP": {
+        "aircraft": 0.4000646068418396,
+        "airport": 0.48367268345773595,
+        "bridge": 0.030831356249652764,
+        "car": 0.5541188965511219,
+        "harbor": 0.41498618595116754,
+        "oil_tank": 0.40998712623621597,
+        "playground": 0.042911084850691374,
+        "ship": 0.37682876586639047,
+        "wind_turbine": 0.37921298530987413
+      }
+    },
+    "precision_recall_at_conf_0_25_iou_0_50": {
+      "aircraft": {
+        "precision": 0.4348697394789579,
+        "recall": 0.889344262295082,
+        "true_positives": 217,
+        "false_positives": 282,
+        "false_negatives": 27
+      },
+      "airport": {
+        "precision": 0.3547008547008547,
+        "recall": 0.8924731182795699,
+        "true_positives": 83,
+        "false_positives": 151,
+        "false_negatives": 10
+      },
+      "bridge": {
+        "precision": 0.0801068090787717,
+        "recall": 0.1671309192200557,
+        "true_positives": 60,
+        "false_positives": 689,
+        "false_negatives": 299
+      },
+      "car": {
+        "precision": 0.5482233502538071,
+        "recall": 0.968609865470852,
+        "true_positives": 432,
+        "false_positives": 356,
+        "false_negatives": 14
+      },
+      "harbor": {
+        "precision": 0.3689095127610209,
+        "recall": 0.7464788732394366,
+        "true_positives": 159,
+        "false_positives": 272,
+        "false_negatives": 54
+      },
+      "oil_tank": {
+        "precision": 0.5484276729559748,
+        "recall": 0.7254575707154742,
+        "true_positives": 436,
+        "false_positives": 359,
+        "false_negatives": 165
+      },
+      "playground": {
+        "precision": 0.13140311804008908,
+        "recall": 0.23412698412698413,
+        "true_positives": 59,
+        "false_positives": 390,
+        "false_negatives": 193
+      },
+      "ship": {
+        "precision": 0.541501976284585,
+        "recall": 0.9133333333333333,
+        "true_positives": 137,
+        "false_positives": 116,
+        "false_negatives": 13
+      },
+      "wind_turbine": {
+        "precision": 0.5571331981068289,
+        "recall": 0.8927410617551462,
+        "true_positives": 824,
+        "false_positives": 655,
+        "false_negatives": 99
+      }
+    },
+    "image_classification": {
+      "accuracy": 0.9094781682641108,
+      "macro_f1": 0.9134472028650725,
+      "balanced_accuracy": 0.9130858421312615,
+      "method": "TerraMind image classification head (native classification predictions)"
+    },
+    "speed": {
+      "batch_size": 1,
+      "images": 939,
+      "wall_seconds": 31.59347265213728,
+      "pipeline_ms_per_image": 33.64587076904929,
+      "pipeline_images_per_second": 29.7213291599484,
+      "scope": "grayscale PNG decode, project mean/std normalization, TerraMind + classification head + RPN/ROI postprocessing; batch size one; GPU warmup of 20 images; includes per-image host and GPU work",
+      "status": "completed"
+    }
+  },
+  "training": {
+    "completed_epochs": 15,
+    "training_seconds": null,
+    "training_seconds_note": "null for evaluation-only recovery jobs; the original training job completed its configured epochs",
+    "best_weights": "runs/yolo26s-p2-E2-328622/train/weights/best.pt",
+    "pretrained_weights_sha256": "f4e34c618a7d257aec239079a3cd65df1196bf880b9a387f83fa93ed2afb0099",
+    "best_weights_sha256": "f4e34c618a7d257aec239079a3cd65df1196bf880b9a387f83fa93ed2afb0099",
+    "classifier_head_checkpoint": "runs/yolo26s-p2-E2-328622/image_classifier.pt",
+    "ultralytics_version": "8.4.178",
+    "torch_version": "2.9.0+cu128",
+    "cuda_name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition MIG 1g.24gb",
+    "settings_file": "runs/yolo26s-p2-E2-328622/train/args.yaml"
+  },
+  "split": {
+    "train_images": 8453,
+    "validation_images": 939,
+    "source": "runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json"
+  },
+  "visual_comparison": {
+    "path": "results/yolo26s-p2-E2-328622/seed_0/visual_comparison.png",
+    "same_validation_image_ids": [
+      96,
+      77,
+      81,
+      617,
+      104,
+      1374,
+      112,
+      146,
+      35
+    ]
+  },
+  "predictions_file": "results/yolo26s-p2-E2-328622/seed_0/predictions_val.json",
+  "ground_truth_file": "results/yolo26s-p2-E2-328622/seed_0/instances_val_holdout.json",
+  "timing_note": "Speed measurements use batch size one and the same converted holdout PNGs. Each pipeline includes image decode, preprocessing, inference, and postprocessing. Twenty images are used for warmup. TerraMind timing is explicitly marked deferred if concurrent GPU memory prevents a valid measurement.",
+  "created_utc": "2026-10-16T19:03:39.484825+00:00"
+}

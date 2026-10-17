@@ -1,0 +1,14 @@
+{
+  "gpu_name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition MIG 1g.24gb",
+  "gpu_hours": 0.2821701990584067,
+  "wall_seconds": 1015.812716610264,
+  "peak_vram_allocated_gib": 5.028477668762207,
+  "peak_vram_reserved_gib": 6.220703125,
+  "total_parameters": 9678193,
+  "trainable_parameters": 0,
+  "best_combined_delta_m": 22.965940254756173,
+  "best_weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/yolo26s-p2-E2-328622/train/weights/best.pt",
+  "best_weights_sha256": "f4e34c618a7d257aec239079a3cd65df1196bf880b9a387f83fa93ed2afb0099",
+  "classifier_checkpoint": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/yolo26s-p2-E2-328622/image_classifier.pt",
+  "classifier_metrics": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/yolo26s-p2-E2-328622/best_classifier_metrics.json"
+}

@@ -1,0 +1,24 @@
+{
+  "experiment": "E2",
+  "name": "yolo26s-p2-joint-finetune",
+  "strategy": "joint_finetune",
+  "architecture": "YOLO26s-P2",
+  "pretrained_weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/yolo26s-100-p2-328338/train/weights/best.pt",
+  "pretrained_weights_sha256": "df823461a1d55a4f187930dfdde4c04caf39b201ab93548f2c372695c7bc22b8",
+  "classification_checkpoint_initialization": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/yolo26s-100-p2-328338/image_classifier.pt",
+  "epochs": 15,
+  "image_size": 512,
+  "batch_size": 16,
+  "seed": 0,
+  "optimizer": "AdamW",
+  "head_learning_rate": 0.001,
+  "shared_backbone_neck_learning_rate": 0.0001,
+  "classification_loss_weight": 0.5,
+  "augmentation": {
+    "mosaic": 0.0,
+    "mixup": 0.0,
+    "copy_paste": 0.0
+  },
+  "split": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json",
+  "ultralytics_version": "8.4.178"
+}
