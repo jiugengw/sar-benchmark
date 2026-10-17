@@ -1,0 +1,186 @@
+{
+  "holdout": {
+    "accuracy": 0.8817891373801917,
+    "macro_f1": 0.8929873160005255,
+    "balanced_accuracy": 0.8966078716644321,
+    "per_class": {
+      "aircraft": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 121
+      },
+      "airport": {
+        "precision": 0.875,
+        "recall": 0.9545454545454546,
+        "f1": 0.9130434782608695,
+        "support": 66
+      },
+      "bridge": {
+        "precision": 0.7301587301587301,
+        "recall": 0.7479674796747967,
+        "f1": 0.7389558232931726,
+        "support": 123
+      },
+      "car": {
+        "precision": 0.98,
+        "recall": 1.0,
+        "f1": 0.98989898989899,
+        "support": 49
+      },
+      "harbor": {
+        "precision": 0.8571428571428571,
+        "recall": 0.864,
+        "f1": 0.8605577689243028,
+        "support": 125
+      },
+      "oil_tank": {
+        "precision": 0.8793103448275862,
+        "recall": 0.7669172932330827,
+        "f1": 0.8192771084337349,
+        "support": 133
+      },
+      "playground": {
+        "precision": 0.7391304347826086,
+        "recall": 0.7798165137614679,
+        "f1": 0.7589285714285714,
+        "support": 109
+      },
+      "ship": {
+        "precision": 0.9672131147540983,
+        "recall": 0.9672131147540983,
+        "f1": 0.9672131147540983,
+        "support": 122
+      },
+      "wind_turbine": {
+        "precision": 0.989010989010989,
+        "recall": 0.989010989010989,
+        "f1": 0.989010989010989,
+        "support": 91
+      }
+    },
+    "confusion_matrix": [
+      [
+        121,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        63,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        6,
+        92,
+        0,
+        6,
+        3,
+        16,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        49,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        8,
+        0,
+        108,
+        2,
+        5,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        9,
+        0,
+        10,
+        102,
+        8,
+        4,
+        0
+      ],
+      [
+        0,
+        2,
+        14,
+        0,
+        2,
+        6,
+        85,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        1,
+        0,
+        2,
+        0,
+        118,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        90
+      ]
+    ],
+    "confusion_columns": [
+      "aircraft",
+      "airport",
+      "bridge",
+      "car",
+      "harbor",
+      "oil_tank",
+      "playground",
+      "ship",
+      "wind_turbine"
+    ]
+  },
+  "checkpoint": "runs/yolo11s-100-p2-328058/image_classifier.pt",
+  "epochs": 100,
+  "checkpoint_selection": "fixed final epoch; holdout was not used for checkpoint selection",
+  "optimizer": "AdamW",
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "class_weighting": "inverse training frequency",
+  "seed": 0,
+  "batch_size": 32,
+  "feature_extraction_seconds": 31.52283638296649,
+  "head_training_seconds": 13.624104118905962
+}

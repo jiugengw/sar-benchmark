@@ -6,6 +6,8 @@ The official results use 1,426 course validation images. The local gallery and d
 
 Shareable artifacts: [official-score comparison](phase3-official-comparison.png), [same-image detection contact sheet](phase3-detection-comparison.jpg), and [machine-readable score audit](score-audit.json).
 
+Archived training curves, raw per-epoch CSV logs, run arguments, and separate classifier histories are indexed in [curves/README.md](curves/README.md). This includes E5 YOLO26m-P2 and the other logged YOLO / RT-DETR runs.
+
 Older completed runs with `metrics.json`, `predictions_val.json`, and `instances_val_holdout.json` under `results/` remain selectable and are discovered automatically. All runs must use the same holdout for the visual comparison. The gallery shows up to 48 error examples at confidence 0.30 and IoU 0.50. The standalone contact sheet instead selects median-object-count examples within six classes, without selecting for which model wins. Both YOLO26m submission ZIPs are linked in the report.
 
 To refresh the snapshot, run:

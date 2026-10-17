@@ -10,6 +10,8 @@ training holdout; the TA's original benchmark scores are retained below as refer
 
 **Phase 3 joint fine-tuning:** the [YOLO26m + RT-DETR-L handoff](yolo_baseline/PHASE3_JOINT_FINETUNING.md) includes its Git LFS checkpoints, dataset conversion, RT-DETR preflight, and an interactive run script (`bash scripts/run_phase3_joint.sh`).
 
+**DenoDet V2:** the [DenoDet V2 setup](denodet_baseline/README.md) trains the authors' FFTResNet-50 + GFL detector with a shared image classification head, ImageNet initialization, and the existing saved split. Submit with `sbatch sbatch/denodet_v2.sbatch` after environment setup.
+
 **Current 48-epoch TerraMind comparison:** [select runs and compare metrics](reports/training-comparison/index.html). The report includes the completed 326894 baseline, the two running 327063 variants, and the queued fixed-weight run.
 
 ![One SAR image, one shared backbone, two heads: a class and the boxes](docs/task_pipeline.png)

@@ -1,0 +1,26 @@
+{
+  "variant": "p2",
+  "scale": "m",
+  "architecture": "YOLO11m-P2 (stride 4/8/16/32)",
+  "pretrained_weights": "pretrained/yolo11m.pt",
+  "classes": [
+    "aircraft",
+    "airport",
+    "bridge",
+    "car",
+    "harbor",
+    "oil_tank",
+    "playground",
+    "ship",
+    "wind_turbine"
+  ],
+  "epochs": 100,
+  "image_size": 512,
+  "batch_size": 16,
+  "workers": 4,
+  "seed": 0,
+  "optimizer": "auto (Ultralytics default)",
+  "augmentation": "identical Ultralytics YOLO11 defaults for both variants",
+  "trainable_parameters": 20027892,
+  "split": "runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json"
+}

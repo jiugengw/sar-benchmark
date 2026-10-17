@@ -8,6 +8,9 @@ phase3-joint-*.log
 /weights/
 .venv/
 .phase3-venv/
+.denodet-venv*/
+/third_party/
+/data/denodet-sar-512/
 __pycache__/
 .pytest_cache/
 .DS_Store
