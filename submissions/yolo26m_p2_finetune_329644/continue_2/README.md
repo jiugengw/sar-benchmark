@@ -16,6 +16,11 @@ The local gain is 0.3522 Delta m. Official scores for this second continuation
 are pending; the previous continuation's official Delta m is 34.5697. These
 local and official measurements use different images.
 
+On the 720-image clean holdout (no training twin), the first continuation scores
+macro-F1 93.4303%, mAP 41.7335%, Delta m 29.9219; the second scores 93.0817%,
+41.8928%, and 30.0398. The clean Delta m gain is only 0.1180. Full details are in
+the [saved clean comparison](../../../results/yolo26m_p2_finetune_329644/clean_continuation_comparison.json).
+
 The ZIP covers all 1,426 course validation images, using the one-to-many
 detection branch, native detector classes, 512px inputs, and no ensemble or
 test-time augmentation. `candidate.json` records checkpoint paths;

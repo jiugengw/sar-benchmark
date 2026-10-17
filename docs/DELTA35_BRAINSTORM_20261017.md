@@ -1,9 +1,42 @@
 # Beating official Δm +35: brainstorm (2026-10-17)
 
-Current best official result: Phase 3 YOLO26m-P2 joint, macro-F1 92.56%, mAP 38.78%, **Δm +23.80**.
-All diagnostics below were run on the 939-image local holdout using that model's exact submission-pipeline
+Latest recorded official result: YOLO26m-P2 first continuation, macro-F1 93.3310%, mAP 44.1919%,
+**Δm +34.5697**. The original brainstorm used the older Phase 3 joint model
+(macro-F1 92.56%, mAP 38.78%, Δm +23.80); its historical diagnostics and scenarios remain below.
+Those diagnostics were run on the 939-image local holdout using that model's exact submission-pipeline
 predictions (`results/phase3-yolo26m-joint-20261017-1516/submission-pipeline/`). They are local evidence,
 not official scores. Gain figures in the "headroom" table are scenarios, not predictions.
+
+## Quick follow-up: latest continuations and clean images
+
+Rescoring saved one-to-many predictions requires no retraining:
+
+| Run | Full holdout Δm (939) | Clean mAP (720) | Clean macro-F1 | Clean Δm |
+|---|---:|---:|---:|---:|
+| First continuation | 36.3202 | 41.7335% | 93.4303% | 29.9219 |
+| Second continuation | 36.6724 | 41.8928% | 93.0817% | 30.0398 |
+
+The second continuation gains only **0.1180 clean Δm**, compared with 0.3522 on
+the full holdout. This single comparison does not establish a reliable gain.
+These local clean scores are not forecasts of official scores: the first
+continuation already has official Δm 34.5697 despite clean Δm 29.9219.
+
+A direct query found **107 candidate training twins among 1,426 official
+validation images (7.50%)**, compared with 219/939 (23.32%) in the local
+holdout. The validation query uses 64×64 grayscale thumbnail Pearson
+correlation > 0.9, without class filtering because official labels are
+unavailable; matches have not been manually verified. This supports fewer
+training twins in official validation but does not isolate the cause of score gaps.
+
+Saved evidence: [clean continuation comparison](../results/yolo26m_p2_finetune_329644/clean_continuation_comparison.json)
+and [candidate validation twins](../results/yolo26m_p2_finetune_329644/official_validation_training_twins.json).
+Clean scores are also recorded beside each continuation's full holdout metrics.
+
+Keep training twins as useful speckle variants. For a new training comparison,
+select checkpoints on clean validation scores. Future fresh splits should keep
+connected same-scene twin groups together in training or validation; changing
+the split cannot remove information already learned by existing checkpoints.
+This improves evaluation reliability rather than directly increasing official AP.
 
 ## 1. What +35 requires
 
