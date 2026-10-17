@@ -1,5 +1,8 @@
 # Archived training curves
 
+The per-epoch histories here feed the curve graphs: each ZIP's `run.json` points at them (see
+[docs/RUN_TEMPLATE.md](../../docs/RUN_TEMPLATE.md)) and `tools/plot_training_curves.py` draws them.
+
 This folder preserves the epoch-by-epoch training artifacts that were generated under the ignored `runs/` directory.
 The source path for each run is `runs/<run-name>/train/`.
 

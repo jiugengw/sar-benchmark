@@ -22,7 +22,7 @@ def archive_curves(tag):
     for ready in run.glob('*_ready.json'):
         record = json.loads(ready.read_text())
         stage = record['stage']
-        destination = ROOT / 'reports/training-comparison/curves' / tag / stage
+        destination = ROOT / 'results/training-curves' / tag / stage
         destination.mkdir(parents=True, exist_ok=True)
         stage_run = run / stage
         # P1's detector logs are at its root train/; its classifier lives at p1/.

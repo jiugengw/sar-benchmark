@@ -3,7 +3,7 @@
  "histories": [
   {
    "type": "ultralytics",
-   "path": "reports/training-comparison/curves/E7-rtdetr-l-p2-328598/training.csv",
+   "path": "results/training-curves/E7-rtdetr-l-p2-328598/training.csv",
    "label": "E7 RT-DETR-L-P2 detector"
   }
  ]

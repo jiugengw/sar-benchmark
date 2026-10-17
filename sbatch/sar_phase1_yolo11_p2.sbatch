@@ -88,5 +88,4 @@ if [[ ! -f "$E4_RUN/skipped.json" ]]; then
     evaluate_and_package E4 "$E4_RUN" "$E4_RESULTS" 200 "YOLO11s-P2 E4 continued to 200 epochs"
 fi
 
-python reports/training-comparison/build_comparison.py
 echo "Phase 1 bundle completed: E2, E3, and conditional E4; each completed experiment has a submission ZIP."

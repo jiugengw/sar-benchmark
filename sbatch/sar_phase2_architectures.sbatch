@@ -232,7 +232,6 @@ train_evaluate_package() {
         --epochs "$epochs" --batch "$batch" --workers 4 \
         --classifier-checkpoint "$classifier_checkpoint" \
         --model-label "$model_label" --eval-only
-    python reports/training-comparison/build_comparison.py
 
     mkdir -p "$package_dir/scoring_result"
     touch "$package_dir/scoring_result/.gitkeep"
@@ -258,7 +257,6 @@ if [[ -z "$E5_RUN" ]]; then
 fi
 package_prior_yolo26s
 package_completed_e5 "$E5_RUN" "results/${E5_RUN##*/}/seed_0" pretrained/yolo26m.pt
-python reports/training-comparison/build_comparison.py
 
 E6_RUN="runs/yolo26n-100-p2-${SLURM_JOB_ID}"
 python -u models/yolo/train_yolo26s_p2.py \
@@ -281,7 +279,6 @@ python -u models/yolo/train_100_epoch.py \
 train_evaluate_package E9 "YOLO11n-P2 E9" yolo pretrained/yolo11n.pt \
     "$E9_RUN" 100 16 "$E9_RUN/image_classifier.pt" "$E9_RUN/train/weights/best.pt"
 
-python reports/training-comparison/build_comparison.py
 python - "$SLURM_JOB_ID" <<'PY'
 import os
 import csv

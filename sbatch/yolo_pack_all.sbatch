@@ -20,4 +20,3 @@ export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 
 python -u models/yolo/make_all_submissions.py
-python reports/training-comparison/build_comparison.py

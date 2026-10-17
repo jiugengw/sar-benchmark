@@ -3,7 +3,7 @@
  "histories": [
   {
    "type": "ultralytics",
-   "path": "reports/training-comparison/curves/yolo26s-100-p2-328338/training.csv",
+   "path": "results/training-curves/yolo26s-100-p2-328338/training.csv",
    "label": "YOLO26s-P2"
   }
  ]

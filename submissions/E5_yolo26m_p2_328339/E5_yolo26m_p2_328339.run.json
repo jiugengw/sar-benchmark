@@ -3,7 +3,7 @@
  "histories": [
   {
    "type": "ultralytics",
-   "path": "reports/training-comparison/curves/yolo26m-100-p2-328339/training.csv",
+   "path": "results/training-curves/yolo26m-100-p2-328339/training.csv",
    "label": "E5 YOLO26m-P2 detector"
   }
  ]

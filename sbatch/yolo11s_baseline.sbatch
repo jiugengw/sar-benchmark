@@ -37,4 +37,3 @@ python -u models/yolo/run_experiment.py \
 
 # Refresh the selectable report with the completed YOLO run. A report-rendering
 # hiccup should not mark a completed training job as failed.
-python reports/training-comparison/build_comparison.py || true

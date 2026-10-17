@@ -47,4 +47,3 @@ python -u models/yolo/run_experiment.py \
     --results-output "$RESULT_ROOT" \
     --epochs 24 --batch 16 --workers 4 "${RUN_ARGS[@]}"
 
-python reports/training-comparison/build_comparison.py || true

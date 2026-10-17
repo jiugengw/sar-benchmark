@@ -60,7 +60,6 @@ python -u models/yolo/run_experiment.py \
     --model-label "YOLO11${MODEL_SCALE}-200-P2" \
     --eval-only
 
-python reports/training-comparison/build_comparison.py
 
 PACKAGE_DIR="nonsubmissions/161026/${MODEL_NAME}-200-p2-${SLURM_JOB_ID}"
 mkdir -p "$PACKAGE_DIR/scoring_result"

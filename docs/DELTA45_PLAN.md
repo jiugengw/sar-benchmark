@@ -39,8 +39,6 @@ parallel. Compare every run on both the full and the clean holdout, and in the c
      **failed at startup and produced no result**. Find the error in the job log, fix it, rerun.
    - Cost: roughly 1.5–2× the compute of the current model for an extra stride-2 level (about 4× if the whole network
      ran at stride 2 instead).
-   - Ask the TA first whether keeping finer internal feature maps is allowed under "each image in once at
-     ≤ 512 × 512"; we do not upsample or tile the input.
 4. Then refit the 1024-neuron image classifier and the box nudge on top, as for the current best.
 
 **Track 2: an alternative detector, optical-pretrained (ImageNet, COCO or aerial photos; never SAR), ≤ 40M trainable parameters, one pass at 512 px**

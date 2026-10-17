@@ -46,4 +46,3 @@ python -u models/yolo/run_experiment.py \
     --model-label "YOLO11s-100-standard" \
     --eval-only
 
-python reports/training-comparison/build_comparison.py

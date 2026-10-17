@@ -4,12 +4,12 @@
  "histories": [
   {
    "type": "ultralytics",
-   "path": "reports/training-comparison/curves/yolo26m_p2_finetune_329644/continue_1/results.csv",
+   "path": "results/training-curves/yolo26m_p2_finetune_329644/continue_1/results.csv",
    "label": "continuation, 40 detector epochs"
   },
   {
    "type": "classifier_csv",
-   "path": "reports/training-comparison/curves/yolo26m_p2_finetune_329644/continue_1/classifier_training.csv",
+   "path": "results/training-curves/yolo26m_p2_finetune_329644/continue_1/classifier_training.csv",
    "label": "spatial image head"
   }
  ]

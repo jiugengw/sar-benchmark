@@ -52,4 +52,3 @@ python -u models/yolo/run_experiment.py \
     --model-label "YOLO26s-100-P2" \
     --eval-only
 
-python reports/training-comparison/build_comparison.py

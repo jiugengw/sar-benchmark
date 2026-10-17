@@ -165,7 +165,8 @@ attributable. TerraMind + Faster R-CNN topped out near 34.4% official mAP.
 | ResNet34 326077 | ImageNet-1k, full fine-tuning (38.46M trainable), FPN, `small_extreme`, LR 2e-5 | 93.94 / 32.19 / +11.93 |
 | ViT + LoRA + SAR CNN (teammate) | Rank-64 LoRA, stride-4/8 CNN fusion, 126.0M / 40.0M params; different 1,408-image holdout | 94.83 / 29.15 / — |
 
-None of these were uploaded. The paired review ([findings](../reports/vit-terramind-48/FINDINGS.md)) showed
+None of these were uploaded. A paired review (its image gallery has since been removed; compare the two runs in the
+[holdout viewer](../reports/holdout-viewer/index.html)) showed
 TerraMind matching 2,436 vs 2,350 objects at IoU 0.5 and 1,469 vs 1,324 at IoU 0.75 against ViT box-loss 2,
 winning on ship, car, oil tank, aircraft and wind turbine but losing on airport, harbor and playground.
 
@@ -261,7 +262,7 @@ result is recorded.
 **Lesson.** Against E5 officially: F1 +2.81, mAP −0.46, net only +0.62 Δm. Joint gradients through the shared
 backbone cost detection, which is worth 3.6× more per point. The 0.39-point training-to-export mAP difference
 also showed that only the exact submission pipeline should be trusted for local scores
-([training-comparison report](../reports/training-comparison/README.md)).
+(`tools/audit_submission_pipeline.py` scores that exact pipeline on the holdout).
 
 ---
 
@@ -430,7 +431,7 @@ P1 level, IoU-aware ranking, bridge/playground oversampling and class-conditione
 | [nonsubmissions/](../nonsubmissions/) | ZIPs packaged but never uploaded (ablations, ViT/ResNet comparisons, second continuation, quick head, box-only, map-only, DenoDet). |
 | [results/](../results/README.md) | Local metrics, holdout predictions and annotations per run, including clean-holdout scores and the twin audits in [results/yolo26m_p2_finetune_329644/](../results/yolo26m_p2_finetune_329644/). |
 | [checkpoints/](../checkpoints/README.md) | TerraMind/ViT/ResNet weights and configuration (Git LFS). YOLO checkpoints for Phase 3 are in `models/yolo/phase3_assets/`; the final image head is in the candidate's submission folder. |
-| `reports/` | [Training comparison](../reports/training-comparison/README.md) (curves, official-vs-local audit) and the [ViT/TerraMind paired review](../reports/vit-terramind-48/FINDINGS.md). |
+| `reports/` | [Holdout viewer](../reports/holdout-viewer/index.html) (every holdout image, runs side by side), [curve comparison](../reports/curve-compare/index.html), and the bridge/playground audit images. Raw per-epoch training CSVs are in [results/training-curves/](../results/training-curves/README.md). |
 
 Code entry points and Slurm scripts per model family are mapped in the [README](../README.md); training
 protocol details are in [DETAILS.md](./DETAILS.md) and [WORKFLOW.md](./WORKFLOW.md).

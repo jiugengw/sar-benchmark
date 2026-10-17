@@ -88,7 +88,6 @@ run_and_package() {
     if [[ -f "$run_root/experiment_config.json" ]]; then
         cp "$run_root/experiment_config.json" "$package_dir/config.json"
     fi
-    python reports/training-comparison/build_comparison.py
 }
 
 run_and_package yolo26l yolo26 l "YOLO26L-100-P2"
