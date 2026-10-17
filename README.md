@@ -47,10 +47,14 @@ classifier and a per-class box-edge correction.
 `yolo26m_p2_candidate_330230.zip`, official Δm +36.80, 29.7 M parameters. It was built in four steps
 ([details](docs/HISTORY.md)):
 
-1. E5: YOLO26m with a stride-4 (P2) detection level, 100 epochs.
-2. Continued for 40 detector-only epochs (job 329644), one-to-many prediction branch.
-3. A new, larger image classifier (the small network that names the image's class), trained while the detector
-   stayed frozen, so the boxes did not change. Its hidden layer has 1024 neurons instead of 512 (a layer width, not
+1. E5: YOLO26m with a stride-4 (P2) detection level, trained 100 epochs (detector only). A simple image
+   classifier (one linear layer on the averaged detector features) was then trained on the frozen detector:
+   holdout macro-F1 91.08%.
+2. The detector was trained 40 more epochs (detector only, job 329644; one-to-many prediction branch). A new
+   "spatial" classifier (feature averages, maxima and 2 × 2 regional averages, one 512-neuron hidden layer) was
+   trained on the frozen result: holdout macro-F1 94.58%, official Δm +34.57 on its own.
+3. That classifier was replaced by a larger one (the small network that names the image's class), again trained
+   while the detector stayed frozen, so the boxes did not change. Its hidden layer has 1024 neurons instead of 512 (a layer width, not
    an image size: images stay 512 × 512 px, one pass). It raised holdout macro-F1 from 94.58% to 96.06% (job 330230, `models/yolo/quick_classifier.py`).
 4. A small fixed nudge to every predicted box: for each class and image size, the box edges move by half the
    typical offset seen between predicted and true boxes (at most 1 px). It was learned on the 720 twin-free holdout
