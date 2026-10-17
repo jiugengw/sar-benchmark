@@ -1,4 +1,7 @@
-"""Add a stride-2 detection level to the trained E5 model and continue training."""
+"""Add a stride-2 (P1) detection level to a trained YOLO26m-P2 detector (default: continue_1) and train 40 epochs.
+
+The settings match the continue_2 control (40 epochs from continue_1, MuSGD, learning rate 0.001, no mosaic), so a
+gain over continue_2 (holdout mAP 44.98% full / 41.89% clean) comes from the new level."""
 from __future__ import annotations
 import argparse
 import copy
@@ -16,7 +19,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--epochs', type=int, default=40)
-    parser.add_argument('--batch', type=int, default=8)
+    parser.add_argument('--batch', type=int, default=16, help='16 matches the control; use 8 if memory runs out')
+    parser.add_argument('--source', type=Path,
+                        default=ROOT / 'runs/deadline-yolo26m-329644/continue_1/weights/best.pt',
+                        help='detector to extend; default the current best (continue_1) so gains stack')
+    parser.add_argument('--lr0', type=float, default=0.001, help='0.001 matches the control (continue_2)')
     args = parser.parse_args()
     import torch
     import yaml
@@ -30,7 +37,9 @@ def main():
     torch.manual_seed(0)
     args.output = args.output.resolve()
     args.output.mkdir(parents=True, exist_ok=True)
-    source_path = ROOT / 'models/yolo/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt'
+    source_path = args.source.resolve()
+    if not source_path.is_file():
+        raise FileNotFoundError(source_path)
     source = YOLO(str(source_path))
     config = copy.deepcopy(source.model.yaml)
     old_detect = config['head'].pop()
@@ -87,15 +96,15 @@ def main():
     write_json(args.output / 'transfer.json', {
         'source': str(source_path), 'source_sha256': hashlib.sha256(source_path.read_bytes()).hexdigest(),
         'copied_backbone_neck_layers': original_layers,
-        'copied_detection_levels': 'E5 P2-P5 copied exactly; new P1 towers initialized from E5 P2',
+        'copied_detection_levels': 'source P2-P5 copied exactly; new P1 towers initialized from the source P2 towers',
         'new_neck': 'stride-2 upsample plus first backbone feature; C3k2 initialized randomly',
         'strides': new_head.stride.tolist(), 'detector_parameters': total,
         'inherited_feature_equivalence_on_real_training_image': True,
-        'pretraining': 'E5 course-training checkpoint; original generic COCO pretraining, no external SAR weights',
+        'pretraining': 'course-trained source detector; original generic COCO pretraining, no external SAR weights',
     })
     del captured, source, old_head, new_head, image
     torch.cuda.empty_cache()
-    initial_weights = args.output / 'p1_initialized_from_e5.pt'
+    initial_weights = args.output / 'p1_initialized.pt'
     target.save(str(initial_weights))
     del target
     detector = YOLO(str(initial_weights))
@@ -103,8 +112,8 @@ def main():
     detector.train(
         data=str(ROOT / 'data/yolo11s-sar-512/dataset.yaml'), pretrained=True,
         epochs=args.epochs, imgsz=512, batch=args.batch, workers=4, device=0,
-        optimizer='MuSGD', lr0=0.003, lrf=0.05, momentum=0.9, weight_decay=0.0005,
-        warmup_epochs=2, warmup_bias_lr=0.0, cos_lr=True, seed=0, deterministic=True,
+        optimizer='MuSGD', lr0=args.lr0, lrf=0.1, momentum=0.9, weight_decay=0.0005,
+        warmup_epochs=1, warmup_bias_lr=0.0, cos_lr=True, seed=0, deterministic=True,
         mosaic=0.0, mixup=0.0, copy_paste=0.0, close_mosaic=0,
         translate=0.05, scale=0.2, fliplr=0.5, flipud=0.5,
         hsv_h=0.0, hsv_s=0.0, hsv_v=0.2, multi_scale=0.0,

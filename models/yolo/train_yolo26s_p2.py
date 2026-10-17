@@ -83,6 +83,9 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--flipud", type=float, default=0.0,
+                        help="vertical-flip probability; overhead images have no up, so 0.5 is a free augmentation")
+    parser.add_argument("--close-mosaic", type=int, default=10, help="turn mosaic off for the last N epochs")
     args = parser.parse_args()
     if args.weights is None:
         args.weights = Path(f"pretrained/yolo26{args.scale}.pt")
@@ -141,6 +144,8 @@ def main() -> None:
         "batch_size": args.batch,
         "workers": args.workers,
         "seed": 0,
+        "flipud": args.flipud,
+        "close_mosaic": args.close_mosaic,
         "optimizer": "auto (Ultralytics default)",
         "augmentation": "Ultralytics YOLO26 defaults",
         "trainable_parameters": parameter_count,
@@ -170,6 +175,8 @@ def main() -> None:
         plots=True,
         val=True,
         cache=False,
+        flipud=args.flipud,
+        close_mosaic=args.close_mosaic,
     )
     torch.cuda.synchronize()
     elapsed = time.perf_counter() - started

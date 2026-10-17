@@ -11,9 +11,10 @@ cd "${SLURM_SUBMIT_DIR:?}"
 source /opt/apps/lmod/lmod/init/bash
 module load Python/3.12.8-GCCcore-13.3.0
 source .venv/bin/activate
-export PYTHONPATH="${SLURM_SUBMIT_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
+export PYTHONPATH="${SLURM_SUBMIT_DIR}:${SLURM_SUBMIT_DIR}/models/yolo${PYTHONPATH:+:${PYTHONPATH}}"
 export OMP_NUM_THREADS=4
 export PYTHONUNBUFFERED=1
 export MPLCONFIGDIR="/tmp/sar-y26-p1-${SLURM_JOB_ID}"
+# Stride-2 (P1) level on the current best detector (continue_1); control: continue_2. Use --batch 8 if memory runs out.
 python -u models/yolo/train_yolo26m_p1.py \
-    --output "runs/deadline-yolo26m-p1-${SLURM_JOB_ID}" --epochs 40 --batch 8
+    --output "runs/ft40-p1-${SLURM_JOB_ID}" --epochs 40 --batch 16
