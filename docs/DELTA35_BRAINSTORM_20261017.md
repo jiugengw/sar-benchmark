@@ -38,6 +38,22 @@ connected same-scene twin groups together in training or validation; changing
 the split cannot remove information already learned by existing checkpoints.
 This improves evaluation reliability rather than directly increasing official AP.
 
+### Thirty-minute follow-up: deterministic box-edge correction
+
+The first continuation's frozen predictions support a quick calibration candidate:
+fit half the median edge residual for each class/source width, clipped to one
+pixel at 512px and requiring at least 12 matched boxes. Two fixed seeds split
+the 720 clean images into class-stratified halves, keeping connected twin groups
+together. Fitting on one half and evaluating on the other, then reversing,
+gives mAP gains of **0.6043, 0.8138, 0.8698, and 0.8408 percentage points**.
+
+The final offsets fit all 720 clean images. Their final fitted full/clean scores
+are descriptive because those images participate in calibration; the four
+held-out checks above are the evidence for transfer. Classification is unchanged.
+The [candidate ZIP and calibration audit](../submissions/yolo26m_p2_box_bias_20261017/)
+are ready; official scoring is pending. Reproduce with
+`yolo_baseline/quick_box_bias.py` and `yolo_baseline/package_box_bias.py`.
+
 ## 1. What +35 requires
 
 `Δm = 50 × [(F1 / 0.9331 − 1) + (mAP / 0.2613 − 1)]`
