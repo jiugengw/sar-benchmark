@@ -1,0 +1,221 @@
+{
+  "val": {
+    "mAP": 0.44980640602761934,
+    "AP50": 0.7145305395242671,
+    "AP75": 0.4658972441835942,
+    "AP_small": 0.38100677193036203,
+    "AR_small": 0.49745941575666475,
+    "per_class_AP": {
+      "aircraft": 0.63126485528365,
+      "airport": 0.7534703950689873,
+      "bridge": 0.057635897001796464,
+      "car": 0.62956387750957,
+      "harbor": 0.605040257825797,
+      "oil_tank": 0.43591540159688325,
+      "playground": 0.10105535677130771,
+      "ship": 0.4357242025206492,
+      "wind_turbine": 0.3985874106699327
+    },
+    "accuracy": 0.9382321618743344,
+    "macro_f1": 0.9443249106941648,
+    "balanced_accuracy": 0.9430300927562496,
+    "image_classification": {
+      "accuracy": 0.9382321618743344,
+      "macro_f1": 0.9443249106941648,
+      "balanced_accuracy": 0.9430300927562496,
+      "per_class": {
+        "aircraft": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 121
+        },
+        "airport": {
+          "precision": 0.96875,
+          "recall": 0.9393939393939394,
+          "f1": 0.9538461538461539,
+          "support": 66
+        },
+        "bridge": {
+          "precision": 0.7841726618705036,
+          "recall": 0.8861788617886179,
+          "f1": 0.8320610687022901,
+          "support": 123
+        },
+        "car": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 49
+        },
+        "harbor": {
+          "precision": 0.96,
+          "recall": 0.96,
+          "f1": 0.96,
+          "support": 125
+        },
+        "oil_tank": {
+          "precision": 0.968,
+          "recall": 0.9097744360902256,
+          "f1": 0.937984496124031,
+          "support": 133
+        },
+        "playground": {
+          "precision": 0.8640776699029126,
+          "recall": 0.8165137614678899,
+          "f1": 0.839622641509434,
+          "support": 109
+        },
+        "ship": {
+          "precision": 0.9754098360655737,
+          "recall": 0.9754098360655737,
+          "f1": 0.9754098360655737,
+          "support": 122
+        },
+        "wind_turbine": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 91
+        }
+      },
+      "confusion_matrix": [
+        [
+          121,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          62,
+          2,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          109,
+          0,
+          2,
+          2,
+          9,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          49,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          3,
+          0,
+          120,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          6,
+          0,
+          1,
+          121,
+          3,
+          2,
+          0
+        ],
+        [
+          0,
+          1,
+          17,
+          0,
+          2,
+          0,
+          89,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          0,
+          0,
+          1,
+          0,
+          119,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          91
+        ]
+      ],
+      "confusion_columns": [
+        "aircraft",
+        "airport",
+        "bridge",
+        "car",
+        "harbor",
+        "oil_tank",
+        "playground",
+        "ship",
+        "wind_turbine"
+      ]
+    },
+    "combined_delta_m": 36.67236241337619
+  },
+  "submission_pipeline": {
+    "format": "project classification.csv + COCO detection.json",
+    "split": "course validation; unlabeled leaderboard split",
+    "images": 939,
+    "detections": 63464,
+    "image_size": 512,
+    "input_channels": "grayscale; Ultralytics expands one channel to three identical channels",
+    "resize": "PIL bilinear stretch to 512 x 512; boxes mapped back to original image coordinates",
+    "classification_rule": "supervised image-classification head top-1 class",
+    "box_class_policy": "native_detector_classes",
+    "detection_branch": "one2many",
+    "effective_detection_branch": "one2many",
+    "nms_iou": 0.7,
+    "classifier_feature_pooling": "spatial",
+    "classifier_checkpoint": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/deadline-yolo26m-329644/continue_2/image_classifier.pt",
+    "classification_fallback_class": 4,
+    "batch_size": 16,
+    "inference_seconds_including_resize_and_zip": 25.934848516248167,
+    "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/deadline-yolo26m-329644/continue_2/weights/best.pt",
+    "weights_sha256": "c3ba99707ebbbb1224e2edb90132ac594e82c049785fa9698b4b1f974537b12f",
+    "zip": "/tmp/sar-deadline-holdout-u363cixy/holdout.zip",
+    "zip_sha256": "a74a6b5f32bd40e343a3c9307e70ae1ad97029e24cbfb47b1bcc360c1bcb2bd4"
+  },
+  "split": "939-image labeled training holdout; no official labels"
+}

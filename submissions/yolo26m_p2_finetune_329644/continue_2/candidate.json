@@ -1,0 +1,15 @@
+{
+  "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/deadline-yolo26m-329644/continue_2/weights/best.pt",
+  "classifier": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/deadline-yolo26m-329644/continue_2/image_classifier.pt",
+  "branch": "one2many",
+  "holdout": {
+    "macro_f1": 0.9443249106941648,
+    "mAP": 0.44980640602761934,
+    "combined_delta_m": 36.67236241337619
+  },
+  "official_score": null,
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512,
+  "training_split": "8453 images; fixed 939-image holdout excluded"
+}

@@ -26,6 +26,8 @@ def main():
     parser.add_argument("--batch", type=int, default=8)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--stop-after-epoch", type=int,
+                        help="Stop at this total epoch while preserving the original LR schedule on resume")
     parser.add_argument("--preflight-only", action="store_true")
     parser.add_argument("--run-settings", type=Path,
                         help="JSON settings overriding CLI epochs; defaults to OUTPUT/run_settings.json if present")
@@ -41,6 +43,9 @@ def main():
         raise FileNotFoundError(settings_path)
     if args.epochs < 3 or args.batch < 1:
         raise ValueError("Need at least three epochs and a positive batch size")
+    if args.stop_after_epoch is not None:
+        if not args.resume or not 1 <= args.stop_after_epoch <= args.epochs:
+            raise ValueError("--stop-after-epoch requires --resume and must be within the original schedule")
     if not args.weights.is_file():
         raise FileNotFoundError(f"Run scripts/setup_denodet.sh first: missing {args.weights}")
     # The official ImageNet-1K ResNet50 V1 URL includes this SHA256 prefix.
@@ -69,6 +74,8 @@ def main():
     cfg = build_config(ROOT, dataset, metadata, args.output, args.weights,
                        args.epochs, args.batch, args.workers)
     cfg.resume = args.resume
+    if args.stop_after_epoch is not None:
+        cfg.train_cfg.max_epochs = args.stop_after_epoch
     cfg.dump(str(args.output / "config.py"))
     runner = Runner.from_cfg(cfg)
     model = runner.model
@@ -103,6 +110,7 @@ def main():
                     upstream_commit=upstream, initialization="torchvision ImageNet-1K ResNet50 V1 only",
                     pretrained_checkpoint=str(args.weights), pretrained_sha256=weight_hash,
                     sar_pretrained_checkpoint=False, seed=0, epochs=args.epochs, batch=args.batch,
+                    stop_after_epoch=args.stop_after_epoch, resumed=args.resume,
                     run_settings=str(settings_path.resolve()) if settings_path.is_file() else None,
                     precision="float32 (including FFT denoising)", parameters=total, trainable_parameters=trainable,
                     gpu=torch.cuda.get_device_name(0), torch_version=torch.__version__,

@@ -77,3 +77,18 @@ The trainer reads this optional per-run file before preparing data and logs the
 resolved duration; it takes precedence over the submitted CLI epoch count.
 This changes the upcoming training duration without interrupting the CUDA build.
 Changing this file after the trainer starts does not alter a running schedule.
+
+## Recovery and continuation
+
+Run `329477` failed while saving epoch 20 after a disk-quota error. Recovery job
+`329870` deliberately stopped at epoch 32 with `--epochs 48 --stop-after-epoch 32`,
+preserving the original learning-rate drops at epochs 32 and 44. Its completed
+[results](../results/denodet-v2-329477-epoch32/) and
+[submission](../submissions/sar-experiments/denodet-v2-329477-epoch32/) are archived.
+
+Job `330220` resumes the saved epoch-32 optimizer/model state through epoch 48
+using `sbatch/denodet_v2_resume.sbatch` (four-hour allocation, 32 GB host memory).
+The log confirms `resumed epoch: 32, iter: 33824`; epoch 33 uses learning rate 0.1.
+The best detection-mAP checkpoint is evaluated and exported after training.
+Local weights, logs, and the epoch-32 metadata/weights snapshot remain in
+`runs/denodet-v2-329477/`. Do not resubmit the resume script while this job runs.
