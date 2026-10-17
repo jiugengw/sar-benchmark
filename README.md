@@ -52,7 +52,9 @@ classifier and a per-class box-edge correction.
 3. A new, larger image classifier (the small network that names the image's class), trained while the detector
    stayed frozen, so the boxes did not change. Its hidden layer has 1024 neurons instead of 512 (a layer width, not
    an image size: images stay 512 × 512 px, one pass). It raised holdout macro-F1 from 94.58% to 96.06% (job 330230, `models/yolo/quick_classifier.py`).
-4. A per-class box-edge correction, cross-fitted on twin-free holdout images.
+4. A small fixed nudge to every predicted box: for each class and image size, the box edges move by half the
+   typical offset seen between predicted and true boxes (at most 1 px). It was learned on the 720 twin-free holdout
+   images and checked by learning on one half and testing on the other (+0.6 to +0.9 mAP points each time).
 
 Files: the ZIP, `image_classifier.pt` and `box_bias_crossfit.json` are in
 [submissions/yolo26m_p2_candidate_330230/](submissions/yolo26m_p2_candidate_330230/). Its holdout predictions are in
@@ -97,7 +99,7 @@ How the best submission (`yolo26m_p2_candidate_330230.zip`, Δm +36.80) was buil
 1. **E5 detector:** YOLO26m with a P2 level, 100 epochs from COCO weights: `models/yolo/train_yolo26s_p2.py` via `sbatch/yolo26_all_p2_100.sbatch`.
 2. **Continuation:** 40 more detector-only epochs from E5, then a spatial image head on the frozen features: `models/yolo/deadline_recovery.py` via `sbatch/deadline_yolo26m.sbatch` (official Δm +34.57 on its own).
 3. **Larger image classifier:** the detector stays frozen (boxes unchanged) while a new classifier with a 1024-neuron hidden layer (wider than the old 512; input images stay 512 × 512) learns the image class from its features: `models/yolo/quick_classifier.py` via `sbatch/quick_classifier.sbatch`.
-4. **Box-edge correction:** per class and image width, fitted on clean holdout images: `models/yolo/quick_box_bias.py`, packaged with `models/yolo/package_box_bias.py`.
+4. **Box-edge correction:** each predicted box edge moves by half the typical predicted-vs-true offset for its class and image size (at most 1 px), learned on clean holdout images: `models/yolo/quick_box_bias.py`, packaged with `models/yolo/package_box_bias.py`.
 
 Repository layout:
 
