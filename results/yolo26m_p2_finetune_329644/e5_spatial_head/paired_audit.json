@@ -1,0 +1,32 @@
+{
+  "method": "Paired bootstrap of images, stratified by image class; COCO AP matching cached per image",
+  "images": 939,
+  "replicates": 200,
+  "random_seed": 20261017,
+  "point_estimates": {
+    "baseline_mAP": 0.4067238650530102,
+    "candidate_mAP": 0.40672040278576355,
+    "baseline_macro_f1": 0.91078603194019,
+    "candidate_macro_f1": 0.9413245499849473
+  },
+  "gain_intervals": {
+    "mAP_gain": {
+      "lower_95": -5.719333292915213e-05,
+      "upper_95": 3.2098473688650665e-05,
+      "bootstrap_mean": -7.156426923456138e-06
+    },
+    "macro_f1_gain": {
+      "lower_95": 0.016704924447005425,
+      "upper_95": 0.043735995149953535,
+      "bootstrap_mean": 0.030724973533934285
+    },
+    "delta_m_gain": {
+      "lower_95": 0.8935484606038108,
+      "upper_95": 2.3427236915661096,
+      "bootstrap_mean": 1.6450229341111628
+    }
+  },
+  "detection_gain_lower_bound_positive": false,
+  "limitation": "Conditional on the existing holdout and selected models. Does not correct earlier adaptive selection or estimate official split shift.",
+  "coco_accumulation_equivalence_checked": true
+}

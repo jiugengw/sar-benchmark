@@ -435,7 +435,9 @@ def main() -> None:
 
         def capture_classifier_features(_module, inputs, output):
             features = feature_maps_from_hook(args.architecture, inputs, output)
-            classifier_feature_batches.append(pool_detection_features(features).detach())
+            classifier_feature_batches.append(pool_detection_features(
+                features, classifier_payload.get("feature_pooling", "mean")
+            ).detach())
 
         classifier_hook = detection_head(detector.model).register_forward_hook(capture_classifier_features)
     if parameter_counts is None:

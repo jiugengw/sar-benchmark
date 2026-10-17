@@ -55,10 +55,13 @@ def main() -> None:
                         help="Ultralytics detector family used by the checkpoint")
     parser.add_argument("--classifier-checkpoint", type=Path,
                         help="optional supervised image-classification head trained on detector features")
+    parser.add_argument("--detection-branch", choices=("default", "one2one", "one2many"), default="default")
+    parser.add_argument("--nms-iou", type=float, default=0.7)
     parser.add_argument("--box-class-policy", choices=(
         "native_detector_classes", "classifier_class_all_boxes", "classifier_class_score_weighted"
     ), default="native_detector_classes")
     args = parser.parse_args()
+    branch_nms = None if args.detection_branch == "default" else args.detection_branch == "one2many"
 
     import torch
     from detector_support import detection_head, feature_maps_from_hook, load_detector
@@ -99,6 +102,15 @@ def main() -> None:
         raise FileExistsError(f"Refusing to overwrite temporary archive {temporary_zip}")
 
     detector = load_detector(args.weights, args.architecture)
+    if args.detection_branch != "default":
+        if args.architecture != "yolo":
+            raise ValueError("Explicit branch selection is supported only for YOLO")
+        head = detection_head(detector.model)
+        if args.detection_branch == "one2many" and getattr(head, "cv2", None) is None:
+            raise ValueError("This checkpoint has already removed its one-to-many branch")
+        if args.detection_branch == "one2one" and getattr(head, "one2one_cv2", None) is None:
+            raise ValueError("This checkpoint has no one-to-one branch")
+        detector.model.end2end = args.detection_branch == "one2one"
     if model_names(detector.names) != class_names:
         raise ValueError(f"Checkpoint classes {model_names(detector.names)} do not match {class_names}")
     device = torch.device("cuda:0")
@@ -108,19 +120,15 @@ def main() -> None:
     if args.classifier_checkpoint:
         from image_head import load_classifier_head, pool_detection_features
 
-        embedded_head = getattr(detector.model, "image_classifier", None)
-        if embedded_head is not None:
-            classifier_payload = torch.load(args.classifier_checkpoint, map_location="cpu", weights_only=True)
-            embedded_head.load_state_dict(classifier_payload["state_dict"], strict=True)
-            classifier_head = embedded_head.to(device).eval()
-        else:
-            classifier_head, classifier_payload = load_classifier_head(args.classifier_checkpoint, device)
+        classifier_head, classifier_payload = load_classifier_head(args.classifier_checkpoint, device)
         if classifier_payload.get("class_names") != class_names:
             raise ValueError("Image-classifier and detector class names differ")
 
         def capture_classifier_features(_module, inputs, output):
             feature_maps = feature_maps_from_hook(args.architecture, inputs, output)
-            classifier_feature_batches.append(pool_detection_features(feature_maps).detach().cpu())
+            classifier_feature_batches.append(pool_detection_features(
+                feature_maps, classifier_payload.get("feature_pooling", "mean")
+            ).detach().cpu())
 
         # Register before Ultralytics creates its predictor on the first call;
         # predictor setup can replace the model object and lose later hooks.
@@ -152,10 +160,10 @@ def main() -> None:
         if classifier_head is not None:
             # Warm up Ultralytics before installing the feature hook so its dummy
             # batch cannot be mistaken for a real image's classifier features.
-            first_image = temp_root / f"{int(images[0]['id']):08d}.png"
             list(detector.predict(
-                source=str(first_image), imgsz=IMAGE_SIZE, batch=1, workers=0, device=0,
-                conf=0.001, iou=0.7, max_det=300, stream=True, verbose=False, save=False,
+                source=Image.new("RGB", (IMAGE_SIZE, IMAGE_SIZE)), imgsz=IMAGE_SIZE, batch=1, workers=0, device=0,
+                conf=0.001, iou=args.nms_iou, max_det=300, stream=True, verbose=False, save=False,
+                nms=branch_nms,
             ))
             classifier_feature_batches.clear()
 
@@ -166,7 +174,8 @@ def main() -> None:
             workers=args.workers,
             device=0,
             conf=0.001,
-            iou=0.7,
+            iou=args.nms_iou,
+            nms=branch_nms,
             max_det=300,
             stream=True,
             verbose=False,
@@ -240,6 +249,9 @@ def main() -> None:
 
         if processed != len(images):
             raise RuntimeError(f"Predicted {processed}/{len(images)} official validation images")
+        actual_branch = "one2one" if getattr(detector.predictor.model, "end2end", False) else "one2many"
+        if args.detection_branch != "default" and actual_branch != args.detection_branch:
+            raise RuntimeError(f"Requested {args.detection_branch}, but the inference backend selected {actual_branch}")
         if classifier_hook is not None:
             classifier_hook.remove()
 
@@ -276,6 +288,10 @@ def main() -> None:
             "in course training labels"
         ),
         "box_class_policy": args.box_class_policy,
+        "detection_branch": args.detection_branch,
+        "effective_detection_branch": actual_branch,
+        "nms_iou": args.nms_iou,
+        "classifier_feature_pooling": classifier_payload.get("feature_pooling", "mean") if classifier_head is not None else None,
         "classifier_checkpoint": str(args.classifier_checkpoint) if args.classifier_checkpoint else None,
         "classification_fallback_class": fallback_class,
         "batch_size": args.batch,

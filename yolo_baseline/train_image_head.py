@@ -42,12 +42,13 @@ class ImageLabels(Dataset):
 
 
 def extract_features(detector, loader: DataLoader, device: torch.device,
-                     architecture: str = "yolo") -> tuple[torch.Tensor, torch.Tensor]:
+                     architecture: str = "yolo", pooling: str = "mean",
+                     train_flips: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
     captured: list[torch.Tensor] = []
 
     def capture(_module, inputs, output):
         feature_maps = feature_maps_from_hook(architecture, inputs, output)
-        captured.append(pool_detection_features(feature_maps).detach().cpu())
+        captured.append(pool_detection_features(feature_maps, pooling).detach().cpu())
 
     handle = detection_head(detector.model).register_forward_hook(capture)
     features, labels = [], []
@@ -55,16 +56,18 @@ def extract_features(detector, loader: DataLoader, device: torch.device,
         detector.model.eval()
         with torch.inference_mode():
             for images, targets in loader:
-                captured.clear()
                 images = images.to(device, non_blocking=True)
-                if architecture == "deformable_detr":
-                    detector.model(**detector.prepare_batch(images))
-                else:
-                    detector.model(images)
-                if len(captured) != 1 or captured[0].shape[0] != len(targets):
-                    raise RuntimeError(f"Could not capture one set of {architecture} feature maps per image batch")
-                features.append(captured.pop())
-                labels.append(targets.clone())
+                for flip_dims in ([(), (-1,), (-2,), (-2, -1)] if train_flips else [()]):
+                    captured.clear()
+                    view = images.flip(flip_dims) if flip_dims else images
+                    if architecture == "deformable_detr":
+                        detector.model(**detector.prepare_batch(view))
+                    else:
+                        detector.model(view)
+                    if len(captured) != 1 or captured[0].shape[0] != len(targets):
+                        raise RuntimeError(f"Could not capture one set of {architecture} feature maps per image batch")
+                    features.append(captured.pop())
+                    labels.append(targets.clone())
     finally:
         handle.remove()
     return torch.cat(features), torch.cat(labels).long()
@@ -81,6 +84,13 @@ def main() -> None:
     parser.add_argument("--batch", type=int, default=32)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--architecture", choices=("yolo", "rtdetr", "deformable_detr"), default="yolo")
+    parser.add_argument("--feature-pooling", choices=("mean", "spatial"), default="mean")
+    parser.add_argument("--hidden-dim", type=int, default=0)
+    parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--head-batch", type=int, help="cached-feature training batch; defaults to --batch")
+    parser.add_argument("--learning-rate", type=float, default=1e-3)
+    parser.add_argument("--weight-decay", type=float, default=1e-4)
+    parser.add_argument("--train-flips", action="store_true", help="training views only; validation uses one original image")
     args = parser.parse_args()
 
     if not torch.cuda.is_available():
@@ -89,6 +99,7 @@ def main() -> None:
     np.random.seed(0)
     torch.manual_seed(0)
     torch.cuda.manual_seed_all(0)
+    torch.set_num_threads(max(1, args.workers))
     device = torch.device("cuda:0")
 
     class_names = json.loads((args.dataset_root / "conversion_manifest.json").read_text())["classes"]
@@ -117,18 +128,27 @@ def main() -> None:
     )
 
     detector = load_detector(args.detector_checkpoint, args.architecture)
+    detector_parameters = sum(parameter.numel() for parameter in detector.model.parameters())
     detector.model.to(device).eval()
     torch.cuda.reset_peak_memory_stats(device)
     total_start = time.perf_counter()
     start = time.perf_counter()
-    train_features, train_targets = extract_features(detector, train_loader, device, args.architecture)
-    val_features, val_targets = extract_features(detector, val_loader, device, args.architecture)
+    print(f"Extracting {args.feature_pooling} features; train flips={args.train_flips}", flush=True)
+    train_features, train_targets = extract_features(detector, train_loader, device, args.architecture,
+                                                   args.feature_pooling, args.train_flips)
+    val_features, val_targets = extract_features(detector, val_loader, device, args.architecture,
+                                               args.feature_pooling)
     extraction_seconds = time.perf_counter() - start
     del detector
     torch.cuda.empty_cache()
 
     feature_dim = int(train_features.shape[1])
-    head = ImageClassifierHead(feature_dim, len(class_names), dropout=0.2).to(device)
+    head = ImageClassifierHead(feature_dim, len(class_names), dropout=args.dropout,
+                               hidden_dim=args.hidden_dim).to(device)
+    classifier_parameters = sum(parameter.numel() for parameter in head.parameters())
+    if detector_parameters + classifier_parameters > 40_000_000:
+        raise RuntimeError("Detector plus classifier exceeds the conservative 40M full-training parameter budget")
+    print(f"Head: {classifier_parameters:,} parameters; features={feature_dim}; training views={len(train_targets)}", flush=True)
     train_features = train_features.to(device)
     train_targets = train_targets.to(device)
     val_features = val_features.to(device)
@@ -136,10 +156,10 @@ def main() -> None:
     counts = torch.bincount(train_targets, minlength=len(class_names)).float()
     class_weights = counts.sum() / (len(class_names) * counts.clamp_min(1))
     criterion = torch.nn.CrossEntropyLoss(weight=class_weights.to(device))
-    optimizer = torch.optim.AdamW(head.parameters(), lr=1e-3, weight_decay=1e-4)
+    optimizer = torch.optim.AdamW(head.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
     generator = torch.Generator().manual_seed(0)
     batch = TensorDataset(train_features, train_targets)
-    loader = DataLoader(batch, batch_size=args.batch, shuffle=True, generator=generator)
+    loader = DataLoader(batch, batch_size=args.head_batch or args.batch, shuffle=True, generator=generator)
 
     training_start = time.perf_counter()
     best_metrics = None
@@ -190,21 +210,29 @@ def main() -> None:
         "feature_dim": feature_dim,
         "num_classes": len(class_names),
         "class_names": class_names,
-        "dropout": 0.2,
+        "dropout": args.dropout,
+        "hidden_dim": args.hidden_dim,
+        "feature_pooling": args.feature_pooling,
         "state_dict": head.state_dict(),
-        "feature_source": f"global average pooling of every feature map passed to the {args.architecture} terminal detection module",
+        "feature_source": f"{args.feature_pooling} pooling of every feature map passed to the {args.architecture} terminal detection module",
         "supervision": "data/course-data/train/labels.csv image labels on the saved 8453/939 TerraMind split",
-        "architecture": "LayerNorm + Dropout(0.2) + Linear(feature_dim, 9)",
+        "architecture": f"LayerNorm + Dropout + {'Linear/GELU/Dropout + ' if args.hidden_dim else ''}Linear",
         "training": {
             "epochs": args.epochs,
             "checkpoint_selection": "best validation macro-F1; with a fixed detector this maximizes the combined delta_m",
             "best_epoch": best_epoch,
             "optimizer": "AdamW",
-            "learning_rate": 1e-3,
-            "weight_decay": 1e-4,
+            "learning_rate": args.learning_rate,
+            "weight_decay": args.weight_decay,
+            "feature_pooling": args.feature_pooling,
+            "hidden_dim": args.hidden_dim,
+            "classifier_parameters": classifier_parameters,
+            "detector_parameters": detector_parameters,
+            "total_parameters": detector_parameters + classifier_parameters,
+            "train_flips": args.train_flips,
             "class_weighting": "inverse training frequency",
             "seed": 0,
-            "batch_size": args.batch,
+            "batch_size": args.head_batch or args.batch,
             "architecture": args.architecture,
             "feature_extraction_seconds": extraction_seconds,
             "head_training_seconds": head_training_seconds,

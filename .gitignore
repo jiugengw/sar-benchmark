@@ -14,3 +14,8 @@ phase3-joint-*.log
 __pycache__/
 .pytest_cache/
 .DS_Store
+
+# Internal live artifacts; published snapshots use experiment names.
+/submissions/deadline-yolo26m-329644
+/results/deadline-yolo26m-329644
+/reports/training-comparison/curves/deadline-yolo26m-329644
