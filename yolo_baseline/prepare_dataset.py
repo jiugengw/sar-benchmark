@@ -27,7 +27,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=Path, default=Path("data/course-data"))
     parser.add_argument("--split", type=Path,
-                        default=Path("runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json"))
+                        default=Path("results/yolo26m-100-p2-328339/seed_0/split.json"))
     parser.add_argument("--out", type=Path, default=Path("data/yolo11s-sar-512"))
     parser.add_argument("--size", type=int, default=512)
     args = parser.parse_args()

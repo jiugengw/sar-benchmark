@@ -191,6 +191,11 @@ def main() -> None:
     if best_classifier_metrics is None:
         raise RuntimeError("Joint trainer did not retain classifier metrics for its best combined checkpoint")
     per_class_path.write_text(json.dumps(best_classifier_metrics, indent=2) + "\n")
+    best_detection_metrics = getattr(model.trainer, "best_detection_metrics", None)
+    if best_detection_metrics is None:
+        raise RuntimeError("Joint trainer did not retain detector per-class metrics for its best checkpoint")
+    detection_metrics_path = output / "best_detection_metrics.json"
+    detection_metrics_path.write_text(json.dumps(best_detection_metrics, indent=2) + "\n")
 
     compute = {
         "gpu_name": torch.cuda.get_device_name(device),
@@ -205,6 +210,7 @@ def main() -> None:
         "best_weights_sha256": sha256(best_weights),
         "classifier_checkpoint": str(classifier_path),
         "classifier_metrics": str(per_class_path),
+        "detection_metrics": str(detection_metrics_path),
     }
     (output / "compute.json").write_text(json.dumps(compute, indent=2) + "\n")
     print(json.dumps(compute, indent=2), flush=True)

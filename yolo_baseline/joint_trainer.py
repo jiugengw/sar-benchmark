@@ -27,6 +27,23 @@ def combined_delta_m(macro_f1: float, map_score: float) -> float:
     )
 
 
+def detection_class_metrics(metrics) -> list[dict]:
+    """Serialize per-class detection precision, recall, F1 and COCO AP."""
+    return [
+        {
+            "class": str(row["Class"]),
+            "images": int(row["Images"]),
+            "instances": int(row["Instances"]),
+            "precision": float(row["Box-P"]),
+            "recall": float(row["Box-R"]),
+            "f1": float(row["Box-F1"]),
+            "map50": float(row["mAP50"]),
+            "map50_95": float(row["mAP50-95"]),
+        }
+        for row in metrics.summary()
+    ]
+
+
 def align_image_labels(image_paths: list[str], class_by_stem: dict[str, int]) -> tuple[torch.Tensor, torch.Tensor]:
     targets = [class_by_stem.get(Path(str(path)).stem, -1) for path in image_paths]
     target_tensor = torch.tensor(targets, dtype=torch.long)
@@ -88,6 +105,7 @@ class JointDetectionTrainer(DetectionTrainer):
         self.val_loader = None
         self.best_combined_fitness = float("-inf")
         self.best_classifier_metrics: dict | None = None
+        self.best_detection_metrics: list[dict] | None = None
 
     def get_model(self, cfg=None, weights=None, verbose=True):
         """Build the joint model, transfer detector weights, and preserve E2's trained classifier."""
@@ -226,6 +244,7 @@ class JointDetectionTrainer(DetectionTrainer):
         if delta_m > self.best_combined_fitness:
             self.best_combined_fitness = delta_m
             self.best_classifier_metrics = classifier_metrics
+            self.best_detection_metrics = detection_class_metrics(self.validator.metrics)
         # BaseTrainer.save_model uses best_fitness == fitness to write best.pt.
         self.best_fitness = self.best_combined_fitness
         return metrics, delta_m

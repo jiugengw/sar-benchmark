@@ -2,3 +2,4 @@ data/*.tar.gz filter=lfs diff=lfs merge=lfs -text
 checkpoints/**/model.pt filter=lfs diff=lfs merge=lfs -text
 checkpoints/vit_pretrained_base_seed0.pt filter=lfs diff=lfs merge=lfs -text
 checkpoints/resnet34-imagenet1k-b627a593.pth filter=lfs diff=lfs merge=lfs -text
+yolo_baseline/phase3_assets/checkpoints/*.pt filter=lfs diff=lfs merge=lfs -text

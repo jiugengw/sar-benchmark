@@ -1,4 +1,5 @@
 runs/
+phase3-joint-*.log
 /reports/detection-review/
 /data/course-data/
 /data/yolo11s-sar-512/
@@ -6,6 +7,7 @@ runs/
 /pretrained/
 /weights/
 .venv/
+.phase3-venv/
 __pycache__/
 .pytest_cache/
 .DS_Store

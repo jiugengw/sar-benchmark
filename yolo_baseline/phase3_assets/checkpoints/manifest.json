@@ -1,0 +1,25 @@
+{
+  "asset_set": "phase3-joint-finetuning-baselines",
+  "files": {
+    "E5_yolo26m_p2_best.pt": {
+      "source": "runs/yolo26m-100-p2-328339/train/weights/best.pt",
+      "size_bytes": 42789839,
+      "sha256": "75631501420ac93e109fec9ec490b8a8adba8461f9e8f146d039f644081beea0"
+    },
+    "E5_yolo26m_image_classifier.pt": {
+      "source": "runs/yolo26m-100-p2-328339/image_classifier.pt",
+      "size_bytes": 69751,
+      "sha256": "f6aa358636c5911944eff924a47db9a265ef288f6f0304d1757ffd8c18325798"
+    },
+    "E7_rtdetr_l_p2_best.pt": {
+      "source": "runs/E7-rtdetr-l-p2-328598/train/weights/best.pt",
+      "size_bytes": 71371349,
+      "sha256": "a6d8bc1b8d52fd8bacd9f4d852a80e3b4af3687fcba1a7b41eef06da0a0685ed"
+    },
+    "E7_rtdetr_l_image_classifier.pt": {
+      "source": "runs/E7-rtdetr-l-p2-328598/image_classifier.pt",
+      "size_bytes": 52855,
+      "sha256": "c554c1a7b663cd45ad2bbab656a04a8df1afe7181b8c9464cb3da8119af23033"
+    }
+  }
+}
