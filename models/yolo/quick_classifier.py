@@ -168,7 +168,7 @@ def main():
     for subset in ['full', 'clean']:
         assert abs(clean_report[subset]['macro_f1'] - best_metrics[subset]['macro_f1']) < 1e-6
     assert abs(metrics['mAP'] - saved_baseline['full']['mAP']) < 1e-9
-    package_dir = ROOT / 'submissions' / output.name
+    package_dir = ROOT / 'nonsubmissions' / output.name
     package_dir.mkdir(parents=True, exist_ok=True)
     package = package_dir / f'{output.name}.zip'
     run([sys.executable, '-u', ROOT / 'models/yolo/make_submission.py', '--weights', weights,

@@ -92,7 +92,7 @@ def candidate(weights, stage, output, tag, feature_batch=32):
     for branch in ('one2one', 'one2many'):
         branches[branch] = evaluate_export(weights, classifier, branch, results_root / branch)
     selected = max(branches, key=lambda key: branches[key]['combined_delta_m'])
-    submission_root = ROOT / 'submissions' / tag / stage
+    submission_root = ROOT / 'nonsubmissions' / tag / stage
     submission_root.mkdir(parents=True, exist_ok=True)
     package = submission_root / f'{tag}_{stage}.zip'
     run([sys.executable, '-u', ROOT / 'models/yolo/make_submission.py',

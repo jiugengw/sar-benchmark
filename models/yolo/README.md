@@ -1,6 +1,6 @@
 # Ultralytics YOLO SAR comparisons
 
-The best submission (YOLO26m-P2, official Δm +36.80) comes from this folder. The [code map](../../README.md#4-code-structure) lists the four scripts that built it, in order; [docs/HISTORY.md](../../docs/HISTORY.md) explains each step. The sections below document the earlier YOLO comparison phases.
+The best submission (YOLO26m-P2, official Δm +36.80) comes from this folder. The [code map](../../README.md#code-structure) lists the four scripts that built it, in order; [docs/HISTORY.md](../../docs/HISTORY.md) explains each step. The sections below document the earlier YOLO comparison phases.
 
 These runs compare the native Ultralytics detector against TerraMind + RPN/ROI. Every run uses the same saved 8,453/939 train/holdout split, 512 × 512 grayscale SAR images, nine classes, 24 epochs, batch size 16, and pretrained weights. Ultralytics expands grayscale images to three equal channels for its pretrained model.
 
