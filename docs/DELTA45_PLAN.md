@@ -1,12 +1,57 @@
-# Beating official Δm +35: brainstorm (2026-10-17)
+# Beating official Δm +45: plan
 
-Best official result: `yolo26m_p2_candidate_330230.zip`, **Δm +36.80**: the first continuation's
-detector with a wider image head and the box-edge correction below. The first continuation alone scored
-macro-F1 93.3310%, mAP 44.1919%, Δm +34.5697. The original brainstorm used the older Phase 3 joint model
-(macro-F1 92.56%, mAP 38.78%, Δm +23.80); its historical diagnostics and scenarios remain below.
-Those diagnostics were run on the 939-image local holdout using that model's exact submission-pipeline
-predictions (`results/phase3-yolo26m-joint-20261017-1516/submission-pipeline/`). They are local evidence,
-not official scores. Gain figures in the "headroom" table are scenarios, not predictions.
+Target raised from +35 to **+45** on 2026-10-18, after the best official result reached **Δm +36.80**
+(`yolo26m_p2_candidate_330230.zip`: macro-F1 94.69%, mAP 44.98%). This top section is the current plan, a first
+draft to refine. Everything below it is the record from the +35 phase: diagnostics, twins, the box-edge correction
+and ideas, many still relevant.
+
+## What +45 requires
+
+`Δm = 50 × [(F1 / 0.9331 − 1) + (mAP / 0.2613 − 1)]`. One mAP point ≈ +1.91 Δm, one F1 point ≈ +0.54 Δm.
++45 needs +8.2 Δm over today, almost all of it from detection:
+
+| Official macro-F1 | Official mAP needed for Δm +45 |
+|---:|---:|
+| 94.69% (today) | 49.3% (+4.3 points) |
+| 97.0% | 48.6% (+3.6) |
+| 100% | 47.8% (+2.8) |
+
+Even perfect classification leaves +2.8 mAP points to find. Detection is the job.
+
+## Draft plan (to refine)
+
+Rule: **no SAR-pretrained weights** (SARDet-100K/MSFA, SARATR-X, SAR-JEPA and similar are not allowed). Pretraining
+on optical images (COCO, ImageNet) is fine. Two Slurm slots, so run one YOLO track and one alternative-model track in
+parallel. Compare every run on both the full and the clean holdout, and in the curve and holdout viewers.
+
+**Track 1: keep improving YOLO26m-P2 (the current best, about 44.8% holdout mAP before the box nudge)**
+
+1. Tiny-box loss: add an NWD (normalized Wasserstein distance) term to the box loss; SAR small-ship papers report
+   gains on small targets. Cheapest change.
+2. One fresh 200-epoch detector run from COCO weights, one learning-rate schedule, mosaic kept on until the last 20
+   epochs, plus vertical flips (and 90° rotations): overhead images have no "up". The chained 100 + 40 + 40 recipe
+   plateaued at about 140 epochs.
+3. **Finer detection level (stride 2, "P1").** "Stride" is how many image pixels one cell of a feature grid
+   covers. Our finest level today is stride 4: a 128 × 128 grid on a 512 px image, so an 8 px wind turbine covers
+   only 2 × 2 cells. Adding a stride-2 level (256 × 256 grid) gives it 4 × 4 cells, which should mean tighter boxes on
+   5–10 px objects. The input stays one 512 px image. This is the biggest structural lever for our tiny objects.
+   - It was tried once (job 329663, `models/yolo/train_yolo26m_p1.py`, `sbatch/deadline_yolo26m_p1.sbatch`) but
+     **failed at startup and produced no result**. Find the error in the job log, fix it, rerun.
+   - Cost: roughly 1.5–2× the compute of the current model for an extra stride-2 level (about 4× if the whole network
+     ran at stride 2 instead).
+   - Ask the TA first whether keeping finer internal feature maps is allowed under "each image in once at
+     ≤ 512 × 512"; we do not upsample or tile the input.
+4. Then refit the 1024-neuron image classifier and the box nudge on top, as for the current best.
+
+**Track 2: an alternative detector, optical-pretrained (ImageNet, COCO or aerial photos; never SAR), ≤ 40M trainable parameters, one pass at 512 px**
+
+1. **Dome-DETR** (ACM MM 2025): a DETR built for tiny objects (AI-TOD-V2, average object ≈ 13 px, close to our
+   ≈ 16 px median); code is public. Check its parameter count first.
+2. **DEIM / D-FINE (M size, ≈ 19M parameters):** DETRs that refine each box edge as a distribution, aimed at tight
+   boxes, our weak spot. Note that RT-DETR-L-P2 (E7) scored official +22.85, below YOLO26m's +23.18.
+3. **ConvNeXt-T + GFL** (ImageNet weights, ≈ 35M trainable) in the existing MMDetection environment.
+
+Lower priority: RF-DETR and other ViT-backbone detectors (16 px patches are too coarse for 6–15 px objects).
 
 ## Quick follow-up: latest continuations and clean images
 
@@ -90,7 +135,7 @@ were not uploaded on their own. The same correction, combined with a wider image
 best submission (official Δm +36.80). Reproduce with
 `models/yolo/quick_box_bias.py` and `models/yolo/package_box_bias.py`.
 
-## 1. What +35 requires
+## 1. What +35 required (+35 phase)
 
 `Δm = 50 × [(F1 / 0.9331 − 1) + (mAP / 0.2613 − 1)]`
 

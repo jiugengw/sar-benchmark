@@ -8,7 +8,7 @@ classifier and a per-class box-edge correction.
 
 - **[docs/HISTORY.md](docs/HISTORY.md): the full record.** Every attempt, part by part: why we tried it, what we
   ran (configs, job IDs, code), local and official scores, and the lesson.
-- **[docs/DELTA35_BRAINSTORM_20261017.md](docs/DELTA35_BRAINSTORM_20261017.md): our plans.** Where the remaining
+- **[docs/DELTA45_PLAN.md](docs/DELTA45_PLAN.md): our plan to reach Δm +45** (draft), followed by the +35-phase analysis. The candidate models are explained [below](#candidate-models-to-run-next). Where the remaining
   mAP is lost, ranked ideas to go further, and a one-change-at-a-time experiment plan.
 - **[submissions/README.md](submissions/README.md): official scores.** Every ZIP uploaded to Codabench, with its Δm.
   Packaged ZIPs that were never uploaded are in [nonsubmissions/](nonsubmissions/).
@@ -41,6 +41,53 @@ classifier and a per-class box-edge correction.
 - **Metric:** macro-F1 for classification, COCO mAP for detection, ranked by
   `Δm = 50 × [(F1 / 0.9331 − 1) + (mAP / 0.2613 − 1)]` against the TA's ViT + LoRA reference
   (macro-F1 93.31%, mAP 26.13%). One mAP point is worth about 1.91 Δm and one F1 point about 0.54 Δm.
+
+## Candidate models to run next
+
+The rules allow pretrained weights from **optical** images but **not from SAR**. "Optical" means ordinary camera
+pictures made from visible light, like the photos a phone takes: colour, sharp edges, no speckle. Our SAR images
+are radar echoes instead: microwave reflections, grayscale and grainy. A model pretrained on photos has already
+learned general shapes and edges, then we fine-tune it on SAR. That helps, but less than pretraining on the same
+kind of image would.
+
+The usual optical pretraining sets:
+
+- **ImageNet:** about 1.3 million everyday photos, each labelled with one of 1,000 things (a dog, a car, a bridge).
+  Used to pretrain a *backbone*, the part of a model that turns pixels into features.
+- **COCO:** about 118,000 everyday photos with boxes drawn around 80 kinds of object (people, cars, boats,
+  aeroplanes). Used to pretrain a whole *detector*.
+- **Objects365:** about 2 million photos with boxes for 365 kinds of object; a bigger COCO-like set.
+- **AI-TOD and VisDrone:** aerial and drone photos full of tiny objects (AI-TOD's average object is about 13 px).
+  Still optical, but seen from above like our SAR images.
+
+**What every model was pretrained on.** "Backbone" is the part that turns pixels into features; "detector" means
+the whole model including its box-predicting head.
+
+Models we have already trained:
+
+| Model | Pretrained on | Where in our code |
+|---|---|---|
+| **YOLO11 / YOLO26** (n–l), incl. the current best YOLO26m-P2 | Whole detector on **COCO** (official Ultralytics weights) | `pretrained/yolo11*.pt`, `pretrained/yolo26*.pt` |
+| **RT-DETR-L** (E7) | Whole detector on **COCO** (official Ultralytics weights) | `pretrained/rtdetr-l.pt` |
+| **ViT-B/16** (TA reference) | Backbone on **ImageNet-21k** (about 14 million photos, 21,000 labels) | `sarbench/backbones.py` |
+| **TerraMind-1.0-base** (TA reference) | Backbone on Earth-observation data from satellites, **including Sentinel-1 radar (SAR)** and Sentinel-2 optical | `sarbench/backbones.py` |
+| **ResNet34** | Backbone on **ImageNet-1K** (torchvision) | `sarbench/backbones.py` |
+| **DenoDet V2** (ResNet-50) | Backbone on **ImageNet-1K** only; no SAR checkpoint | `models/denodet/` |
+
+TerraMind came with the TA's reference code, but it has seen radar images; check with the TA before relying on it
+again under the no-SAR-pretraining rule.
+
+Candidates to run next (details in the [Δm +45 plan](docs/DELTA45_PLAN.md)), all within 40M trainable parameters
+and one pass at 512 px:
+
+| Model | What it is | Why it might help us | Pretrained on |
+|---|---|---|---|
+| **Dome-DETR** (ACM MM 2025) | A DETR (transformer detector) built for tiny objects: it first finds where objects cluster, then spends its attention and box queries there | Designed for objects about our size (AI-TOD averages ≈ 13 px; our median is ≈ 16 px); reports +3.3 AP on AI-TOD-V2 over earlier methods | Backbone (HGNetV2) on **ImageNet**. Released detector weights trained on **AI-TOD-V2 and VisDrone**: aerial and drone photos, optical, so allowed; academic use only. No COCO version mentioned in the paper |
+| **DEIM / D-FINE** (M size, ≈ 19M parameters) | DETRs that predict each box edge as a refined probability distribution instead of one number; DEIM is a training recipe that converges faster | Our biggest loss is boxes that are a pixel or two off on tiny objects, and finer edge prediction targets exactly that | Backbone (HGNetV2) on **ImageNet**. Whole detector on **COCO**, or on **Objects365 then COCO**, which the authors recommend as the starting point for fine-tuning |
+| **ConvNeXt-T + GFL** | A modern CNN backbone (≈ 28.6M) with the GFL detection head, which scores boxes by their predicted quality | A strong, different architecture family; ConvNeXt-T beat ResNet-50 on the large SAR benchmark SARDet-100K | Backbone on **ImageNet-1K** only. The GFL head starts untrained (no COCO checkpoint for this pairing was found) |
+
+Not allowed: anything pretrained on SAR, such as SARDet-100K/MSFA, SARATR-X or SAR-JEPA weights. Lower priority:
+ViT-based detectors such as RF-DETR, whose 14–16 px patches are too coarse for 6–15 px objects.
 
 ## Best model: test and rebuild it
 

@@ -398,7 +398,7 @@ audit found 57% / 61% of boxes matched at IoU ≥ 0.3 at some score, but median 
 Ruled out: classifier gating/relabelling of boxes (oracle +0.19 mAP at best), maxDets 300 (+0.02), GT shifts,
 size snapping, per-class score calibration, bigger generic detectors. Ranked next ideas (NWD loss/assignment,
 P1 level, IoU-aware ranking, bridge/playground oversampling and class-conditioned detection) are in
-[DELTA35_BRAINSTORM_20261017.md](./DELTA35_BRAINSTORM_20261017.md).
+[DELTA45_PLAN.md](./DELTA45_PLAN.md).
 
 ---
 
