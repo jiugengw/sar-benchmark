@@ -7,7 +7,14 @@
     "mAP": 0.4475468363992632,
     "combined_delta_m": 36.320161033756705
   },
-  "official_score": null,
+  "official_score": {
+    "delta_m": 34.569653499468906,
+    "macro_f1": 93.33098794340412,
+    "mAP": 44.19187821543707,
+    "accuracy": 93.68863955119214,
+    "AP50": 70.8678960810555,
+    "provenance": "Official scores.json contents supplied by user on 2026-10-17; F1, mAP, accuracy and AP50 in percent"
+  },
   "no_ensemble": true,
   "no_test_time_augmentation": true,
   "image_size": 512,

@@ -103,7 +103,9 @@ retained. Local gains do not establish the official target.
 
 Package: `submissions/yolo26m_p2_finetune_329644/continue_1/yolo26m_p2_finetune_40ep_329644.zip`.
 The ZIP passed archive integrity and schema checks with all 1,426 unique image labels and 103,065 valid detections.
-No official score is available yet. The second 40-epoch block is running; DenoDet continues and P1 remains queued.
+Official scores supplied by the user: **macro-F1 93.3310%, mAP 44.1919%, Delta m 34.5697**, accuracy 93.6886%, AP50 70.8679%. The target of 30 is exceeded by 4.5697 points. Raw values are saved under the candidate scoring_result directory.
+
+At 20:22 SGT the second YOLO 40-epoch block is running (11 epochs complete), with approximately one hour including export remaining. DenoDet failed at 20:08 while saving epoch 20 due to filesystem quota; epoch 19 is preserved. P1 failed at startup immediately after that slot opened. These two jobs are no longer running or queued. The file-count quota was relieved by moving regenerable Python bytecode caches to temporary storage.
 
 Against the original E5 on the same 939-image holdout, paired bootstrap estimates
 a mAP gain of 4.08 percentage points (95% interval +3.28 to +5.01) and an F1 gain
