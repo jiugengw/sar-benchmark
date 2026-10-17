@@ -1,0 +1,15 @@
+{
+  "gpu_name": "NVIDIA GeForce RTX 3090",
+  "gpu_hours": 0.7978156426366667,
+  "wall_seconds": 2872.136313492,
+  "peak_vram_allocated_gib": 16.598297595977783,
+  "peak_vram_reserved_gib": 17.880859375,
+  "total_parameters": 21086513,
+  "trainable_parameters": 0,
+  "best_combined_delta_m": 28.649047082165897,
+  "best_weights": "/home/ubuntu55/sar-benchmark/runs/phase3-yolo26m-joint-20261017-1516/train/weights/best.pt",
+  "best_weights_sha256": "256223491cd53554ba532914161556159a7df43e10c828b97979b5e6b7d362e7",
+  "classifier_checkpoint": "/home/ubuntu55/sar-benchmark/runs/phase3-yolo26m-joint-20261017-1516/image_classifier.pt",
+  "classifier_metrics": "/home/ubuntu55/sar-benchmark/runs/phase3-yolo26m-joint-20261017-1516/best_classifier_metrics.json",
+  "detection_metrics": "/home/ubuntu55/sar-benchmark/runs/phase3-yolo26m-joint-20261017-1516/best_detection_metrics.json"
+}

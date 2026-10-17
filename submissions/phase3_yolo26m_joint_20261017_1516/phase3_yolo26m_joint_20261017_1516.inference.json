@@ -1,0 +1,19 @@
+{
+  "format": "project classification.csv + COCO detection.json",
+  "split": "course validation; unlabeled leaderboard split",
+  "images": 1426,
+  "detections": 119177,
+  "image_size": 512,
+  "input_channels": "grayscale; Ultralytics expands one channel to three identical channels",
+  "resize": "PIL bilinear stretch to 512 x 512; boxes mapped back to original image coordinates",
+  "classification_rule": "supervised image-classification head top-1 class",
+  "box_class_policy": "native_detector_classes",
+  "classifier_checkpoint": "runs/phase3-yolo26m-joint-20261017-1516/image_classifier.pt",
+  "classification_fallback_class": 4,
+  "batch_size": 16,
+  "inference_seconds_including_resize_and_zip": 48.855210696000086,
+  "weights": "runs/phase3-yolo26m-joint-20261017-1516/train/weights/best.pt",
+  "weights_sha256": "256223491cd53554ba532914161556159a7df43e10c828b97979b5e6b7d362e7",
+  "zip": "submissions/phase3_yolo26m_joint_20261017_1516/phase3_yolo26m_joint_20261017_1516.zip",
+  "zip_sha256": "8daeb6dd627d11ed8e1b1428973b2baeede821db96c3c19ca4181be3b513dd43"
+}
