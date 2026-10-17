@@ -13,6 +13,10 @@ classifier and a per-class box-edge correction.
 - **[submissions/README.md](submissions/README.md): official scores.** Every ZIP uploaded to Codabench, with its Δm.
   Packaged ZIPs that were never uploaded are in [nonsubmissions/](nonsubmissions/).
 - **[reports/training-comparison/index.html](reports/training-comparison/index.html):** compare runs side by side.
+- **[reports/holdout-viewer/index.html](reports/holdout-viewer/index.html): compare runs image by image.** All 939
+  holdout images with ground truth and up to three runs' boxes, filters (class, size, clean/twin, missed, false
+  positives, A vs B), a live score threshold and zoom. Build its data first with `python tools/build_holdout_viewer.py`
+  (needs `data/course-data/`).
 - **[reports/curve-compare/index.html](reports/curve-compare/index.html): compare training curves.** Tick any runs
   (or best 5 / all) to overlay validation mAP, F1, Δm and train vs validation loss; rebuild its data with
   `python tools/build_curve_compare.py`.

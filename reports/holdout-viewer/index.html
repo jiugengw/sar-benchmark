@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Holdout Image Viewer</title>
+<style>
+.viz-root {
+  color-scheme: light;
+  --surface-0: #f4f4f2; --surface-1: #fcfcfb; --border: #dddcd7;
+  --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #77756f;
+  --accent: #2a78d6; --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .viz-root {
+    color-scheme: dark;
+    --surface-0: #121211; --surface-1: #1a1a19; --border: #33332f;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8e86;
+    --accent: #3987e5; --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+  }
+}
+:root[data-theme="dark"] .viz-root {
+  color-scheme: dark;
+  --surface-0: #121211; --surface-1: #1a1a19; --border: #33332f;
+  --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8e86;
+  --accent: #3987e5; --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--surface-0); }
+.viz-root { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text-primary);
+  background: var(--surface-0); min-height: 100vh; display: grid; grid-template-columns: 270px 1fr; }
+aside { border-right: 1px solid var(--border); background: var(--surface-1); padding: 14px; height: 100vh;
+  position: sticky; top: 0; overflow: auto; }
+main { padding: 14px 18px 40px; min-width: 0; }
+h1 { font-size: 18px; margin: 0 0 2px; }
+h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin: 16px 0 6px; }
+.sub { color: var(--text-secondary); font-size: 12.5px; margin: 0 0 8px; }
+select, button, input { font: inherit; font-size: 13px; color: var(--text-primary); background: var(--surface-0);
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; }
+button { cursor: pointer; } button:hover { border-color: var(--accent); }
+button[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chips button { font-size: 12px; padding: 3px 8px; }
+label.row { display: flex; gap: 6px; align-items: center; font-size: 13px; margin: 3px 0; }
+.runs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 6px 0 12px; }
+.runcard { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 10px; border-top: 4px solid var(--c); }
+.runcard select { width: 100%; margin-bottom: 8px; }
+.runcard .k { display: grid; grid-template-columns: auto 1fr 1fr; gap: 2px 10px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.runcard .k span:nth-child(3n+1) { color: var(--text-muted); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 4px 0 10px; color: var(--text-secondary); font-size: 13px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--text-secondary); }
+.legend i { display: inline-block; width: 16px; height: 0; border-top: 3px solid var(--c); vertical-align: middle; margin-right: 5px; }
+.legend i.gt { border-top: 3px solid #fff; box-shadow: 0 0 0 1.5px #000; height: 0; }
+.legend i.fp { border-top-style: dashed; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; cursor: pointer; }
+.card:hover { border-color: var(--accent); }
+.card canvas { width: 100%; aspect-ratio: 1; display: block; background: #000; image-rendering: pixelated; }
+.card .meta { padding: 6px 8px 8px; font-size: 12px; }
+.card .top { display: flex; justify-content: space-between; gap: 6px; color: var(--text-secondary); }
+.stat { display: flex; gap: 6px; align-items: center; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.stat b { width: 8px; height: 8px; border-radius: 2px; background: var(--c); flex: none; }
+.bad { color: #e34948; font-weight: 600; }
+.pager { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 14px 0; color: var(--text-secondary); }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; z-index: 10; }
+.modal.open { display: grid; grid-template-columns: 1fr 340px; }
+.stage { position: relative; overflow: hidden; background: #000; cursor: grab; }
+.stage canvas { position: absolute; left: 0; top: 0; image-rendering: pixelated; }
+.side { background: var(--surface-1); padding: 14px; overflow: auto; border-left: 1px solid var(--border); }
+.side table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.side td, .side th { padding: 3px 4px; border-bottom: 1px solid var(--border); text-align: left; }
+.zoombar { position: absolute; left: 12px; top: 12px; display: flex; gap: 6px; z-index: 2; }
+.zoombar button { background: rgba(20,20,20,.75); color: #fff; border-color: #555; }
+.hint { position: absolute; left: 12px; bottom: 10px; color: #ddd; font-size: 12px; text-shadow: 0 1px 2px #000; }
+.empty { color: var(--text-muted); padding: 40px; text-align: center; }
+@media (max-width: 900px) { .viz-root { grid-template-columns: 1fr; } aside { position: static; height: auto; }
+  .runs { grid-template-columns: 1fr; } .modal.open { grid-template-columns: 1fr; grid-template-rows: 60vh 1fr; } }
+</style>
+</head>
+<body>
+<div class="viz-root">
+<aside>
+  <h1>Holdout viewer</h1>
+  <p class="sub" id="gen"></p>
+  <h3>Subset</h3>
+  <div class="chips" id="subset"></div>
+  <h3>Image source size</h3>
+  <div class="chips" id="source"></div>
+  <h3>Class</h3>
+  <div class="chips" id="classes"></div>
+  <h3>Outcome (run A, or A vs B)</h3>
+  <select id="outcome" style="width:100%">
+    <option value="any">Any image</option>
+    <option value="miss">A missed objects</option>
+    <option value="fp">A has false positives</option>
+    <option value="cls">A got the image class wrong</option>
+    <option value="perfect">A perfect (no miss, no FP)</option>
+    <option value="abetter">A better than B (recall)</option>
+    <option value="bbetter">B better than A (recall)</option>
+    <option value="differ">A and B differ</option>
+  </select>
+  <h3>Sort</h3>
+  <select id="sort" style="width:100%">
+    <option value="id">Image id</option>
+    <option value="worst">Worst for A first (recall, then FP)</option>
+    <option value="fn">Most missed by A</option>
+    <option value="fp">Most false positives from A</option>
+    <option value="diff">Biggest A vs B recall gap</option>
+    <option value="objects">Most objects</option>
+  </select>
+  <h3>Find image</h3>
+  <input id="find" placeholder="image id, e.g. 1057" style="width:100%">
+  <h3>Score threshold</h3>
+  <label class="row"><input type="range" id="thr" min="0.05" max="0.95" step="0.05" value="0.3" style="flex:1"><span id="thrv">0.30</span></label>
+  <p class="sub">Boxes below this score are hidden; hits (IoU ≥ 0.5, same class) and misses are recomputed live.</p>
+</aside>
+<main>
+  <div class="runs" id="runs"></div>
+  <div class="toolbar">
+    <span id="count"></span>
+    <div class="legend" id="legend"></div>
+    <span style="flex:1"></span>
+    <label class="row"><input type="checkbox" id="showgt" checked> Ground truth</label>
+    <button id="theme">Light / dark</button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="pager" id="pager"></div>
+</main>
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <div class="stage" id="stage">
+    <div class="zoombar"><button data-z="fit">Fit</button><button data-z="2">2×</button><button data-z="4">4×</button><button data-z="8">8×</button><button id="close">Close ✕</button></div>
+    <canvas id="big"></canvas>
+    <div class="hint">Wheel to zoom, drag to pan, ← → for previous / next, Esc to close</div>
+  </div>
+  <div class="side" id="side"></div>
+</div>
+</div>
+<script src="data/index.js"></script>
+<script>
+(() => {
+'use strict';
+const H = window.HOLDOUT;
+if (!H) { document.getElementById('grid').innerHTML = '<div class="empty">No data. Run: python tools/build_holdout_viewer.py</div>'; return; }
+const CLASSES = H.classes, PAGE = 48;
+const IMAGES = H.images.map(([id, file, w, h, label, clean, gt]) => ({id, file, w, h, label, clean: !!clean,
+  gt: gt.map(g => ({box: g.slice(0, 4), cat: g[4]}))}));
+const RUNS = H.runs, bySlug = new Map(RUNS.map(r => [r.slug, r]));
+const SLOTS = ['A', 'B', 'C'];
+const state = {sel: [H.defaults[0], H.defaults[1] || '', ''], thr: 0.3, subset: 'all', source: 'all', classes: new Set(),
+  outcome: 'any', sort: 'id', find: '', page: 0, showgt: true, list: [], open: -1};
+const loaded = {};
+const imgCache = new Map();
+const css = n => getComputedStyle(document.querySelector('.viz-root')).getPropertyValue(n).trim();
+const colour = i => css(`--series-${i + 1}`);
+
+function loadRun(slug) {
+  return new Promise(res => {
+    if (!slug || loaded[slug]) return res();
+    const s = document.createElement('script'); s.src = `data/runs/${encodeURIComponent(slug)}.js`;
+    s.onload = () => { const raw = window.HOLDOUT_RUNS[slug];
+      loaded[slug] = {cls: raw.cls, dets: raw.dets.map(f => { const out = []; for (let i = 0; i < f.length; i += 6)
+        out.push({box: f.slice(i, i + 4), cat: f[i + 4], score: f[i + 5] / 1000}); return out; })}; res(); };
+    s.onerror = () => { loaded[slug] = null; res(); };
+    document.head.append(s);
+  });
+}
+
+function iou(a, b) {
+  const ix = Math.max(0, Math.min(a[0] + a[2], b[0] + b[2]) - Math.max(a[0], b[0]));
+  const iy = Math.max(0, Math.min(a[1] + a[3], b[1] + b[3]) - Math.max(a[1], b[1]));
+  const inter = ix * iy, u = a[2] * a[3] + b[2] * b[3] - inter; return u > 0 ? inter / u : 0;
+}
+function match(gt, dets, thr) {
+  // Greedy COCO-style matching, mirroring tools/build_holdout_viewer.py: highest score first, same class, IoU >= 0.5.
+  const keep = dets.filter(d => d.score >= thr);
+  const gm = gt.map(() => -1), dm = keep.map(() => -1);
+  keep.forEach((d, i) => { let best = -1, bi = H.iou;
+    gt.forEach((g, j) => { if (gm[j] < 0 && g.cat === d.cat) { const v = iou(d.box, g.box); if (v >= bi) { best = j; bi = v; } } });
+    if (best >= 0) { gm[best] = i; dm[i] = best; } });
+  const tp = dm.filter(x => x >= 0).length;
+  return {keep, gm, dm, tp, fp: keep.length - tp, fn: gt.length - tp, recall: gt.length ? tp / gt.length : 1};
+}
+const active = () => state.sel.map((s, i) => ({slug: s, i})).filter(x => x.slug && loaded[x.slug]);
+function evalImage(idx) {
+  const im = IMAGES[idx];
+  return active().map(({slug, i}) => { const run = loaded[slug], m = match(im.gt, run.dets[idx], state.thr);
+    return {slot: i, slug, ...m, pred: run.cls ? run.cls[idx] : null}; });
+}
+
+function fmtPct(v) { return v == null ? '—' : (v * 100).toFixed(2) + '%'; }
+function fmtDm(v) { return v == null ? '—' : (v >= 0 ? '+' : '') + v.toFixed(2); }
+
+function renderRunCards() {
+  const host = document.getElementById('runs'); host.innerHTML = '';
+  SLOTS.forEach((name, i) => {
+    const card = document.createElement('div'); card.className = 'runcard'; card.style.setProperty('--c', colour(i));
+    const sel = document.createElement('select');
+    sel.innerHTML = `<option value="">Run ${name}: none</option>` + [...new Set(RUNS.map(r => r.family))].map(f =>
+      `<optgroup label="${f}">` + RUNS.filter(r => r.family === f).map(r =>
+        `<option value="${r.slug}" ${r.slug === state.sel[i] ? 'selected' : ''}>${name}: ${r.label}${r.official_dm != null ? ' · official ' + fmtDm(r.official_dm) : ''}</option>`).join('') + '</optgroup>').join('');
+    sel.addEventListener('change', async () => { state.sel[i] = sel.value; await loadRun(sel.value); state.page = 0; refresh(); });
+    card.append(sel);
+    const r = bySlug.get(state.sel[i]);
+    if (r) {
+      const k = document.createElement('div'); k.className = 'k';
+      k.innerHTML = `<span></span><span>full 939</span><span>clean 720</span>`
+        + `<span>mAP</span><span>${fmtPct(r.full.mAP)}</span><span>${fmtPct(r.clean.mAP)}</span>`
+        + `<span>AP50</span><span>${fmtPct(r.full.AP50)}</span><span>${fmtPct(r.clean.AP50)}</span>`
+        + `<span>macro-F1</span><span>${fmtPct(r.full.F1)}</span><span>${fmtPct(r.clean.F1)}</span>`
+        + `<span>Δm</span><span>${fmtDm(r.full.dm)}</span><span>${fmtDm(r.clean.dm)}</span>`
+        + `<span>official Δm</span><span>${fmtDm(r.official_dm)}</span><span></span>`;
+      card.append(k);
+    }
+    host.append(card);
+  });
+}
+
+function chipGroup(id, options, get, set) {
+  const host = document.getElementById(id); host.innerHTML = '';
+  for (const [value, text] of options) {
+    const b = document.createElement('button'); b.textContent = text; b.setAttribute('aria-pressed', get(value));
+    b.addEventListener('click', () => { set(value); state.page = 0; renderFilters(); refresh(); });
+    host.append(b);
+  }
+}
+function renderFilters() {
+  const nClean = IMAGES.filter(x => x.clean).length;
+  chipGroup('subset', [['all', `All ${IMAGES.length}`], ['clean', `Clean ${nClean}`], ['twin', `Twin ${IMAGES.length - nClean}`]],
+    v => state.subset === v, v => state.subset = v);
+  chipGroup('source', [['all', 'All'], ['256', '256 px'], ['512', '512 px'], ['other', 'Other']], v => state.source === v, v => state.source = v);
+  chipGroup('classes', CLASSES.map((c, i) => [i, c.replace('_', ' ')]), v => state.classes.has(v),
+    v => state.classes.has(v) ? state.classes.delete(v) : state.classes.add(v));
+}
+
+function filtered() {
+  const out = [];
+  IMAGES.forEach((im, idx) => {
+    if (state.subset === 'clean' && !im.clean) return;
+    if (state.subset === 'twin' && im.clean) return;
+    const src = im.w === 256 ? '256' : im.w === 512 ? '512' : 'other';
+    if (state.source !== 'all' && state.source !== src) return;
+    if (state.classes.size && !state.classes.has(im.label)) return;
+    if (state.find && !String(im.id).includes(state.find.trim())) return;
+    const ev = evalImage(idx), A = ev.find(e => e.slot === 0), B = ev.find(e => e.slot === 1);
+    const o = state.outcome;
+    if (o !== 'any') {
+      if (!A) return;
+      if (o === 'miss' && !A.fn) return;
+      if (o === 'fp' && !A.fp) return;
+      if (o === 'cls' && !(A.pred != null && A.pred !== im.label)) return;
+      if (o === 'perfect' && (A.fn || A.fp)) return;
+      if (['abetter', 'bbetter', 'differ'].includes(o)) { if (!B) return;
+        if (o === 'abetter' && !(A.recall > B.recall)) return;
+        if (o === 'bbetter' && !(B.recall > A.recall)) return;
+        if (o === 'differ' && A.recall === B.recall && A.fp === B.fp) return; }
+    }
+    out.push({idx, ev, A, B});
+  });
+  const s = state.sort, key = {
+    id: x => IMAGES[x.idx].id, worst: x => x.A ? x.A.recall * 1000 - x.A.fp : 0, fn: x => x.A ? -x.A.fn : 0,
+    fp: x => x.A ? -x.A.fp : 0, diff: x => x.A && x.B ? -Math.abs(x.A.recall - x.B.recall) : 0, objects: x => -IMAGES[x.idx].gt.length}[s];
+  out.sort((a, b) => key(a) - key(b) || IMAGES[a.idx].id - IMAGES[b.idx].id);
+  return out;
+}
+
+function getImage(im) {
+  if (imgCache.has(im.id)) return imgCache.get(im.id);
+  const img = new Image(); const p = new Promise(res => { img.onload = () => res(img); img.onerror = () => res(null); });
+  img.src = `${H.image_root}/${im.file}`; imgCache.set(im.id, p); return p;
+}
+
+function drawBoxes(ctx, im, ev, scale, ox, oy, lw) {
+  const B = b => [ox + b[0] * scale, oy + b[1] * scale, b[2] * scale, b[3] * scale];
+  if (state.showgt) for (const g of im.gt) { const r = B(g.box);
+    ctx.setLineDash([]); ctx.lineWidth = lw + 2; ctx.strokeStyle = '#000'; ctx.strokeRect(...r);
+    ctx.lineWidth = lw; ctx.strokeStyle = '#fff'; ctx.strokeRect(...r); }
+  for (const e of ev) { ctx.strokeStyle = colour(e.slot); ctx.lineWidth = lw;
+    e.keep.forEach((d, i) => { ctx.setLineDash(e.dm[i] >= 0 ? [] : [4, 3]); ctx.strokeRect(...B(d.box)); }); }
+  ctx.setLineDash([]);
+}
+
+async function drawThumb(canvas, item) {
+  const im = IMAGES[item.idx], img = await getImage(im), ctx = canvas.getContext('2d');
+  const S = canvas.width; ctx.imageSmoothingEnabled = false; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, S, S);
+  const scale = S / Math.max(im.w, im.h), ox = (S - im.w * scale) / 2, oy = (S - im.h * scale) / 2;
+  if (img) ctx.drawImage(img, ox, oy, im.w * scale, im.h * scale);
+  else { ctx.fillStyle = '#888'; ctx.font = '12px system-ui'; ctx.fillText('image not found', 10, 20); }
+  drawBoxes(ctx, im, item.ev, scale, ox, oy, 1.5);
+}
+
+function renderGrid() {
+  state.list = filtered();
+  const total = state.list.length, pages = Math.max(1, Math.ceil(total / PAGE));
+  state.page = Math.min(state.page, pages - 1);
+  document.getElementById('count').textContent = `Showing ${total} of ${IMAGES.length} images`;
+  const grid = document.getElementById('grid'); grid.innerHTML = '';
+  if (!total) grid.innerHTML = '<div class="empty">No image matches these filters.</div>';
+  state.list.slice(state.page * PAGE, (state.page + 1) * PAGE).forEach((item, k) => {
+    const im = IMAGES[item.idx], card = document.createElement('div'); card.className = 'card';
+    const cv = document.createElement('canvas'); cv.width = cv.height = 240; card.append(cv);
+    const meta = document.createElement('div'); meta.className = 'meta';
+    meta.innerHTML = `<div class="top"><span>#${im.id} · ${CLASSES[im.label]?.replace('_', ' ') ?? '?'}</span><span>${im.w}px${im.clean ? '' : ' · twin'}</span></div>`
+      + item.ev.map(e => `<div class="stat" style="--c:${colour(e.slot)}"><b></b>${SLOTS[e.slot]}: found ${e.tp}/${im.gt.length}`
+        + `${e.fp ? ` · <span class="bad">${e.fp} FP</span>` : ''}${e.pred != null && e.pred !== im.label ? ` · <span class="bad">class: ${CLASSES[e.pred]}</span>` : ''}</div>`).join('');
+    card.append(meta);
+    card.addEventListener('click', () => openModal(state.page * PAGE + k));
+    grid.append(card); drawThumb(cv, item);
+  });
+  const pager = document.getElementById('pager');
+  pager.innerHTML = `<button ${state.page ? '' : 'disabled'} id="prev">← Prev</button> Page ${state.page + 1} of ${pages} <button ${state.page < pages - 1 ? '' : 'disabled'} id="next">Next →</button>`;
+  pager.querySelector('#prev').onclick = () => { state.page--; renderGrid(); scrollTo(0, 0); };
+  pager.querySelector('#next').onclick = () => { state.page++; renderGrid(); scrollTo(0, 0); };
+}
+
+function renderLegend() {
+  document.getElementById('legend').innerHTML = '<span><i class="gt"></i>ground truth</span>'
+    + active().map(({slug, i}) => `<span><i style="--c:${colour(i)}"></i>${SLOTS[i]}: ${bySlug.get(slug).label}</span>`).join('')
+    + '<span><i class="fp" style="--c:var(--text-muted)"></i>dashed = false positive</span>';
+}
+
+// ---- detail view with zoom and pan
+const view = {scale: 1, x: 0, y: 0, img: null, item: null};
+function fitView() {
+  const st = document.getElementById('stage'), im = IMAGES[view.item.idx];
+  view.scale = Math.min(st.clientWidth / im.w, st.clientHeight / im.h); view.x = (st.clientWidth - im.w * view.scale) / 2;
+  view.y = (st.clientHeight - im.h * view.scale) / 2;
+}
+function zoomTo(z, cx, cy) {
+  const st = document.getElementById('stage'); cx ??= st.clientWidth / 2; cy ??= st.clientHeight / 2;
+  const ix = (cx - view.x) / view.scale, iy = (cy - view.y) / view.scale;
+  view.scale = z; view.x = cx - ix * z; view.y = cy - iy * z; drawBig();
+}
+function drawBig() {
+  const st = document.getElementById('stage'), cv = document.getElementById('big'), dpr = devicePixelRatio || 1;
+  cv.width = st.clientWidth * dpr; cv.height = st.clientHeight * dpr; cv.style.width = st.clientWidth + 'px'; cv.style.height = st.clientHeight + 'px';
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, st.clientWidth, st.clientHeight);
+  const im = IMAGES[view.item.idx];
+  if (view.img) ctx.drawImage(view.img, view.x, view.y, im.w * view.scale, im.h * view.scale);
+  drawBoxes(ctx, im, view.item.ev, view.scale, view.x, view.y, 2);
+}
+async function openModal(pos) {
+  state.open = pos; view.item = state.list[pos]; const im = IMAGES[view.item.idx];
+  document.getElementById('modal').classList.add('open');
+  view.img = await getImage(im); fitView(); drawBig(); renderSide();
+}
+function renderSide() {
+  const im = IMAGES[view.item.idx];
+  let html = `<h1>Image #${im.id}</h1><p class="sub">${im.file} · ${im.w}×${im.h} px · ${im.clean ? 'clean' : 'has a training twin'}<br>`
+    + `True class: <b>${CLASSES[im.label]}</b> · ${im.gt.length} objects · ${state.open + 1} of ${state.list.length}</p>`;
+  for (const e of view.item.ev) {
+    const r = bySlug.get(e.slug);
+    html += `<h3 style="color:${colour(e.slot)}">${SLOTS[e.slot]}: ${r.label}</h3><p class="sub">found ${e.tp}/${im.gt.length}, ${e.fp} false positive${e.fp === 1 ? '' : 's'}`
+      + (e.pred != null ? `, image class <b>${CLASSES[e.pred]}</b>${e.pred === im.label ? ' ✓' : ' ✗'}` : '') + '</p>'
+      + '<table><tr><th>score</th><th>class</th><th>result</th><th>size</th></tr>'
+      + e.keep.map((d, i) => `<tr><td>${d.score.toFixed(2)}</td><td>${CLASSES[d.cat - 1]}</td><td>${e.dm[i] >= 0 ? 'hit' : '<span class="bad">false positive</span>'}</td><td>${d.box[2].toFixed(0)}×${d.box[3].toFixed(0)}</td></tr>`).join('')
+      + im.gt.map((g, j) => e.gm[j] >= 0 ? '' : `<tr><td>—</td><td>${CLASSES[g.cat - 1]}</td><td><span class="bad">missed</span></td><td>${g.box[2].toFixed(0)}×${g.box[3].toFixed(0)}</td></tr>`).join('')
+      + '</table>';
+  }
+  document.getElementById('side').innerHTML = html;
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); state.open = -1; }
+function step(d) { const n = state.open + d; if (n >= 0 && n < state.list.length) openModal(n); }
+(() => {
+  const st = document.getElementById('stage'); let drag = null;
+  st.addEventListener('wheel', e => { e.preventDefault(); const r = st.getBoundingClientRect();
+    zoomTo(Math.min(40, Math.max(0.2, view.scale * (e.deltaY < 0 ? 1.25 : 0.8))), e.clientX - r.left, e.clientY - r.top); }, {passive: false});
+  st.addEventListener('mousedown', e => { if (e.target.tagName === 'BUTTON') return; drag = {x: e.clientX - view.x, y: e.clientY - view.y}; st.style.cursor = 'grabbing'; });
+  addEventListener('mousemove', e => { if (drag) { view.x = e.clientX - drag.x; view.y = e.clientY - drag.y; drawBig(); } });
+  addEventListener('mouseup', () => { drag = null; st.style.cursor = 'grab'; });
+  document.querySelectorAll('[data-z]').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.z === 'fit') { fitView(); drawBig(); } else { const im = IMAGES[view.item.idx];
+      zoomTo(+b.dataset.z * Math.min(st.clientWidth / im.w, st.clientHeight / im.h)); } }));
+  document.getElementById('close').addEventListener('click', closeModal);
+  addEventListener('keydown', e => { if (state.open < 0) return;
+    if (e.key === 'Escape') closeModal(); if (e.key === 'ArrowRight') step(1); if (e.key === 'ArrowLeft') step(-1); });
+  addEventListener('resize', () => { if (state.open >= 0) { fitView(); drawBig(); } });
+})();
+
+function refresh() { renderRunCards(); renderLegend(); renderGrid(); }
+document.getElementById('gen').textContent = `${IMAGES.length} holdout images · ${RUNS.length} runs · data built ${H.generated}`;
+document.getElementById('outcome').onchange = e => { state.outcome = e.target.value; state.page = 0; renderGrid(); };
+document.getElementById('sort').onchange = e => { state.sort = e.target.value; state.page = 0; renderGrid(); };
+document.getElementById('find').oninput = e => { state.find = e.target.value; state.page = 0; renderGrid(); };
+document.getElementById('thr').oninput = e => { state.thr = +e.target.value; document.getElementById('thrv').textContent = state.thr.toFixed(2); renderGrid(); };
+document.getElementById('showgt').onchange = e => { state.showgt = e.target.checked; renderGrid(); };
+document.getElementById('theme').onclick = () => { const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark'; refresh(); };
+renderFilters();
+Promise.all(state.sel.map(loadRun)).then(refresh);
+})();
+</script>
+</body>
+</html>
