@@ -1,0 +1,10 @@
+{
+ "zip": "longer_boxloss_photometric_calibrated.zip",
+ "histories": [
+  {
+   "type": "terramind",
+   "path": "results/overnight-improve-324156/longer_boxloss_photometric/terramind_pretrained_moelora/seed_0/metrics.json",
+   "label": "train.py run"
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+{
+ "zip": "submission_1.zip",
+ "histories": [
+  {
+   "type": "terramind",
+   "path": "results/vit_pretrained_lora/metrics.json",
+   "label": "ViT + LoRA (TA recipe)"
+  }
+ ],
+ "note": "matched by recipe; the ZIP did not record its run"
+}

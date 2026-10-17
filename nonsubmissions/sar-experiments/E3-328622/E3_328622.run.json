@@ -1,0 +1,10 @@
+{
+ "zip": "E3_328622.zip",
+ "histories": [
+  {
+   "type": "ultralytics",
+   "path": "reports/training-comparison/curves/yolo26s-p2-E3-328622/training.csv",
+   "label": "E3 YOLO26s-P2"
+  }
+ ]
+}

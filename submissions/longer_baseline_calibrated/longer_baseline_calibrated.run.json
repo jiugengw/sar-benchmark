@@ -1,0 +1,10 @@
+{
+ "zip": "longer_baseline_calibrated.zip",
+ "histories": [
+  {
+   "type": "terramind",
+   "path": "results/overnight-improve-324156/longer_baseline/terramind_pretrained_moelora/seed_0/metrics.json",
+   "label": "train.py run"
+  }
+ ]
+}

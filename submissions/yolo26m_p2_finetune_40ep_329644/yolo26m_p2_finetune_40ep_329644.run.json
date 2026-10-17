@@ -1,0 +1,16 @@
+{
+ "zip": "yolo26m_p2_finetune_40ep_329644.zip",
+ "parent": "submissions/E5_yolo26m_p2_328339/E5_yolo26m_p2_328339.run.json",
+ "histories": [
+  {
+   "type": "ultralytics",
+   "path": "reports/training-comparison/curves/yolo26m_p2_finetune_329644/continue_1/results.csv",
+   "label": "continuation, 40 detector epochs"
+  },
+  {
+   "type": "classifier_csv",
+   "path": "reports/training-comparison/curves/yolo26m_p2_finetune_329644/continue_1/classifier_training.csv",
+   "label": "spatial image head"
+  }
+ ]
+}

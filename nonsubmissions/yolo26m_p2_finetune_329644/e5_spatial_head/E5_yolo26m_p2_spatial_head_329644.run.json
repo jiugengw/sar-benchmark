@@ -1,0 +1,11 @@
+{
+ "zip": "E5_yolo26m_p2_spatial_head_329644.zip",
+ "parent": "submissions/E5_yolo26m_p2_328339/E5_yolo26m_p2_328339.run.json",
+ "histories": [
+  {
+   "type": "classifier_csv",
+   "path": "reports/training-comparison/curves/yolo26m_p2_finetune_329644/e5_spatial_head/classifier_training.csv",
+   "label": "spatial image head"
+  }
+ ]
+}

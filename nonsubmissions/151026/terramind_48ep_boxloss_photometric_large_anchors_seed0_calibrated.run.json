@@ -1,0 +1,10 @@
+{
+ "zip": "terramind_48ep_boxloss_photometric_large_anchors_seed0_calibrated.zip",
+ "histories": [
+  {
+   "type": "terramind",
+   "path": "results/improve-48-324733/boxloss_photometric_large_anchors/terramind_pretrained_moelora/seed_0/metrics.json",
+   "label": "train.py run"
+  }
+ ]
+}

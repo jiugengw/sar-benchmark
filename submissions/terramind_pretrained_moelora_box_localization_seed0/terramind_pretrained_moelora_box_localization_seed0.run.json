@@ -1,0 +1,10 @@
+{
+ "zip": "terramind_pretrained_moelora_box_localization_seed0.zip",
+ "histories": [
+  {
+   "type": "terramind",
+   "path": "results/terramind_pretrained_moelora_box_localization_seed0/metrics.json",
+   "label": "train.py run"
+  }
+ ]
+}

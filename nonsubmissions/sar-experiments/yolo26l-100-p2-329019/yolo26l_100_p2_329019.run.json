@@ -1,0 +1,10 @@
+{
+ "zip": "yolo26l_100_p2_329019.zip",
+ "histories": [
+  {
+   "type": "ultralytics",
+   "path": "reports/training-comparison/curves/yolo26l-100-p2-329019/training.csv",
+   "label": "YOLO26l-P2"
+  }
+ ]
+}

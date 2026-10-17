@@ -1,0 +1,11 @@
+{
+ "zip": "terramind_pretrained_moelora_calibrated.zip",
+ "histories": [
+  {
+   "type": "terramind",
+   "path": "results/terramind_pretrained_moelora/metrics.json",
+   "label": "train.py run"
+  }
+ ],
+ "note": "score calibration of the 24-epoch run"
+}

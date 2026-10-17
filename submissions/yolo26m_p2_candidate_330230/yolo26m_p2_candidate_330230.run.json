@@ -1,0 +1,6 @@
+{
+ "zip": "yolo26m_p2_candidate_330230.zip",
+ "parent": "nonsubmissions/yolo26m_p2_quick_head_330230/yolo26m_p2_quick_head_330230.run.json",
+ "histories": [],
+ "note": "box-edge correction on the quick-head ZIP; no extra training"
+}

@@ -1,0 +1,6 @@
+{
+ "zip": "yolo26m_p2_box_bias_20261017.zip",
+ "parent": "submissions/yolo26m_p2_finetune_40ep_329644/yolo26m_p2_finetune_40ep_329644.run.json",
+ "histories": [],
+ "note": "box-edge correction only; no extra training"
+}

@@ -13,6 +13,9 @@ classifier and a per-class box-edge correction.
 - **[submissions/README.md](submissions/README.md): official scores.** Every ZIP uploaded to Codabench, with its Δm.
   Packaged ZIPs that were never uploaded are in [nonsubmissions/](nonsubmissions/).
 - **[reports/training-comparison/index.html](reports/training-comparison/index.html):** compare runs side by side.
+- **[docs/TRAINING_CURVES.md](docs/TRAINING_CURVES.md): training curves** for every packaged ZIP (train vs validation
+  loss, validation mAP / F1 / Δm per epoch), with how to spot overfitting.
+- **[docs/RUN_TEMPLATE.md](docs/RUN_TEMPLATE.md): what every new run must save** so it can be graphed and compared.
 - **[docs/REPORT_CHECKLIST.md](docs/REPORT_CHECKLIST.md):** what the course report must state, and how to export
   GPU hours.
 
@@ -39,7 +42,9 @@ classifier and a per-class box-edge correction.
 
 1. E5: YOLO26m with a stride-4 (P2) detection level, 100 epochs.
 2. Continued for 40 detector-only epochs (job 329644), one-to-many prediction branch.
-3. A 1024-unit image classifier trained on the frozen detector features (job 330230).
+3. A new, larger image classifier (the small network that names the image's class), trained while the detector
+   stayed frozen, so the boxes did not change. Its hidden layer has 1024 neurons instead of 512 (a layer width, not
+   an image size: images stay 512 × 512 px, one pass). It raised holdout macro-F1 from 94.58% to 96.06% (job 330230, `models/yolo/quick_classifier.py`).
 4. A per-class box-edge correction, cross-fitted on twin-free holdout images.
 
 Files: the ZIP, `image_classifier.pt` and `box_bias_crossfit.json` are in
@@ -84,7 +89,7 @@ How the best submission (`yolo26m_p2_candidate_330230.zip`, Δm +36.80) was buil
 
 1. **E5 detector:** YOLO26m with a P2 level, 100 epochs from COCO weights: `models/yolo/train_yolo26s_p2.py` via `sbatch/yolo26_all_p2_100.sbatch`.
 2. **Continuation:** 40 more detector-only epochs from E5, then a spatial image head on the frozen features: `models/yolo/deadline_recovery.py` via `sbatch/deadline_yolo26m.sbatch` (official Δm +34.57 on its own).
-3. **Wider image head:** a 1024-unit classifier on the same frozen features: `models/yolo/quick_classifier.py` via `sbatch/quick_classifier.sbatch`.
+3. **Larger image classifier:** the detector stays frozen (boxes unchanged) while a new classifier with a 1024-neuron hidden layer (wider than the old 512; input images stay 512 × 512) learns the image class from its features: `models/yolo/quick_classifier.py` via `sbatch/quick_classifier.sbatch`.
 4. **Box-edge correction:** per class and image width, fitted on clean holdout images: `models/yolo/quick_box_bias.py`, packaged with `models/yolo/package_box_bias.py`.
 
 Repository layout:

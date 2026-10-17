@@ -1,0 +1,10 @@
+{
+ "zip": "boxloss_photometric_calibrated.zip",
+ "histories": [
+  {
+   "type": "terramind",
+   "path": "results/improve-48-324733/boxloss_photometric/terramind_pretrained_moelora/seed_0/metrics.json",
+   "label": "train.py run"
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "zip": "boxloss1_photometric_large_anchors_calibrated.zip",
+ "histories": [
+  {
+   "type": "terramind",
+   "path": "results/vit48-325636/boxloss1_photometric_large_anchors/vit_pretrained_moelora/seed_0/metrics.json",
+   "label": "train.py run"
+  }
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "zip": "yolo26m_p2_quick_head_330230.zip",
+ "parent": "submissions/yolo26m_p2_finetune_40ep_329644/yolo26m_p2_finetune_40ep_329644.run.json",
+ "histories": [
+  {
+   "type": "quick_head",
+   "path": "results/yolo26m_p2_quick_head_330230/head_comparison.json",
+   "recipe": "wider_1024",
+   "label": "1024-neuron image classifier"
+  }
+ ]
+}

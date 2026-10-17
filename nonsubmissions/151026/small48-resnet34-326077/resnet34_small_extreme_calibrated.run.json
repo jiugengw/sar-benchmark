@@ -1,0 +1,10 @@
+{
+ "zip": "resnet34_small_extreme_calibrated.zip",
+ "histories": [
+  {
+   "type": "terramind",
+   "path": "results/small48-resnet34-326077/resnet34_pretrained_full/seed_0/metrics.json",
+   "label": "ResNet34 + Faster R-CNN"
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "zip": "terramind_48ep_default_anchors_uncertainty_calibrated.zip",
+ "histories": [
+  {
+   "type": "terramind",
+   "path": "results/tm-default-uncertainty-326398/terramind_pretrained_moelora_uncertainty/seed_0/metrics.json",
+   "label": "train.py run"
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "zip": "terramind_48ep_gain_mean3_seed0.zip",
+ "histories": [
+  {
+   "type": "terramind",
+   "path": "results/colab-161026/terramind_48ep_gain_mean3/terramind_pretrained_moelora/seed_0/metrics.json",
+   "label": "train.py run"
+  }
+ ]
+}

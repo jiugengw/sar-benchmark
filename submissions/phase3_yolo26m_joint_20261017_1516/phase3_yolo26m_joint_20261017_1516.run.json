@@ -1,0 +1,11 @@
+{
+ "zip": "phase3_yolo26m_joint_20261017_1516.zip",
+ "parent": "submissions/E5_yolo26m_p2_328339/E5_yolo26m_p2_328339.run.json",
+ "histories": [
+  {
+   "type": "ultralytics",
+   "path": "submissions/phase3_yolo26m_joint_20261017_1516/phase3_yolo26m_joint_20261017_1516.training_history.csv",
+   "label": "Phase 3 joint fine-tune"
+  }
+ ]
+}
