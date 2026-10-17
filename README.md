@@ -44,20 +44,34 @@ classifier and a per-class box-edge correction.
 
 ## Best model: test and rebuild it
 
-`yolo26m_p2_candidate_330230.zip`, official Δm +36.80, 29.7 M parameters. It was built in three steps
-([details](docs/HISTORY.md)):
+`yolo26m_p2_candidate_330230.zip`: official **Δm +36.80** (macro-F1 94.69%, mAP 44.98%), 29.7 M parameters.
 
-1. **Detector:** YOLO26m with a stride-4 (P2) detection level, trained **140 detector-only epochs** in two stages.
-   First 100 epochs from COCO weights (E5: learning rate 0.01 decaying, mosaic augmentation), then 40 more
-   (job 329644: learning rate restarted at 0.002, no mosaic). It predicts with the one-to-many branch. A single
-   140-epoch run with one schedule has not been tried, so it is not known to match.
-2. **Image classifier:** the small network that names the image's class, trained on the frozen detector's
-   features, so the boxes do not change. Its hidden layer has 1024 neurons (a layer width, not an image size:
-   images stay 512 × 512 px, one pass). Holdout macro-F1 96.06% (job 330230, `models/yolo/quick_classifier.py`).
-   An earlier 512-neuron classifier on the same detector reached 94.58% and scored official Δm +34.57.
-3. **Box nudge:** for each class and image size, every predicted box edge moves by half the typical offset seen
-   between predicted and true boxes (at most 1 px). It was learned on the 720 twin-free holdout images and checked
-   by learning on one half and testing on the other (+0.6 to +0.9 mAP points each time).
+**How it runs on one image** (one pass at 512 × 512 px, one model):
+
+```
+SAR image ──► detector (YOLO26m-P2) ──► boxes ──► box nudge ──► final boxes
+                    │
+                    └── its internal features ──► image classifier ──► image class
+```
+
+**How it was built**, in three steps. Each step kept everything before it unchanged.
+
+| Step | Part | What we did | Holdout result after this step |
+|---|---|---|---|
+| 1 | **Detector** | Trained YOLO26m with an extra fine-detail (P2) layer for small objects, starting from COCO weights: 100 epochs (run "E5"), then 40 more with a fresh, lower learning rate (job 329644). 140 epochs in total. | mAP 40.7% → 44.8% |
+| 2 | **Image classifier** | Trained a small network that reads the detector's features and outputs the image's class. The detector was frozen, so its boxes did not change. The network's hidden layer is 1024 neurons wide (job 330230). | macro-F1 96.1% |
+| 3 | **Box nudge** | Shifted every box edge by a tiny fixed amount learned per class and image size (at most 1 px), because the detector's boxes were slightly but consistently off. Learned on the 720 twin-free holdout images. | mAP 45.6% |
+
+Notes:
+
+- "1024 neurons" is the width of one layer inside the classifier, not an image size.
+- YOLO26 has two prediction heads. We use the "one-to-many" head, which proposes several boxes per object and then
+  drops duplicates; it scores about 1.3 mAP points higher than the "one-to-one" head.
+- Before step 2's classifier, a smaller 512-neuron one on the same detector scored official Δm +34.57. Steps 2 and
+  3 together added +2.2.
+- The box nudge was tested before use: learning it on one half of the clean images and measuring on the other half
+  gained +0.6 to +0.9 mAP points every time.
+- The 140 detector epochs were two runs with different settings. A single 140-epoch run has not been tried.
 
 Files: the ZIP, `image_classifier.pt` and `box_bias_crossfit.json` are in
 [submissions/yolo26m_p2_candidate_330230/](submissions/yolo26m_p2_candidate_330230/). Its holdout predictions are in
