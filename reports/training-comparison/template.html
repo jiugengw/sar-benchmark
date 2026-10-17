@@ -52,19 +52,68 @@
     .review-image img { display:block; width:100%; height:auto; }
     .review-image svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
     .review-empty { padding:18px; color:var(--muted); text-align:center; border:1px dashed var(--line); border-radius:8px; }
+    .score-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:20px 0; }
+    .score-card { border:1px solid var(--line); border-radius:10px; padding:16px 18px; background:var(--panel); }
+    .score-card strong { display:block; font-size:2rem; color:var(--accent); font-variant-numeric:tabular-nums; }
+    .score-card p { margin:4px 0; }
+    .target-controls { display:flex; gap:16px; flex-wrap:wrap; margin:16px 0; }
+    .target-controls label { display:grid; gap:5px; font-size:.85rem; font-weight:650; }
+    input[type="number"] { padding:8px; width:150px; border:1px solid #b9c7cc; border-radius:7px; font:inherit; }
+    .target-chart { width:100%; max-height:340px; display:block; background:#fafcfc; border:1px solid var(--line); border-radius:10px; }
+    .target-result { padding:12px 16px; background:#e1f4e9; border-radius:8px; margin:12px 0; }
+    details { margin:16px 0; }
+    summary { cursor:pointer; font-weight:650; color:var(--accent); }
     @media (max-width:650px) { body { padding:22px 12px 42px; } th,td { padding:9px; } }
   </style>
 </head>
 <body>
 <main>
   <h1>__TITLE__</h1>
-  <p class="subtle">Generated __GENERATED_AT__. Select completed or running runs below to compare their local validation metrics.</p>
+  <p class="subtle">Generated __GENERATED_AT__. Compare official scores, plan the next target, and review detections on identical labeled images.</p>
   <div class="note">
-    <strong>Metric status:</strong> Detection mAP uses each detector's native box classes. YOLO runs with an image classifier also show the fixed-holdout results after assigning its class to every box, with and without score weighting. Image macro-F1 comes from the supervised image-classification head. All reported scores use the labeled training holdout, not the official leaderboard.
+    <strong>Two evaluation splits:</strong> Official scores come from the saved course scoring results for 1,426 images. Local metrics and box overlays use the separate 939-image training holdout. Detection mAP means AP averaged over IoU 0.50–0.95, with native detector box classes. Keep each split's scores together when comparing runs.
   </div>
 
+  <section aria-labelledby="official-heading">
+    <h2 id="official-heading">Official results: baseline vs joint fine-tuning</h2>
+    <p class="artifact"><a href="phase3-official-comparison.png">Open the shareable score comparison</a></p>
+    <div id="official-cards" class="score-cards"></div>
+    <div class="table-wrap"><table class="compare-table">
+      <thead><tr><th>Submission</th><th>Macro-F1</th><th>mAP</th><th>AP50</th><th>Accuracy</th><th>Δm</th><th>ZIP</th></tr></thead>
+      <tbody id="official-comparison"></tbody>
+    </table></div>
+    <p id="official-change" class="subtle"></p>
+    <details><summary>All saved official results</summary><div class="table-wrap"><table>
+      <thead><tr><th>Submission</th><th>Macro-F1</th><th>mAP</th><th>Δm</th></tr></thead>
+      <tbody id="official-scoreboard"></tbody>
+    </table></div></details>
+  </section>
+
+  <section aria-labelledby="target-heading">
+    <h2 id="target-heading">What does Δm +30 require?</h2>
+    <p class="subtle">Explore combinations of official macro-F1 and mAP. Raising mAP by one percentage point contributes about 1.91 Δm points; one macro-F1 point contributes about 0.54.</p>
+    <div class="target-controls">
+      <label>Target Δm<input id="target-delta" type="number" min="0" max="100" step="0.1" value="30"></label>
+      <label>Macro-F1 (%)<input id="target-f1" type="number" min="0" max="100" step="0.1"></label>
+      <label>Candidate mAP (%)<input id="target-map" type="number" min="0" max="100" step="0.1"></label>
+    </div>
+    <div id="target-result" class="target-result" aria-live="polite"></div>
+    <svg id="target-chart" class="target-chart" viewBox="0 0 920 320" role="img" aria-labelledby="target-chart-title">
+      <title id="target-chart-title">Official model scores and the macro-F1/mAP combinations needed for the target Δm</title>
+    </svg>
+    <div class="table-wrap"><table><thead><tr><th>Macro-F1</th><th>mAP needed for target Δm</th><th>mAP gain vs current</th></tr></thead><tbody id="target-combinations"></tbody></table></div>
+    <p class="tiny">Targets are estimates using the repository's rounded reference values (macro-F1 93.31%, mAP 26.13%) anchored to the current official score. The final course evaluator determines the official score.</p>
+  </section>
+
+  <section aria-labelledby="gap-heading">
+    <h2 id="gap-heading">Tracing the local-to-official gap</h2>
+    <div class="table-wrap"><table><thead><tr><th>Evaluation path</th><th>Images</th><th>Macro-F1</th><th>mAP</th><th>AP50</th><th>Δm</th></tr></thead><tbody id="gap-comparison"></tbody></table></div>
+    <p id="gap-explanation" class="subtle"></p>
+    <p class="tiny">The two local inference passes reuse the completed best checkpoint. Differences between local rows measure evaluation-path effects; the official row also changes the image set. A gap across these splits alone does not establish overfitting.</p>
+  </section>
+
   <section aria-labelledby="runs-heading">
-    <h2 id="runs-heading">Runs</h2>
+    <h2 id="runs-heading">Local holdout runs</h2>
     <div class="filters">
       <label class="filter">Find by job, name, or recipe
         <input id="search" type="search" placeholder="e.g. sampling, baseline">
@@ -90,7 +139,7 @@
   </section>
 
   <section aria-labelledby="comparison-heading">
-    <h2 id="comparison-heading">Selected comparison</h2>
+    <h2 id="comparison-heading">Selected local holdout comparison</h2>
     <div class="table-wrap">
       <table class="compare-table">
         <thead id="compare-head"></thead>
@@ -101,6 +150,7 @@
 
   <section aria-labelledby="visual-review-heading">
     <h2 id="visual-review-heading">Visual detection review</h2>
+    <p class="artifact"><a href="phase3-detection-comparison.jpg">Open the baseline vs joint detection contact sheet</a></p>
     <p class="subtle">Choose runs above to view their boxes side by side on the same labeled images. The gallery uses saved validation predictions at confidence ≥ 0.30; diagnostic box counts are not COCO AP.</p>
     <div class="review-legend">
       <span><b style="color:#19854a">Green:</b> matched ground truth</span>
@@ -132,6 +182,8 @@
 <script>
   const runs = __RUNS__;
   const reviewData = __REVIEW_DATA__;
+  const officialResults = __OFFICIAL_RESULTS__;
+  const targetConfig = __TARGET_CONFIG__;
   const baseMetricRows = [
     ["Validation epoch", "epoch"],
     ["Accuracy", "accuracy"],
@@ -158,6 +210,130 @@
     if (text !== undefined && text !== null) node.textContent = text;
     if (className) node.className = className;
     return node;
+  }
+  const percent = value => Number.isFinite(value) ? (value * 100).toFixed(2) + "%" : "—";
+  const delta = value => Number.isFinite(value) ? (value >= 0 ? "+" : "") + value.toFixed(2) : "—";
+  const pointChange = value => (value >= 0 ? "+" : "") + value.toFixed(2) + " pp";
+  const officialChosen = runs.filter(run => run.compare_by_default && run.official_metrics);
+  const targetRun = runs.find(run => run.job_id === targetConfig.job_id && run.official_metrics) || officialChosen.at(-1);
+
+  function renderOfficial() {
+    const body = document.getElementById("official-comparison");
+    const cards = document.getElementById("official-cards");
+    officialChosen.forEach(run => {
+      const metrics = run.official_metrics;
+      const card = cell("div", undefined, "score-card");
+      card.append(cell("p", run.name), cell("strong", delta(metrics.delta_m)), cell("p", "Official Δm"), cell("p", "Macro-F1 " + percent(metrics.macro_f1) + " · mAP " + percent(metrics.mAP), "tiny"));
+      cards.appendChild(card);
+      const row = document.createElement("tr");
+      const name = cell("th", run.name);
+      const source = cell("a", "Official score JSON", "run-id");
+      source.href = "../../" + run.official_metrics_source;
+      name.appendChild(source);
+      row.appendChild(name);
+      ["macro_f1", "mAP", "AP50", "accuracy"].forEach(key => row.appendChild(cell("td", percent(metrics[key]), "metric")));
+      row.appendChild(cell("td", delta(metrics.delta_m), "metric"));
+      const download = cell("td");
+      if (run.zip_href) { const link = cell("a", "Download ZIP"); link.href = run.zip_href; download.appendChild(link); }
+      row.appendChild(download);
+      body.appendChild(row);
+    });
+    if (targetRun) {
+      const gap = targetConfig.delta_m - targetRun.official_metrics.delta_m;
+      const card = cell("div", undefined, "score-card");
+      card.append(cell("p", "Gap to official Δm +" + targetConfig.delta_m), cell("strong", gap.toFixed(2)), cell("p", "Δm points remaining"));
+      cards.appendChild(card);
+    }
+    if (officialChosen.length >= 2) {
+      const before = officialChosen[0].official_metrics, after = officialChosen.at(-1).official_metrics;
+      document.getElementById("official-change").textContent = "Joint fine-tuning vs baseline: Δm " + delta(after.delta_m - before.delta_m) + "; macro-F1 " + pointChange(100 * (after.macro_f1 - before.macro_f1)) + "; mAP " + pointChange(100 * (after.mAP - before.mAP)) + ".";
+    }
+    officialResults.forEach(run => {
+      const row = document.createElement("tr");
+      row.append(cell("th", run.name), cell("td", percent(run.metrics.macro_f1)), cell("td", percent(run.metrics.mAP)), cell("td", delta(run.metrics.delta_m)));
+      document.getElementById("official-scoreboard").appendChild(row);
+    });
+  }
+
+  function renderGap() {
+    if (!targetRun) return;
+    const evaluations = [
+      ["Training validator · best epoch", targetRun.training_metrics, "939 holdout"],
+      ["Exported checkpoint · batch 1 · COCO", targetRun.checkpoint_metrics, "939 holdout"],
+      ["Exact submission pipeline · batch 16 · COCO", targetRun.metrics, "939 holdout"],
+      ["Official course scoring", targetRun.official_metrics, "1,426 official"]
+    ];
+    evaluations.forEach(([label, metrics, images]) => {
+      if (!metrics) return;
+      const row = document.createElement("tr");
+      row.append(cell("th", label), cell("td", images));
+      ["macro_f1", "mAP", "AP50"].forEach(key => row.appendChild(cell("td", percent(metrics[key]))));
+      row.appendChild(cell("td", delta(metrics.delta_m)));
+      document.getElementById("gap-comparison").appendChild(row);
+    });
+    if (targetRun.training_metrics && targetRun.metrics) {
+      const training = targetRun.training_metrics, exported = targetRun.metrics, official = targetRun.official_metrics;
+      document.getElementById("gap-explanation").textContent = "mAP gap: " + (100 * (training.mAP - exported.mAP)).toFixed(2) + " pp between the training validator and the exact local submission pipeline, then " + (100 * (exported.mAP - official.mAP)).toFixed(2) + " pp between the local and official image sets. Macro-F1 changes by " + (100 * (training.macro_f1 - exported.macro_f1)).toFixed(2) + " pp locally, with " + (100 * (exported.macro_f1 - official.macro_f1)).toFixed(2) + " pp remaining across splits.";
+      const audit = targetRun.pipeline_audit || {};
+      if (audit.classifier_confusion_matches_training) {
+        document.getElementById("gap-explanation").textContent += " The exact local ZIP pipeline reproduces the training classifier's confusion matrix, so it shows no classification loss from packaging on this holdout.";
+      }
+      if (audit.same_predictions_evaluator_delta_pp) {
+        document.getElementById("gap-explanation").textContent += " With predicted boxes held fixed, switching metric calculators changes mAP by only " + Math.abs(audit.same_predictions_evaluator_delta_pp.mAP).toFixed(2) + " pp; the full local path difference cannot be attributed to COCO calculation alone.";
+      }
+    }
+  }
+
+  function svgElement(tag, attrs, text) {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    Object.entries(attrs || {}).forEach(([key, value]) => node.setAttribute(key, value));
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function renderTarget() {
+    if (!targetRun) return;
+    const anchor = targetRun.official_metrics;
+    const target = Number(document.getElementById("target-delta").value);
+    const f1 = Number(document.getElementById("target-f1").value);
+    const map = Number(document.getElementById("target-map").value);
+    const f1Reference = targetConfig.f1_reference * 100, mapReference = targetConfig.map_reference * 100;
+    const requiredMap = f => anchor.mAP * 100 + (target - anchor.delta_m - 50 * (f - anchor.macro_f1 * 100) / f1Reference) * mapReference / 50;
+    const predicted = anchor.delta_m + 50 * ((f1 - anchor.macro_f1 * 100) / f1Reference + (map - anchor.mAP * 100) / mapReference);
+    const needed = requiredMap(f1);
+    document.getElementById("target-result").textContent = "At " + f1.toFixed(2) + "% macro-F1, target Δm +" + target.toFixed(2) + " needs approximately " + needed.toFixed(2) + "% mAP (" + pointChange(needed - anchor.mAP * 100) + " vs current). Your candidate combination gives Δm ≈ " + delta(predicted) + ".";
+    const body = document.getElementById("target-combinations"); body.replaceChildren();
+    [...new Set([Number((anchor.macro_f1 * 100).toFixed(2)), 93, 94, 95, 96])].forEach(value => {
+      const row = document.createElement("tr");
+      row.append(cell("td", value.toFixed(2) + "%"), cell("td", requiredMap(value).toFixed(2) + "%"), cell("td", pointChange(requiredMap(value) - anchor.mAP * 100)));
+      body.appendChild(row);
+    });
+    const svg = document.getElementById("target-chart");
+    svg.replaceChildren(svgElement("title", {}, "Official results and the combinations needed for target Δm"));
+    const left = 70, right = 875, top = 35, bottom = 270;
+    const x = value => left + (value - 85) / 15 * (right - left);
+    const yMin = Math.min(35, anchor.mAP * 100 - 2, requiredMap(100) - 2);
+    const yMax = Math.max(46, requiredMap(85) + 2);
+    const y = value => bottom - (value - yMin) / (yMax - yMin) * (bottom - top);
+    for (let v = 85; v <= 100; v += 5) {
+      svg.append(svgElement("line", {x1:x(v),y1:top,x2:x(v),y2:bottom,stroke:"#dce4e5"}), svgElement("text", {x:x(v),y:bottom+20,"text-anchor":"middle",fill:"#5b6a72","font-size":12}, v + "%"));
+    }
+    for (let v = Math.ceil(yMin); v <= yMax; v += 2) {
+      svg.append(svgElement("line", {x1:left,y1:y(v),x2:right,y2:y(v),stroke:"#dce4e5"}), svgElement("text", {x:left-10,y:y(v)+4,"text-anchor":"end",fill:"#5b6a72","font-size":12}, v + "%"));
+    }
+    svg.append(svgElement("line", {x1:x(85),y1:y(requiredMap(85)),x2:x(100),y2:y(requiredMap(100)),stroke:"#176b62","stroke-width":3}), svgElement("text", {x:85,y:22,fill:"#176b62","font-size":13}, "Target Δm +" + target.toFixed(1) + " · combinations on or above the green line meet the target"));
+    officialChosen.forEach((run, index) => {
+      const metrics = run.official_metrics, px = x(metrics.macro_f1 * 100), py = y(metrics.mAP * 100);
+      const color = index === 0 ? "#a35f24" : "#176b62";
+      svg.append(svgElement("circle", {cx:px,cy:py,r:6,fill:color}), svgElement("text", {x:px+10,y:py+(index===0?-12:18),fill:color,"font-size":12}, (index===0?"Baseline":"Joint fine-tune") + " · Δm " + delta(metrics.delta_m)));
+    });
+    if (f1 >= 85 && f1 <= 100 && map >= yMin && map <= yMax) {
+      svg.append(svgElement("circle", {cx:x(f1),cy:y(map),r:7,fill:"none",stroke:"#2376d1","stroke-width":2}));
+    }
+    if (f1 >= 85 && f1 <= 100) {
+      svg.append(svgElement("circle", {cx:x(f1),cy:y(needed),r:6,fill:"#176b62"}), svgElement("text", {x:Math.min(x(f1)+10,770),y:y(needed)-12,fill:"#176b62","font-size":12}, "Needs " + needed.toFixed(2) + "% mAP"));
+    }
+    svg.append(svgElement("text", {x:460,y:312,"text-anchor":"middle",fill:"#17232b","font-size":13}, "Official macro-F1"), svgElement("text", {x:18,y:160,transform:"rotate(-90 18 160)","text-anchor":"middle",fill:"#17232b","font-size":13}, "Official mAP (AP50–95)"));
   }
   function availableRuns() {
     const query = document.getElementById("search").value.trim().toLowerCase();
@@ -421,6 +597,15 @@
   });
   reviewClass.addEventListener("change", renderGallery);
   document.getElementById("review-error").addEventListener("change", renderGallery);
+  renderOfficial();
+  renderGap();
+  if (targetRun) {
+    document.getElementById("target-delta").value = targetConfig.delta_m;
+    document.getElementById("target-f1").value = (targetRun.official_metrics.macro_f1 * 100).toFixed(2);
+    document.getElementById("target-map").value = (targetRun.official_metrics.mAP * 100).toFixed(2);
+    ["target-delta", "target-f1", "target-map"].forEach(id => document.getElementById(id).addEventListener("input", renderTarget));
+    renderTarget();
+  }
   render();
 </script>
 </body>

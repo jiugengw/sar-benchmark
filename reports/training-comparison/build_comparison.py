@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import re
 import shutil
@@ -22,6 +23,7 @@ REVIEW_IOU = 0.5
 REVIEW_EXAMPLES = 48
 F1_REFERENCE = 0.9331
 MAP_REFERENCE = 0.2613
+OFFICIAL_METRICS = ("accuracy", "macro_f1", "mAP", "AP50", "AP75", "balanced_accuracy")
 
 ERROR_FIELDS = ("objects", "matched", "missed", "missed_small", "wrong_class", "duplicate", "localization", "background")
 ERROR_WEIGHTS = {"missed_small": 3, "missed": 1, "wrong_class": 2, "duplicate": 1, "localization": 1}
@@ -188,7 +190,42 @@ def prepare_run(entry: dict[str, Any]) -> dict[str, Any]:
 
     run["metrics"] = scores
     run["metrics_source"] = source
+    official_path = repo_path(entry.get("official_scores_path"))
+    if not official_path and entry.get("zip_path"):
+        official_path = repo_path(entry["zip_path"]).parent / "scoring_result" / "scores.json"
+    run["official_metrics"] = None
+    if official_path and official_path.is_file():
+        official = json.loads(official_path.read_text())
+        if "delta_m" in official:
+            run["official_metrics"] = {
+                key: float(value) / 100 if key in OFFICIAL_METRICS else float(value)
+                for key, value in official.items() if key in (*OFFICIAL_METRICS, "delta_m")
+            }
+            run["official_metrics_source"] = official_path.relative_to(ROOT).as_posix()
+    history_path = repo_path(entry.get("training_history_path"))
+    if history_path and history_path.is_file():
+        with history_path.open(newline="") as stream:
+            history = list(csv.DictReader(stream))
+        if history:
+            best = max(history, key=lambda row: float(row["metrics/combined_delta_m"]))
+            run["training_metrics"] = {
+                "epoch": int(best["epoch"]),
+                "macro_f1": float(best["metrics/image_macro_f1"]),
+                "mAP": float(best["metrics/mAP50-95(B)"]),
+                "AP50": float(best["metrics/mAP50(B)"]),
+                "delta_m": float(best["metrics/combined_delta_m"]),
+            }
+            run["training_metrics_source"] = history_path.relative_to(ROOT).as_posix()
+    if entry.get("checkpoint_metrics_path"):
+        checkpoint_scores, checkpoint_source, _ = load_metrics({"metrics_path": entry["checkpoint_metrics_path"]})
+        run["checkpoint_metrics"] = checkpoint_scores
+        run["checkpoint_metrics_source"] = checkpoint_source
     if metric_path:
+        raw_metrics = json.loads(metric_path.read_text())
+        run["pipeline_audit"] = {key: raw_metrics[key] for key in (
+            "same_predictions_ultralytics_metrics", "same_predictions_evaluator_delta_pp",
+            "classifier_confusion_matches_training", "submission_pipeline"
+        ) if key in raw_metrics}
         run.setdefault("predictions_path", metric_path.with_name("predictions_val.json").relative_to(ROOT).as_posix())
         run.setdefault("ground_truth_path", metric_path.with_name("instances_val_holdout.json").relative_to(ROOT).as_posix())
     run["review_available"] = bool(
@@ -202,6 +239,33 @@ def prepare_run(entry: dict[str, Any]) -> dict[str, Any]:
         run["zip_href"] = Path("../../") / entry["zip_path"]
         run["zip_href"] = run["zip_href"].as_posix()
     return run
+
+
+def official_results(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep official percentages separate from fractional local holdout metrics."""
+    names = {run.get("official_metrics_source"): run for run in runs if run.get("official_metrics_source")}
+    results = []
+    for path in sorted((ROOT / "submissions").glob("*/scoring_result/scores.json")):
+        source = path.relative_to(ROOT).as_posix()
+        try:
+            scores = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError):
+            print(f"Skipping unreadable official scores: {source}")
+            continue
+        if "delta_m" not in scores:
+            continue
+        run = names.get(source, {})
+        package = path.parent.parent
+        zips = sorted(package.glob("*.zip"))
+        results.append({
+            "job_id": run.get("job_id", package.name),
+            "name": run.get("name", package.name.replace("_", " ")),
+            "metrics": {key: float(value) / 100 if key in OFFICIAL_METRICS else float(value)
+                        for key, value in scores.items() if key in (*OFFICIAL_METRICS, "delta_m")},
+            "source": source,
+            "zip_href": "../../" + zips[0].relative_to(ROOT).as_posix() if zips else None,
+        })
+    return sorted(results, key=lambda result: result["metrics"]["delta_m"], reverse=True)
 
 
 def box_iou(a: list[float], b: list[float]) -> float:
@@ -351,6 +415,7 @@ def main() -> None:
     REVIEW_EXAMPLES = int(review_config.get("examples", REVIEW_EXAMPLES))
     entries = manifest["runs"] + discover_result_runs(manifest)
     runs = [prepare_run(entry) for entry in entries]
+    official = official_results(runs)
     review_data = build_review_data(runs)
     generated_at = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
     data = json.dumps(runs, ensure_ascii=False).replace("</", "<\\/")
@@ -360,7 +425,22 @@ def main() -> None:
     page = page.replace("__GENERATED_AT__", generated_at)
     page = page.replace("__RUNS__", data)
     page = page.replace("__REVIEW_DATA__", review_json)
+    page = page.replace("__OFFICIAL_RESULTS__", json.dumps(official, ensure_ascii=False).replace("</", "<\\/"))
+    target_config = {"delta_m": manifest.get("target_delta_m", 30),
+                     "f1_reference": F1_REFERENCE, "map_reference": MAP_REFERENCE,
+                     "job_id": manifest.get("target_run_job_id")}
+    page = page.replace("__TARGET_CONFIG__", json.dumps(target_config))
     OUTPUT.write_text(page)
+    audit = {
+        "generated_at": generated_at,
+        "target": target_config,
+        "runs": [{key: run[key] for key in (
+            "job_id", "name", "metrics", "metrics_source", "official_metrics", "official_metrics_source",
+            "training_metrics", "training_metrics_source", "checkpoint_metrics", "checkpoint_metrics_source",
+            "zip_href", "predictions_path", "ground_truth_path", "pipeline_audit"
+        ) if key in run} for run in runs if run.get("official_metrics")],
+    }
+    (HERE / "score-audit.json").write_text(json.dumps(audit, indent=2) + "\n")
     print(f"Wrote {OUTPUT.relative_to(ROOT)} with {len(runs)} runs and {len(review_data['examples'])} visual examples.")
 
 

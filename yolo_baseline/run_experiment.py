@@ -536,7 +536,11 @@ def main() -> None:
             [classifier_predictions[image_id] for image_id in image_ids],
             names,
         )
-        yolo_cls["method"] = "supervised image-classification head trained from labels.csv on frozen YOLO detection features"
+        yolo_cls["method"] = (
+            "jointly fine-tuned image-classification head on shared YOLO detection features"
+            if classifier_embedded else
+            "supervised image-classification head trained from labels.csv on frozen YOLO detection features"
+        )
         yolo_cls["prediction_confidence"] = {
             "mean_top1_probability": statistics.mean(classifier_probabilities.values()),
             "minimum_top1_probability": min(classifier_probabilities.values()),
@@ -667,7 +671,10 @@ def main() -> None:
             "backbone": model_name,
             "detector_architecture": args.architecture,
             "adapt": "native pretrained backbone, neck, and detection head",
-            "training_scheme": "full fine-tuning; no LoRA and no frozen layers",
+            "training_scheme": (
+                "joint detection and image-classification fine-tuning"
+                if classifier_embedded else "full fine-tuning; no LoRA and no frozen layers"
+            ),
             "total_parameters": total_parameters,
             "trainable_parameters": trainable_parameters,
             "epochs": args.epochs,
@@ -683,7 +690,10 @@ def main() -> None:
             "precision_recall_confidence": CONFIDENCE,
             "precision_recall_iou": MATCH_IOU,
             "image_classification_head": str(args.classifier_checkpoint) if args.classifier_checkpoint else None,
-            "image_classification_training": "supervised from labels.csv; frozen detector features",
+            "image_classification_training": (
+                "jointly fine-tuned from labels.csv; shared detector features"
+                if classifier_embedded else "supervised from labels.csv; frozen detector features"
+            ),
             "evaluated_box_class_policies": [
                 key for key, value in detection_class_policies.items()
                 if isinstance(value, dict) and "mAP" in value
