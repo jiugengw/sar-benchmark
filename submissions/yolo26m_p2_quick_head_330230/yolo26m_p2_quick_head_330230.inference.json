@@ -1,0 +1,23 @@
+{
+  "format": "project classification.csv + COCO detection.json",
+  "split": "course validation; unlabeled leaderboard split",
+  "images": 1426,
+  "detections": 103065,
+  "image_size": 512,
+  "input_channels": "grayscale; Ultralytics expands one channel to three identical channels",
+  "resize": "PIL bilinear stretch to 512 x 512; boxes mapped back to original image coordinates",
+  "classification_rule": "supervised image-classification head top-1 class",
+  "box_class_policy": "native_detector_classes",
+  "detection_branch": "one2many",
+  "effective_detection_branch": "one2many",
+  "nms_iou": 0.7,
+  "classifier_feature_pooling": "spatial",
+  "classifier_checkpoint": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/yolo26m_p2_quick_head_330230/image_classifier.pt",
+  "classification_fallback_class": 4,
+  "batch_size": 16,
+  "inference_seconds_including_resize_and_zip": 41.13014085125178,
+  "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/deadline-yolo26m-329644/continue_1/weights/best.pt",
+  "weights_sha256": "a8af4262f5986f066bd1bb33ad8c450ed5686a1f582214d6891906e3edb13bfe",
+  "zip": "/common/scratch/users/j/jgwong.2023/sar-benchmark/submissions/yolo26m_p2_quick_head_330230/yolo26m_p2_quick_head_330230.zip",
+  "zip_sha256": "9cd97a93aad1489678d08bac5b5c4daa2a6f3907192a5d8b0d72538785255ba5"
+}

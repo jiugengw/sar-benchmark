@@ -99,9 +99,10 @@ def main():
 
 Submission: [{package.name}]({package.name}). Official score pending.
 
-Uses the first continuation's frozen detector and classifier (original official
-Delta m 34.5697), followed by one deterministic box-edge correction. No ensemble,
-extra image pass, test-time augmentation, or official labels are used.
+Uses the frozen detector from the first continuation (that original model scored
+official Delta m 34.5697), with classification predictions copied from
+`{args.base_zip}`. One deterministic box-edge correction follows detection.
+No ensemble, extra image pass, test-time augmentation, or official labels are used.
 
 For each class and source width, fit half the median matched-box edge residual,
 clipped to one pixel at 512px. At least 12 matches at IoU >= 0.5 and confidence
