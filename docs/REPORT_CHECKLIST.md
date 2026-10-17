@@ -5,8 +5,8 @@ Back to the [README](../README.md).
 Parameter counts, configurations and results of every attempt are summarised in [docs/HISTORY.md](HISTORY.md).
 Learned task weights and component losses are recorded in each run's `training_history.json`.
 
-Use our saved experiment results for the report. The reference mean ± std tables
-above are the TA's measurements, not repeated runs by our team.
+Use our saved experiment results for the report. The TA's reference scores are their measurements, not
+repeated runs by our team.
 
 | Required item | Evidence / remaining work |
 |---|---|
