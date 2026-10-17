@@ -1,6 +1,6 @@
 # Phase 3: joint fine-tuning plan
 
-**Status:** ready to submit; neither fine-tune has been submitted or queued. These are local holdout experiments, not official benchmark submissions.
+**Status:** ready to run interactively; no Phase 3 fine-tune is currently queued. These are local holdout experiments, not official benchmark submissions.
 
 ## Existing runs and results
 
@@ -26,12 +26,15 @@ Start with the completed baseline batch sizes: 16 for YOLO26m and 8 for RT-DETR.
 
 The source dataset archives are already Git LFS files under `data/`. The 8,453/939 split is tracked at `results/yolo26m-100-p2-328339/seed_0/split.json`. The converter is `yolo_baseline/prepare_dataset.py`. The four E5/E7 model and classifier checkpoints are now staged under `yolo_baseline/phase3_assets/checkpoints/` and tracked with Git LFS, so the new GPU does not need this machine's ignored `runs/` directory.
 
-The batch job creates a dedicated `.phase3-venv` from `requirements-phase3.txt` if needed, fetches the LFS files, extracts course data, regenerates `data/yolo11s-sar-512`, runs the RT-DETR joint preflight, and then trains both models in one allocation. From a checkout of the pushed repository, submit it with:
+On the GPU machine, pull the latest repository version and hydrate the tracked Git LFS files, then activate an existing CUDA-enabled Python environment with the dependencies listed in `yolo_baseline/requirements.txt`. From the project root, run:
 
 ```bash
-sbatch sbatch/phase3_joint_finetuning.sbatch
+git pull origin main
+bash scripts/run_phase3_joint.sh
 ```
 
-This one job requests the student partition's Blackwell GPU allocation, batch size 16/8, and a maximum of 24 hours. Outputs are written to `runs/phase3-yolo26m-joint-<jobid>/` and `runs/phase3-rtdetr-l-joint-<jobid>/`. Each includes `train/weights/best.pt`, the matched `image_classifier.pt`, the training config, per-epoch `train/results.csv`, best per-class classifier F1 and detector AP metrics, and compute/VRAM records. The RT-DETR directory also includes `preflight.json`, which records label alignment, live multi-scale feature capture, gradients from both losses into the shared backbone, validation output, and custom-checkpoint save/reload.
+The script verifies CUDA and all four checkpoints, fetches the LFS assets, extracts course data when needed, regenerates `data/yolo11s-sar-512`, and runs the RT-DETR joint preflight before starting either training. It trains YOLO26m first and RT-DETR-L second in the current GPU session, using batch sizes 16 and 8 from the configs. It does not create an environment or submit a Slurm job. Set `PHASE3_RUN_TAG` before running if you want a custom output suffix.
 
-The job does not submit to the leaderboard or generate official validation predictions. After it finishes, compare each result first against its own sequential baseline (E5 or E7), then compare the two Phase 3 models by local Δm. The 939-image holdout is for local selection; it is not an official benchmark score.
+Outputs are written to `runs/phase3-yolo26m-joint-<tag>/` and `runs/phase3-rtdetr-l-joint-<tag>/`. Each includes `train/weights/best.pt`, the matched `image_classifier.pt`, the training config, per-epoch `train/results.csv`, best per-class classifier F1 and detector AP metrics, and compute/VRAM records. The RT-DETR directory also includes `preflight.json`, which records label alignment, live multi-scale feature capture, gradients from both losses into the shared backbone, validation output, and custom-checkpoint save/reload.
+
+Neither run submits to the leaderboard or generates official validation predictions. After both finish, compare each result first against its own sequential baseline (E5 or E7), then compare the two Phase 3 models by local Δm. The 939-image holdout is for local selection; it is not an official benchmark score.
