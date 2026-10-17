@@ -1,6 +1,7 @@
 seed: 0
 architecture_family: yolo26
 architecture: YOLO26m-P2
+amp: false
 image_size: 512
 batch_size: 16
 workers: 4

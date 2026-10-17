@@ -126,6 +126,7 @@ def main() -> None:
         workers=int(config["workers"]),
         device=0,
         pretrained=True,
+        amp=bool(config.get("amp", True)),
         optimizer=str(config["optimizer"]),
         lr0=float(config["lr0"]),
         lrf=float(config["lrf"]),

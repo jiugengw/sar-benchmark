@@ -30,6 +30,9 @@ class JointRTDETRDetectionModel(RTDETRDetectionModel):
         classifier_dropout: float = 0.2,
     ):
         super().__init__(cfg=cfg, nc=nc, ch=ch, verbose=verbose)
+        # Ultralytics' RT-DETR loss reads ``self.nc``, but the current
+        # DetectionModel initializer only stores the configured count in yaml.
+        self.nc = int(self.yaml["nc"])
         input_projections = self.model[-1].input_proj
         feature_dim = sum(int(projection[0].in_channels) for projection in input_projections)
         self.image_classifier = ImageClassifierHead(feature_dim, num_classes=nc, dropout=classifier_dropout)
