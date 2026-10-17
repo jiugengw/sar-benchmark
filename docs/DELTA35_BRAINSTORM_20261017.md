@@ -88,7 +88,7 @@ held-out checks above are the evidence for transfer. Classification is unchanged
 The [candidate ZIP and calibration audit](../nonsubmissions/yolo26m_p2_box_bias_20261017/)
 were not uploaded on their own. The same correction, combined with a wider image head, is part of the
 best submission (official Δm +36.80). Reproduce with
-`yolo_baseline/quick_box_bias.py` and `yolo_baseline/package_box_bias.py`.
+`models/yolo/quick_box_bias.py` and `models/yolo/package_box_bias.py`.
 
 ## 1. What +35 requires
 
@@ -296,10 +296,10 @@ Across the whole labeled set, 2,345 of 9,392 images (25%) have a twin: 2,540 pai
 
 Fix (implemented):
 
-1. Every evaluation path now reports the clean subset next to the full holdout: `train.py` (`val['clean']` in
-   each validation record and in the log line), cross-validation summaries, `calibrate_submission.py`,
-   `yolo_baseline/run_experiment.py` (`val.clean_holdout`), `yolo_baseline/train_deformable_detr.py`,
-   `denodet_baseline/export.py` and the submission audit (`clean_holdout`, `clean_minus_official_percentage_points`).
+1. Every evaluation path now reports the clean subset next to the full holdout: `models/terramind/train.py` (`val['clean']` in
+   each validation record and in the log line), cross-validation summaries, `models/terramind/calibrate_submission.py`,
+   `models/yolo/run_experiment.py` (`val.clean_holdout`), `models/yolo/train_deformable_detr.py`,
+   `models/denodet/export.py` and the submission audit (`clean_holdout`, `clean_minus_official_percentage_points`).
    Checkpoint selection is unchanged and still uses the full holdout.
 2. Old runs need no retraining: `python -m sarbench.twins score results/<run>/seed_0` re-grades their saved
    predictions. Macro-F1 and Δm are included when per-image classifications were saved.

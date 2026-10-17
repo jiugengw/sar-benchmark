@@ -14,6 +14,6 @@
   "inference_seconds_including_resize_and_zip": 33.89263608166948,
   "weights": "runs/yolo11s-100-p2-328058/train/weights/best.pt",
   "weights_sha256": "76f6a411618dd26a51783aa009fcccd4f9f889ee74c06291278ac79e409fb280",
-  "zip": "nonsubmissions/161026/tests-no-submit/yolo11s-100-p2-328058/yolo11s_100_p2_328058.zip",
+  "zip": "nonsubmissions/161026/yolo11s-100-p2-328058/yolo11s_100_p2_328058.zip",
   "zip_sha256": "dff4bcac2a5a4afb2c0fda4216dc7e0bf5d9ceb5273b509915ca7103511b4c28"
 }

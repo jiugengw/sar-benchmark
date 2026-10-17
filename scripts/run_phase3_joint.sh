@@ -10,13 +10,13 @@ if ! git lfs version >/dev/null 2>&1; then
     exit 2
 fi
 
-git lfs pull --include="data/*.tar.gz,yolo_baseline/phase3_assets/checkpoints/*.pt"
+git lfs pull --include="data/*.tar.gz,models/yolo/phase3_assets/checkpoints/*.pt"
 
 for checkpoint in \
-    yolo_baseline/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt \
-    yolo_baseline/phase3_assets/checkpoints/E5_yolo26m_image_classifier.pt \
-    yolo_baseline/phase3_assets/checkpoints/E7_rtdetr_l_p2_best.pt \
-    yolo_baseline/phase3_assets/checkpoints/E7_rtdetr_l_image_classifier.pt; do
+    models/yolo/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt \
+    models/yolo/phase3_assets/checkpoints/E5_yolo26m_image_classifier.pt \
+    models/yolo/phase3_assets/checkpoints/E7_rtdetr_l_p2_best.pt \
+    models/yolo/phase3_assets/checkpoints/E7_rtdetr_l_image_classifier.pt; do
     if [[ ! -s "$checkpoint" ]]; then
         echo "Missing or empty Phase 3 checkpoint: $checkpoint" >&2
         exit 2
@@ -45,7 +45,7 @@ if [[ ! -s data/course-data/train/labels.csv || ! -s data/course-data/val/images
     tar -xzf data/val.tar.gz -C data/course-data
 fi
 
-python -u yolo_baseline/prepare_dataset.py \
+python -u models/yolo/prepare_dataset.py \
     --data data/course-data \
     --split results/yolo26m-100-p2-328339/seed_0/split.json \
     --out data/yolo11s-sar-512 \
@@ -56,17 +56,17 @@ YOLO_OUTPUT="runs/phase3-yolo26m-joint-${JOB_TAG}"
 RTDETR_OUTPUT="runs/phase3-rtdetr-l-joint-${JOB_TAG}"
 mkdir -p "$YOLO_OUTPUT" "$RTDETR_OUTPUT"
 
-python -u yolo_baseline/preflight_rtdetr_joint.py \
-    --config yolo_baseline/experiment_configs/phase3_rtdetr_l.yaml \
+python -u models/yolo/preflight_rtdetr_joint.py \
+    --config models/yolo/experiment_configs/phase3_rtdetr_l.yaml \
     --output "${RTDETR_OUTPUT}/preflight.json"
 
-python -u yolo_baseline/train_joint.py \
-    --config yolo_baseline/experiment_configs/phase3_yolo26m.yaml \
+python -u models/yolo/train_joint.py \
+    --config models/yolo/experiment_configs/phase3_yolo26m.yaml \
     --experiment E2 \
     --output "$YOLO_OUTPUT"
 
-python -u yolo_baseline/train_rtdetr_joint.py \
-    --config yolo_baseline/experiment_configs/phase3_rtdetr_l.yaml \
+python -u models/yolo/train_rtdetr_joint.py \
+    --config models/yolo/experiment_configs/phase3_rtdetr_l.yaml \
     --experiment E2 \
     --output "$RTDETR_OUTPUT"
 

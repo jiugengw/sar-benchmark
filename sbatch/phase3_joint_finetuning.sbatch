@@ -19,7 +19,7 @@ if ! git lfs version >/dev/null 2>&1; then
     echo "Git LFS is required to fetch the Phase 3 checkpoints and course data." >&2
     exit 2
 fi
-git lfs pull --include="data/*.tar.gz,yolo_baseline/phase3_assets/checkpoints/*.pt"
+git lfs pull --include="data/*.tar.gz,models/yolo/phase3_assets/checkpoints/*.pt"
 
 VENV_DIR=""
 if [[ -x .venv/bin/python ]] && .venv/bin/python -c 'import torch, torchvision, ultralytics' >/dev/null 2>&1; then
@@ -30,7 +30,7 @@ else
     fi
     if ! .phase3-venv/bin/python -c 'import torch, torchvision, ultralytics' >/dev/null 2>&1; then
         .phase3-venv/bin/python -m pip install --upgrade pip
-        .phase3-venv/bin/python -m pip install -r yolo_baseline/requirements.txt
+        .phase3-venv/bin/python -m pip install -r models/yolo/requirements.txt
     fi
     VENV_DIR=".phase3-venv"
 fi
@@ -42,7 +42,7 @@ export OMP_NUM_THREADS=4
 export MPLCONFIGDIR="/tmp/sar-phase3-${SLURM_JOB_ID}"
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
-export PYTHONPATH="${SLURM_SUBMIT_DIR}:${SLURM_SUBMIT_DIR}/yolo_baseline${PYTHONPATH:+:${PYTHONPATH}}"
+export PYTHONPATH="${SLURM_SUBMIT_DIR}:${SLURM_SUBMIT_DIR}/models/yolo${PYTHONPATH:+:${PYTHONPATH}}"
 
 python - <<'PY'
 import torch
@@ -55,10 +55,10 @@ print(f"GPU: {torch.cuda.get_device_name(0)}; visible memory: {torch.cuda.get_de
 PY
 
 for checkpoint in \
-    yolo_baseline/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt \
-    yolo_baseline/phase3_assets/checkpoints/E5_yolo26m_image_classifier.pt \
-    yolo_baseline/phase3_assets/checkpoints/E7_rtdetr_l_p2_best.pt \
-    yolo_baseline/phase3_assets/checkpoints/E7_rtdetr_l_image_classifier.pt; do
+    models/yolo/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt \
+    models/yolo/phase3_assets/checkpoints/E5_yolo26m_image_classifier.pt \
+    models/yolo/phase3_assets/checkpoints/E7_rtdetr_l_p2_best.pt \
+    models/yolo/phase3_assets/checkpoints/E7_rtdetr_l_image_classifier.pt; do
     if [[ ! -s "$checkpoint" ]]; then
         echo "Missing or empty Phase 3 checkpoint: $checkpoint" >&2
         exit 2
@@ -75,7 +75,7 @@ if [[ ! -s data/course-data/train/labels.csv || ! -s data/course-data/val/images
     tar -xzf data/val.tar.gz -C data/course-data
 fi
 
-python -u yolo_baseline/prepare_dataset.py \
+python -u models/yolo/prepare_dataset.py \
     --data data/course-data \
     --split results/yolo26m-100-p2-328339/seed_0/split.json \
     --out data/yolo11s-sar-512 \
@@ -86,17 +86,17 @@ YOLO_OUTPUT="runs/phase3-yolo26m-joint-${JOB_TAG}"
 RTDETR_OUTPUT="runs/phase3-rtdetr-l-joint-${JOB_TAG}"
 mkdir -p runs
 
-python -u yolo_baseline/preflight_rtdetr_joint.py \
-    --config yolo_baseline/experiment_configs/phase3_rtdetr_l.yaml \
+python -u models/yolo/preflight_rtdetr_joint.py \
+    --config models/yolo/experiment_configs/phase3_rtdetr_l.yaml \
     --output "${RTDETR_OUTPUT}/preflight.json"
 
-python -u yolo_baseline/train_joint.py \
-    --config yolo_baseline/experiment_configs/phase3_yolo26m.yaml \
+python -u models/yolo/train_joint.py \
+    --config models/yolo/experiment_configs/phase3_yolo26m.yaml \
     --experiment E2 \
     --output "$YOLO_OUTPUT"
 
-python -u yolo_baseline/train_rtdetr_joint.py \
-    --config yolo_baseline/experiment_configs/phase3_rtdetr_l.yaml \
+python -u models/yolo/train_rtdetr_joint.py \
+    --config models/yolo/experiment_configs/phase3_rtdetr_l.yaml \
     --experiment E2 \
     --output "$RTDETR_OUTPUT"
 

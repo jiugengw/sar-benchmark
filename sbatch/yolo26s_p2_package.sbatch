@@ -18,13 +18,13 @@ export OMP_NUM_THREADS=4
 export MPLCONFIGDIR="/tmp/yolo26s-p2-pack-${SLURM_JOB_ID}"
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
-export PYTHONPATH="${SLURM_SUBMIT_DIR}/yolo_baseline${PYTHONPATH:+:${PYTHONPATH}}"
+export PYTHONPATH="${SLURM_SUBMIT_DIR}/models/yolo${PYTHONPATH:+:${PYTHONPATH}}"
 
-PACKAGE_DIR="nonsubmissions/161026/tests-no-submit/yolo26s-100-p2-328262"
+PACKAGE_DIR="nonsubmissions/161026/yolo26s-100-p2-328262"
 mkdir -p "$PACKAGE_DIR/scoring_result"
 touch "$PACKAGE_DIR/scoring_result/.gitkeep"
 
-python -u yolo_baseline/make_submission.py \
+python -u models/yolo/make_submission.py \
     --weights runs/yolo26s-100-p2-328262/train/weights/best.pt \
     --classifier-checkpoint runs/yolo26s-100-p2-328262/image_classifier.pt \
     --box-class-policy native_detector_classes \

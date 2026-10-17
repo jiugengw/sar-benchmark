@@ -1,0 +1,178 @@
+{
+  "record_id": "404a21b1f4e1410b93b8254a0040b856",
+  "phase": "submission_inference",
+  "status": "completed",
+  "started_utc": "2026-10-16T09:14:55.295760+00:00",
+  "hostname": "block",
+  "pid": 3898315,
+  "command": [
+    "make_submission.py",
+    "--run",
+    "runs/tm-48baseline-326894/terramind_pretrained_moelora",
+    "--data",
+    "data/course-data",
+    "--out",
+    "nonsubmissions/161026/tm-48baseline-326894/terramind_48epoch_baseline_calibrated.zip",
+    "--class-score-power",
+    "0.0"
+  ],
+  "slurm": {
+    "SLURM_JOB_ID": "326894",
+    "SLURM_ARRAY_JOB_ID": null,
+    "SLURM_ARRAY_TASK_ID": null,
+    "SLURM_JOB_PARTITION": "student",
+    "SLURM_JOB_GPUS": "1",
+    "SLURM_GPUS_ON_NODE": "1"
+  },
+  "metadata": {
+    "python": "3.12.8",
+    "libraries": {
+      "torch": "2.9.0+cu128",
+      "torchvision": "0.24.0+cu128",
+      "timm": "1.0.24",
+      "terratorch": "1.2.7",
+      "torchgeo": "0.9.0",
+      "pycocotools": "2.0.11",
+      "Pillow": "12.3.0",
+      "numpy": "2.5.4"
+    },
+    "git_commit": "0fbfda8bf8b03578a92f4dc808e0f1422d85673c",
+    "tracked_files_modified": false,
+    "pretrained_models": [
+      {
+        "name": "TerraMind-1.0-base",
+        "source": "https://huggingface.co/ibm-esa-geospatial/TerraMind-1.0-base",
+        "input_modality": "S1GRD; grayscale repeated as VV and VH",
+        "local_weights": null,
+        "local_weights_sha256": null
+      }
+    ],
+    "input": {
+      "size": [
+        1,
+        512,
+        512
+      ],
+      "geometry": "stretch",
+      "pixel_scale": "uint8 / 255",
+      "mean": 0.2526,
+      "std": 0.2133,
+      "training_flips": "independent horizontal/vertical, each probability 0.5",
+      "training_photometric": false
+    },
+    "configuration": {
+      "data": "data/course-data",
+      "backbone": "terramind",
+      "init": "pretrained",
+      "backbone_weights": null,
+      "adapt": "moelora",
+      "unfreeze_last": 0,
+      "unfrozen_lr": 2e-05,
+      "epochs": 48,
+      "batch_size": 16,
+      "lr": 0.0001,
+      "backbone_lr": 0.0001,
+      "weight_decay": 0.05,
+      "eval_every": 2,
+      "workers": 4,
+      "limit": null,
+      "seed": 0,
+      "fold": null,
+      "folds": 5,
+      "split_seed": 0,
+      "photometric": false,
+      "select_best": true,
+      "anchor_profile": "default",
+      "geometry": "stretch",
+      "class_sampling": "uniform",
+      "box_loss_weight": 1.0,
+      "loss_weighting": "fixed",
+      "out": "runs/tm-48baseline-326894",
+      "results": "results/tm-48baseline-326894",
+      "checkpoints": "checkpoints/tm-48baseline-326894"
+    }
+  },
+  "updated_utc": "2026-10-16T09:15:30.080768+00:00",
+  "process_wall_hours": 0.009662506975000724,
+  "model_gpu_count": 1,
+  "process_gpu_hours": 0.009662506975000724,
+  "gpu_hours_definition": "process wall time \u00d7 model GPU count; includes CPU setup, excludes queue time",
+  "gpu_type": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition MIG 1g.24gb",
+  "cuda_version": "12.8",
+  "peak_gpu_memory_allocated_gib": 2.3139748573303223,
+  "peak_gpu_memory_reserved_gib": 7.22265625,
+  "checkpoint": "runs/tm-48baseline-326894/terramind_pretrained_moelora",
+  "split": "val",
+  "images": 1426,
+  "batch_size": 16,
+  "workers": 8,
+  "precision": "bf16 autocast",
+  "class_score_power": 0.0,
+  "parameters": 106493209,
+  "anchor_configuration": {
+    "sizes": [
+      [
+        8,
+        11
+      ],
+      [
+        16,
+        23
+      ],
+      [
+        32,
+        45
+      ],
+      [
+        64,
+        91
+      ],
+      [
+        128,
+        181
+      ]
+    ],
+    "aspect_ratios": [
+      [
+        0.5,
+        1.0,
+        2.0
+      ],
+      [
+        0.5,
+        1.0,
+        2.0
+      ],
+      [
+        0.5,
+        1.0,
+        2.0
+      ],
+      [
+        0.5,
+        1.0,
+        2.0
+      ],
+      [
+        0.5,
+        1.0,
+        2.0
+      ]
+    ],
+    "strides": [
+      4,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  "prediction_wall_seconds": 34.00260886410251,
+  "prediction_seconds_per_image": 0.023844746749019995,
+  "prediction_timing_scope": "data loading, preprocessing, host-to-device copy, model, calibration, CPU predictions; excludes model loading and ZIP writing",
+  "steady_state_model_seconds_per_image": 0.023255417769748373,
+  "steady_state_timed_images": 1410,
+  "model_timing_scope": "synchronized model forward including detector postprocessing; excludes first batch, data loading and host-to-device copy; batch amortized throughput, not batch-1 latency",
+  "ended_utc": "2026-10-16T09:15:30.080745+00:00",
+  "error": null
+}

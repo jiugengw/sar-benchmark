@@ -22,12 +22,12 @@ export TRANSFORMERS_OFFLINE=1
 RUN_ROOT="runs/tm-48baseline-${SLURM_JOB_ID}"
 RESULT_ROOT="results/tm-48baseline-${SLURM_JOB_ID}"
 CHECKPOINT_ROOT="checkpoints/tm-48baseline-${SLURM_JOB_ID}"
-SUBMISSION_ROOT="nonsubmissions/161026/tests-no-submit/tm-48baseline-${SLURM_JOB_ID}"
+SUBMISSION_ROOT="nonsubmissions/161026/tm-48baseline-${SLURM_JOB_ID}"
 mkdir -p "$RUN_ROOT" "$SUBMISSION_ROOT"
 
-python -u train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \
+python -u models/terramind/train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \
     --epochs 48 --batch-size 16 --lr 1e-4 --seed 0 --workers 4 --eval-every 2 \
     --box-loss-weight 1 --anchor-profile default --loss-weighting fixed --select-best \
     --out "$RUN_ROOT" --results "$RESULT_ROOT" --checkpoints "$CHECKPOINT_ROOT"
-python -u calibrate_submission.py --run "$RUN_ROOT/terramind_pretrained_moelora" \
+python -u models/terramind/calibrate_submission.py --run "$RUN_ROOT/terramind_pretrained_moelora" \
     --out "$SUBMISSION_ROOT/terramind_48epoch_baseline_calibrated.zip"

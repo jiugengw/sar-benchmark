@@ -22,13 +22,13 @@ export TRANSFORMERS_OFFLINE=1
 RUN_ROOT="runs/tm-default-uncertainty-${SLURM_JOB_ID}"
 RESULT_ROOT="results/tm-default-uncertainty-${SLURM_JOB_ID}"
 CHECKPOINT_ROOT="checkpoints/tm-default-uncertainty-${SLURM_JOB_ID}"
-SUBMISSION_ROOT="nonsubmissions/151026/tests-no-submit/tm-default-uncertainty-${SLURM_JOB_ID}"
+SUBMISSION_ROOT="nonsubmissions/151026/tm-default-uncertainty-${SLURM_JOB_ID}"
 mkdir -p "$RUN_ROOT" "$SUBMISSION_ROOT"
 
-python -u train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \
+python -u models/terramind/train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \
     --epochs 48 --batch-size 16 --lr 1e-4 --seed 0 --workers 4 --eval-every 2 \
     --box-loss-weight 2 --photometric --select-best --anchor-profile default \
     --loss-weighting uncertainty --out "$RUN_ROOT" \
     --results "$RESULT_ROOT" --checkpoints "$CHECKPOINT_ROOT"
-python -u calibrate_submission.py --run "$RUN_ROOT/terramind_pretrained_moelora_uncertainty" \
+python -u models/terramind/calibrate_submission.py --run "$RUN_ROOT/terramind_pretrained_moelora_uncertainty" \
     --out "$SUBMISSION_ROOT/terramind_48ep_default_anchors_uncertainty_calibrated.zip"

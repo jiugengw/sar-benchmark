@@ -29,7 +29,7 @@ export MPLCONFIGDIR="/tmp/sar-denodet-${SLURM_JOB_ID}"
 
 OUTPUT="runs/denodet-v2-${SLURM_JOB_ID}"
 mkdir -p "$OUTPUT"
-python denodet_baseline/patch_mmcv.py
+python models/denodet/patch_mmcv.py
 if ! python -c 'import mmcv._ext'; then
     echo "Building MMCV CUDA operators for Blackwell (first run only)"
     python -m pip install --no-deps --no-build-isolation ./third_party/mmcv > "$OUTPUT/mmcv-build.log" 2>&1 || {
@@ -38,6 +38,6 @@ if ! python -c 'import mmcv._ext'; then
     }
 fi
 
-python -u denodet_baseline/train.py \
+python -u models/denodet/train.py \
     --output "$OUTPUT" --epochs "${EPOCHS:-48}" --batch "${BATCH:-8}" --workers 4
 echo "DenoDet V2 finished: $OUTPUT"

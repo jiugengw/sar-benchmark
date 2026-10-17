@@ -23,7 +23,7 @@ JOB_ROOT="runs/yolo11s-baseline-${SLURM_JOB_ID}"
 RESULT_ROOT="results/yolo11s-baseline-${SLURM_JOB_ID}/seed_0"
 mkdir -p "$JOB_ROOT" "$RESULT_ROOT"
 
-python -u yolo_baseline/run_experiment.py \
+python -u models/yolo/run_experiment.py \
     --data data/course-data \
     --dataset-yaml data/yolo11s-sar-512/dataset.yaml \
     --dataset-root data/yolo11s-sar-512 \

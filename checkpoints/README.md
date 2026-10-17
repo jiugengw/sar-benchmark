@@ -7,7 +7,7 @@ Checkpoints are organized as `<backbone>_<init>_<adapt>/seed_<seed>/`. Each fold
 | `model.pt` | Learned model weights, saved as a PyTorch state dictionary. |
 | `metrics.json` | Model configuration, training settings, and local evaluation scores. |
 
-`train.py` copies both files here after training finishes. The `--checkpoints` option chooses a different parent
+`models/terramind/train.py` copies both files here after training finishes. The `--checkpoints` option chooses a different parent
 folder. Use separate parents for experiments with different learning rates or epoch counts but the same model
 configuration and seed; reusing the same checkpoint path replaces its files.
 
@@ -25,7 +25,7 @@ git lfs pull --include="checkpoints/**/model.pt"
 To make a submission using saved weights:
 
 ```bash
-python make_submission.py \
+python models/terramind/make_submission.py \
   --run checkpoints/terramind_pretrained_moelora/seed_0 \
   --data data/course-data --split val \
   --out submissions/terramind_pretrained_moelora_seed0.zip

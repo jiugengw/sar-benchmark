@@ -29,11 +29,11 @@ RUN_ROOT="runs/vit48-${SLURM_ARRAY_JOB_ID}"
 SUBMISSION_ROOT="nonsubmissions/vit48-${SLURM_ARRAY_JOB_ID}"
 mkdir -p "$RUN_ROOT" "$SUBMISSION_ROOT"
 echo "Experiment: $TRIAL; 48 epochs; anchors=large; box loss weight=$BOX_LOSS_WEIGHT"
-python -u train.py --data data/course-data --backbone vit --init pretrained --adapt moelora \
+python -u models/terramind/train.py --data data/course-data --backbone vit --init pretrained --adapt moelora \
     --backbone-weights checkpoints/vit_pretrained_base_seed0.pt \
     --epochs 48 --batch-size 16 --lr 1e-4 --seed 0 --workers 4 --eval-every 2 \
     --box-loss-weight "$BOX_LOSS_WEIGHT" --photometric --select-best --anchor-profile large \
     --out "$RUN_ROOT/$TRIAL" --results "results/vit48-${SLURM_ARRAY_JOB_ID}/$TRIAL" \
     --checkpoints "checkpoints/vit48-${SLURM_ARRAY_JOB_ID}/$TRIAL"
-python -u calibrate_submission.py --run "$RUN_ROOT/$TRIAL/vit_pretrained_moelora" \
+python -u models/terramind/calibrate_submission.py --run "$RUN_ROOT/$TRIAL/vit_pretrained_moelora" \
     --out "$SUBMISSION_ROOT/${TRIAL}_calibrated.zip"

@@ -21,7 +21,7 @@ export OMP_NUM_THREADS=4
 export MPLCONFIGDIR="/tmp/sar-p2-three-models-${SLURM_JOB_ID}"
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
-export PYTHONPATH="${SLURM_SUBMIT_DIR}:${SLURM_SUBMIT_DIR}/yolo_baseline${PYTHONPATH:+:${PYTHONPATH}}"
+export PYTHONPATH="${SLURM_SUBMIT_DIR}:${SLURM_SUBMIT_DIR}/models/yolo${PYTHONPATH:+:${PYTHONPATH}}"
 
 DATA="data/course-data"
 DATASET="data/yolo11s-sar-512"
@@ -48,22 +48,22 @@ run_and_package() {
     touch "$package_dir/scoring_result/.gitkeep"
 
     if [[ "$family" == "yolo26" ]]; then
-        python -u yolo_baseline/train_yolo26s_p2.py \
+        python -u models/yolo/train_yolo26s_p2.py \
             --scale "$scale" --weights "$weights" --train-output "$run_root" \
             --epochs 100 --batch 16 --workers 4
     else
-        python -u yolo_baseline/train_100_epoch.py \
+        python -u models/yolo/train_100_epoch.py \
             --scale "$scale" --variant p2 --weights "$weights" \
             --dataset-yaml "$DATASET/dataset.yaml" --classes "$MANIFEST" \
             --train-output "$run_root" --epochs 100 --batch 16 --workers 4
     fi
 
-    python -u yolo_baseline/train_image_head.py \
+    python -u models/yolo/train_image_head.py \
         --detector-checkpoint "$run_root/train/weights/best.pt" \
         --data "$DATA" --dataset-root "$DATASET" --split "$SPLIT" \
         --output "$run_root/image_classifier.pt" --epochs 100 --batch 32 --workers 4
 
-    python -u yolo_baseline/run_experiment.py \
+    python -u models/yolo/run_experiment.py \
         --data "$DATA" --dataset-yaml "$DATASET/dataset.yaml" \
         --dataset-root "$DATASET" --split "$SPLIT" \
         --baseline-results "$BASELINE_RESULTS" --baseline-checkpoint "$BASELINE_CHECKPOINT" \
@@ -72,7 +72,7 @@ run_and_package() {
         --classifier-checkpoint "$run_root/image_classifier.pt" \
         --model-label "$label" --eval-only
 
-    python -u yolo_baseline/make_submission.py \
+    python -u models/yolo/make_submission.py \
         --weights "$run_root/train/weights/best.pt" \
         --classifier-checkpoint "$run_root/image_classifier.pt" \
         --box-class-policy native_detector_classes --data "$DATA" --classes "$MANIFEST" \

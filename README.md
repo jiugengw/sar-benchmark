@@ -93,17 +93,17 @@ pip install -r requirements.txt   # CUDA 12.8 builds of torch 2.9.0 / torchvisio
 After fetching and extracting the [course data](#23-use-course-data):
 
 ```bash
-python train.py --data data/course-data --backbone vit --init pretrained --adapt lora \
+python models/terramind/train.py --data data/course-data --backbone vit --init pretrained --adapt lora \
   --seed 0 --eval-every 1
 
 # All eight reference configurations, including the over-budget full/scratch runs
-bash run_all.sh --data data/course-data
+bash models/terramind/run_all.sh --data data/course-data
 ```
 
 - Options: `--backbone vit|terramind|resnet34`, `--init pretrained|scratch`, `--adapt full|lora|moelora`.
   ResNet-34 uses `--adapt full`; the small-anchor CNN with both heads has 38.46M
   trainable parameters. Transformer full fine-tuning remains over budget.
-  (`python train.py -h`).
+  (`python models/terramind/train.py -h`).
 - Each validation line reports Δm against the validation ViT + LoRA reference (macro-F1 93.31%, mAP 26.13%).
 - Default training: 24 epochs, batch size 16, learning rate 1e-4, seed 0. `--eval-every 1` validates every epoch;
   the default interval is 4 epochs. The saved checkpoint is the final-epoch model.
@@ -131,18 +131,18 @@ Pass it explicitly; the script's legacy default points to a different dataset lo
 
 The trainer holds out a seeded random 10% of the labeled training set. For the 9,392 course training images,
 that means **8,453 training images and 939 local validation images**. The public course validation images are
-unlabeled and used for submission prediction. `train.py` does not evaluate the official validation or test split.
+unlabeled and used for submission prediction. `models/terramind/train.py` does not evaluate the official validation or test split.
 
 Select experiments with CLI options rather than editing the training loop. Full data layout and command examples
 are in [docs/WORKFLOW.md](docs/WORKFLOW.md).
 
 ### 2.4 Make Submission
 
-`make_submission.py` loads a saved model, predicts the course validation images, maps boxes back to original image
+`models/terramind/make_submission.py` loads a saved model, predicts the course validation images, maps boxes back to original image
 pixels, and writes a ZIP containing `classification.csv` and `detection.json`:
 
 ```bash
-python make_submission.py --run checkpoints/terramind_pretrained_moelora/seed_0 \
+python models/terramind/make_submission.py --run checkpoints/terramind_pretrained_moelora/seed_0 \
   --data data/course-data --split val --out submissions/my-model.zip
 ```
 
@@ -152,7 +152,7 @@ are available locally.
 
 ### 2.5 Saved Files and Detection Report
 
-After a successful run, `train.py` saves the following. Here, `<config>` means `<backbone>_<init>_<adapt>`.
+After a successful run, `models/terramind/train.py` saves the following. Here, `<config>` means `<backbone>_<init>_<adapt>`.
 Partial fine-tuning adds `_unfreezeN` to that configuration name.
 
 | Location | Contents / purpose |
@@ -169,7 +169,7 @@ overwrites its outputs. For another seed or hyperparameter experiment, choose di
 To compare saved detections:
 
 ```bash
-python inspect_detections.py \
+python tools/inspect_detections.py \
   --runs results/terramind_pretrained_moelora results/vit_pretrained_moelora \
   --data data/course-data --out reports/detection-review
 ```
@@ -232,21 +232,21 @@ Three model families, each with its own training code. Run everything from the r
 
 | Family | Train | Slurm | Evaluate / package | Docs |
 |---|---|---|---|---|
-| **YOLO / RT-DETR detectors** with an image-classification head (best: YOLO26m-P2, Δm +36.80) | `yolo_baseline/train_yolo26s_p2.py` (YOLO26 n–l with a P2 level), `train_100_epoch.py` (YOLO11), `train_rtdetr_p2.py`, `train_image_head.py` (image head on frozen features), `train_joint.py` / `train_rtdetr_joint.py` (Phase 3), `deadline_recovery.py` (detector continuation + spatial head), `train_yolo26m_p1.py` (stride-2 level) | `sbatch/yolo26_all_p2_100.sbatch`, `sbatch/sar_phase2_architectures.sbatch`, `sbatch/phase3_*.sbatch`, `sbatch/deadline_yolo26m*.sbatch`, `sbatch/quick_classifier.sbatch` | `yolo_baseline/run_experiment.py` (holdout scoring), `make_submission.py`, `quick_box_bias.py` + `package_box_bias.py`, `paired_holdout_audit.py` | [yolo_baseline/README.md](yolo_baseline/README.md) |
-| **ViT / TerraMind / ResNet34 + Faster R-CNN** (TA reference and our first experiments) | `train.py` (code in `sarbench/`), `run_all.sh`, `cross_validate.py` | `sbatch/terramind_*.sbatch`, `sbatch/small_anchor_48.sbatch`, `sbatch/targeted_small_*.sbatch`, `sbatch/vit_compare_48.sbatch` | `make_submission.py`, `calibrate_submission.py` | [docs/DETAILS.md](docs/DETAILS.md), [docs/WORKFLOW.md](docs/WORKFLOW.md) |
-| **DenoDet V2** (SAR-specific FFTResNet-50 + GFL) | `denodet_baseline/train.py` | `sbatch/denodet_v2.sbatch`, `sbatch/denodet_v2_resume.sbatch` | `denodet_baseline/export.py`, `export_checkpoint.py` | [denodet_baseline/README.md](denodet_baseline/README.md) |
+| **YOLO / RT-DETR detectors** with an image-classification head (best: YOLO26m-P2, Δm +36.80) | `models/yolo/train_yolo26s_p2.py` (YOLO26 n–l with a P2 level), `train_100_epoch.py` (YOLO11), `train_rtdetr_p2.py`, `train_image_head.py` (image head on frozen features), `train_joint.py` / `train_rtdetr_joint.py` (Phase 3), `deadline_recovery.py` (detector continuation + spatial head), `train_yolo26m_p1.py` (stride-2 level) | `sbatch/yolo26_all_p2_100.sbatch`, `sbatch/sar_phase2_architectures.sbatch`, `sbatch/phase3_*.sbatch`, `sbatch/deadline_yolo26m*.sbatch`, `sbatch/quick_classifier.sbatch` | `models/yolo/run_experiment.py` (holdout scoring), `models/terramind/make_submission.py`, `quick_box_bias.py` + `package_box_bias.py`, `paired_holdout_audit.py` | [models/yolo/README.md](models/yolo/README.md) |
+| **ViT / TerraMind / ResNet34 + Faster R-CNN** (TA reference and our first experiments) | `models/terramind/train.py` (code in `sarbench/`), `models/terramind/run_all.sh`, `models/terramind/cross_validate.py` | `sbatch/terramind_*.sbatch`, `sbatch/small_anchor_48.sbatch`, `sbatch/targeted_small_*.sbatch`, `sbatch/vit_compare_48.sbatch` | `models/terramind/make_submission.py`, `models/terramind/calibrate_submission.py` | [docs/DETAILS.md](docs/DETAILS.md), [docs/WORKFLOW.md](docs/WORKFLOW.md) |
+| **DenoDet V2** (SAR-specific FFTResNet-50 + GFL) | `models/denodet/train.py` | `sbatch/denodet_v2.sbatch`, `sbatch/denodet_v2_resume.sbatch` | `models/denodet/export.py`, `export_checkpoint.py` | [models/denodet/README.md](models/denodet/README.md) |
 
 How the best submission (`yolo26m_p2_candidate_330230.zip`, Δm +36.80) was built:
 
-1. **E5 detector:** YOLO26m with a P2 level, 100 epochs from COCO weights: `yolo_baseline/train_yolo26s_p2.py` via `sbatch/yolo26_all_p2_100.sbatch`.
-2. **Continuation:** 40 more detector-only epochs from E5, then a spatial image head on the frozen features: `yolo_baseline/deadline_recovery.py` via `sbatch/deadline_yolo26m.sbatch` (official Δm +34.57 on its own).
-3. **Wider image head:** a 1024-unit classifier on the same frozen features: `yolo_baseline/quick_classifier.py` via `sbatch/quick_classifier.sbatch`.
-4. **Box-edge correction:** per class and image width, fitted on clean holdout images: `yolo_baseline/quick_box_bias.py`, packaged with `yolo_baseline/package_box_bias.py`.
+1. **E5 detector:** YOLO26m with a P2 level, 100 epochs from COCO weights: `models/yolo/train_yolo26s_p2.py` via `sbatch/yolo26_all_p2_100.sbatch`.
+2. **Continuation:** 40 more detector-only epochs from E5, then a spatial image head on the frozen features: `models/yolo/deadline_recovery.py` via `sbatch/deadline_yolo26m.sbatch` (official Δm +34.57 on its own).
+3. **Wider image head:** a 1024-unit classifier on the same frozen features: `models/yolo/quick_classifier.py` via `sbatch/quick_classifier.sbatch`.
+4. **Box-edge correction:** per class and image width, fitted on clean holdout images: `models/yolo/quick_box_bias.py`, packaged with `models/yolo/package_box_bias.py`.
 
-Shared pieces:
+Repository layout:
 
 ```
-sarbench/             model, data, metrics and twin-aware evaluation used by train.py and the YOLO scorer
+sarbench/             model, data, metrics and twin-aware evaluation used by models/terramind/train.py and the YOLO scorer
 ├── data.py           images + boxes at 512 × 512, flips; boxes back to original pixels
 ├── backbones.py      ViT (ImageNet-21k), TerraMind-1.0-base, ResNet34
 ├── adapters.py       LoRA, MoE-LoRA on a frozen backbone
@@ -254,8 +254,8 @@ sarbench/             model, data, metrics and twin-aware evaluation used by tra
 ├── metrics.py        accuracy, macro-F1, COCO box AP
 ├── twins.py          near-duplicate twins and the clean holdout subset (python -m sarbench.twins)
 └── optim.py          learning-rate groups for adapters, heads, and unfrozen backbone weights
-inspect_detections.py saved predictions + correct boxes -> HTML detection report
-account_compute.py    Slurm GPU-hour accounting for the report
+models/               the three model families above: terramind/ (uses the root requirements.txt), yolo/ and denodet/ (own requirements.txt)
+tools/                detection HTML report, Slurm GPU-hour accounting, one-off backbone diagnostics
 scripts/              interactive setup and run helpers (Phase 3, DenoDet)
 tests/                CPU tests; dataset-dependent tests need the course data
 submissions/          ZIPs uploaded to Codabench, with official scoring results
@@ -281,14 +281,14 @@ above are the TA's measurements, not repeated runs by our team.
 | Whole-project GPU hours, tuning included | Export Slurm allocation accounting with the command below. Include failed/cancelled jobs and add runs from other machines. Do not sum copied metrics or overlapping accounting sources. Historical whole-project total is still pending. |
 | Peak GPU memory | Existing metrics store peak allocated GiB. New compute records also save peak reserved GiB. |
 | Inference time per image | New submission generation writes `<name>.inference.json`: GPU, batch size, precision, prediction wall time/image and synchronized model time/image. Model timing excludes the first batch; it is batch-amortized throughput, not batch-1 latency. The final model still needs a recorded measurement. |
-| Input and preprocessing | New records save grayscale 512×512 input, geometry, scale, normalization and training augmentation flags. Full implementation: `sarbench/data.py`, `make_submission.py`. |
+| Input and preprocessing | New records save grayscale 512×512 input, geometry, scale, normalization and training augmentation flags. Full implementation: `sarbench/data.py`, `models/terramind/make_submission.py`. |
 | Every pretrained model, including training-only models | New records save model identifiers, source URLs and local weight paths. Verify checkpoint provenance and document any additional teacher or auxiliary model if introduced. |
 | External code versus team contributions | `requirements.txt` pins dependencies; new records capture actual installed versions and Git revision/dirty status. Still write the attribution distinguishing TA/reference code, external libraries and team modifications. |
 | Validation and Phase 2 selection | Saved configuration, holdout annotations and newer `split.json` record the split. Recent runs select highest local Δm and calibrate locally. Record the exact final checkpoint, ZIP and decision before Phase 2. |
 | Seeds and uncertainty | Current saved experiments use seed 0. Repeat final comparisons where a gain below about 2 points is claimed; report mean ± sample std and number of runs. Keep holdout fixed: current 90/10 splitting uses `--seed`, so separate split/training seeds before these repeats. |
 | Ablations | Assemble local comparisons from `results/`, keeping the split fixed. State all settings changed; longer schedules change both epoch count and LR decay. Planned changes are not trained results. |
 
-Future `train.py` runs write `compute.json` at startup, every 30 seconds, after
+Future `models/terramind/train.py` runs write `compute.json` at startup, every 30 seconds, after
 training epochs, and on normal completion or Python exceptions. Completed records
 are copied beside results/checkpoints. Reusing an output preserves the previous
 compute record under a unique filename. Calibration has its own
@@ -306,7 +306,7 @@ From the repository root, export the cluster accounting (choose the date coverin
 the project's first cluster run):
 
 ```bash
-python account_compute.py --start 2026-10-01
+python tools/account_compute.py --start 2026-10-01
 ```
 
 This saves `results/compute/slurm_accounting.json` and the raw accounting output.

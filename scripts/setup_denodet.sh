@@ -27,11 +27,11 @@ packages = Path(sys.prefix) / 'lib/python3.12/site-packages'
 (packages / 'sar_shared.pth').write_text(str(Path('.venv/lib/python3.12/site-packages').resolve()) + '\n')
 PY
 # Install into this environment only. Torch/CUDA stay in the existing .venv.
-.denodet-venv/bin/python -m pip install --no-deps -r requirements-denodet.txt
+.denodet-venv/bin/python -m pip install --no-deps -r models/denodet/requirements.txt
 if [[ ! -s pretrained/resnet50-0676ba61.pth ]]; then
     curl --fail --location --output pretrained/resnet50-0676ba61.pth.partial \
         https://download.pytorch.org/models/resnet50-0676ba61.pth
     mv pretrained/resnet50-0676ba61.pth.partial pretrained/resnet50-0676ba61.pth
 fi
-.denodet-venv/bin/python denodet_baseline/patch_mmcv.py
+.denodet-venv/bin/python models/denodet/patch_mmcv.py
 echo 'Ready: sbatch sbatch/denodet_v2.sbatch'

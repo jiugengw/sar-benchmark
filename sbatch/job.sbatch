@@ -47,7 +47,7 @@ if [[ -n "$LIMIT" ]]; then
 fi
 
 echo "Experiment: $RUN_ID"
-python train.py \
+python models/terramind/train.py \
     --data "${DATA_DIR:-data/course-data}" \
     --backbone "$BACKBONE" \
     --init "$INIT" \

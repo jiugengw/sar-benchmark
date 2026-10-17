@@ -80,7 +80,7 @@ per class (512 scale):  boxes   imgs  median-size  p10   p90   <16px
    ship            1544   1187      55.1   31.0   98.7    0.5%
    wind_turbine    8625    918       8.3    5.5   15.0   94.2%
 crowding: boxes overlapping another box with IoU>0.3: 0.6%, IoU>0.5: 0.2% (of boxes in multi-box images) | box area / image area: median 0.9%  p95 19.1%
-   (NMS in train.py uses 0.5 at RoI level and 0.7 at RPN; IoU>0.5 overlaps between true boxes get suppressed)
+   (NMS in models/terramind/train.py uses 0.5 at RoI level and 0.7 at RPN; IoU>0.5 overlaps between true boxes get suppressed)
 anchor coverage [default (0.5,1,2)] best centred-shape IoU per box: median 0.79 | >=0.7: 86.9% | 0.5-0.7: 7.7% | <0.5: 5.4%
 anchor coverage [wide (0.2..5)] best centred-shape IoU per box: median 0.79 | >=0.7: 88.4% | 0.5-0.7: 7.0% | <0.5: 4.5%
    upper bound (anchors on a stride grid are offset from the box centre, so real IoUs are lower, esp. for tiny boxes)
@@ -119,4 +119,4 @@ anchor coverage [wide (0.2..5)] best centred-shape IoU per box: median 0.79 | >=
 - Class and image size are strongly linked (Cramer V 0.54): the model can read class from resampling blur even after stretching to 512. Treat classification gains with suspicion; consider a size-aware holdout.
 - Brightness alone explains 43% of between-class variance: global intensity transforms change a class cue, not just noise.
 - Duplicates / near-duplicates exist inside train: a random 90/10 split puts copies on both sides and inflates local scores; group duplicates before splitting.
-- Normalisation: train mean/std at native res = 0.2657/0.2056 vs 0.2526/0.2133 in data.py. Recompute after ANY intensity transform and apply it identically in make_submission.py.
+- Normalisation: train mean/std at native res = 0.2657/0.2056 vs 0.2526/0.2133 in data.py. Recompute after ANY intensity transform and apply it identically in models/terramind/make_submission.py.

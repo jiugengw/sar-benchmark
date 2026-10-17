@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT))
 
 from sarbench.metrics import detection_metrics
 from sarbench.twins import clean_image_ids
-from yolo_baseline.image_head import classification_metrics
+from models.yolo.image_head import classification_metrics
 
 
 def score_same_predictions_ultralytics(ground_truth: dict, predictions: list[dict]) -> dict:
@@ -90,7 +90,7 @@ def main() -> None:
         (view / "val/images.json").write_text(json.dumps({"images": ground_truth["images"]}))
         package = temporary / "holdout.zip"
         subprocess.run([
-            sys.executable, "-u", str(ROOT / "yolo_baseline/make_submission.py"),
+            sys.executable, "-u", str(ROOT / "models/yolo/make_submission.py"),
             "--weights", str((args.run / "train/weights/best.pt").resolve()),
             "--classifier-checkpoint", str((args.run / "image_classifier.pt").resolve()),
             "--data", str(view), "--batch", str(args.batch), "--out", str(package),
@@ -131,7 +131,7 @@ def main() -> None:
     }
     official = json.loads(args.official_scores.read_text())
     metadata = {
-        "evaluation": "Exact make_submission.py pipeline scored on labeled holdout; COCOeval detection",
+        "evaluation": "Exact models/terramind/make_submission.py pipeline scored on labeled holdout; COCOeval detection",
         "images": len(image_ids), "batch_size": args.batch,
         "weights_sha256": inference["weights_sha256"],
         "split": "local training holdout; disjoint from official course validation",

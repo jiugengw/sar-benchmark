@@ -1,6 +1,6 @@
 task: detect
 mode: train
-model: /common/scratch/users/j/jgwong.2023/sar-benchmark/yolo_baseline/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt
+model: /common/scratch/users/j/jgwong.2023/sar-benchmark/models/yolo/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt
 data: /common/scratch/users/j/jgwong.2023/sar-benchmark/data/yolo11s-sar-512/dataset.yaml
 epochs: 40
 time: null

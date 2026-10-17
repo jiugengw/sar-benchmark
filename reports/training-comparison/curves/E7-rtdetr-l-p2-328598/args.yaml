@@ -1,6 +1,6 @@
 task: detect
 mode: train
-model: /common/scratch/users/j/jgwong.2023/sar-benchmark/yolo_baseline/rtdetr_l_p2.yaml
+model: /common/scratch/users/j/jgwong.2023/sar-benchmark/models/yolo/rtdetr_l_p2.yaml
 data: /common/scratch/users/j/jgwong.2023/sar-benchmark/data/yolo11s-sar-512/dataset.yaml
 epochs: 100
 time: null

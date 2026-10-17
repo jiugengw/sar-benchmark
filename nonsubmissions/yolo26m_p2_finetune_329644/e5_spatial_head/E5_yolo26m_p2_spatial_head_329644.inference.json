@@ -16,7 +16,7 @@
   "classification_fallback_class": 4,
   "batch_size": 16,
   "inference_seconds_including_resize_and_zip": 41.23502015369013,
-  "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/yolo_baseline/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt",
+  "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/models/yolo/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt",
   "weights_sha256": "75631501420ac93e109fec9ec490b8a8adba8461f9e8f146d039f644081beea0",
   "zip": "/common/scratch/users/j/jgwong.2023/sar-benchmark/nonsubmissions/yolo26m_p2_finetune_329644/e5_spatial_head/E5_yolo26m_p2_spatial_head_329644.zip",
   "zip_sha256": "1337d3e8b0ef3d6f02b7e954daeafa2e963346a2fa709b41a9823e48005838bb"

@@ -12,7 +12,7 @@
     "--data",
     "data/course-data",
     "--out",
-    "nonsubmissions/151026/tests-no-submit/tm-default-uncertainty-326398/terramind_48ep_default_anchors_uncertainty_calibrated.zip",
+    "nonsubmissions/151026/tm-default-uncertainty-326398/terramind_48ep_default_anchors_uncertainty_calibrated.zip",
     "--class-score-power",
     "0.5"
   ],

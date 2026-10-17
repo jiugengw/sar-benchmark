@@ -17,7 +17,7 @@ export PYTHONUNBUFFERED=1
 export OMP_NUM_THREADS=4
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
-export PYTHONPATH="${SLURM_SUBMIT_DIR}/yolo_baseline${PYTHONPATH:+:${PYTHONPATH}}"
+export PYTHONPATH="${SLURM_SUBMIT_DIR}/models/yolo${PYTHONPATH:+:${PYTHONPATH}}"
 
 MODEL_NAME="yolo26n"
 RUN_ROOT="runs/${MODEL_NAME}-100-p2-${SLURM_JOB_ID}"
@@ -25,13 +25,13 @@ RESULT_ROOT="results/${MODEL_NAME}-100-p2-${SLURM_JOB_ID}/seed_0"
 export MPLCONFIGDIR="/tmp/${MODEL_NAME}-p2-100-${SLURM_JOB_ID}"
 mkdir -p "$RUN_ROOT" "$RESULT_ROOT"
 
-python -u yolo_baseline/train_yolo26s_p2.py \
+python -u models/yolo/train_yolo26s_p2.py \
     --scale n \
     --weights pretrained/yolo26n.pt \
     --train-output "$RUN_ROOT" \
     --epochs 100 --batch 16 --workers 4
 
-python -u yolo_baseline/train_image_head.py \
+python -u models/yolo/train_image_head.py \
     --detector-checkpoint "$RUN_ROOT/train/weights/best.pt" \
     --data data/course-data \
     --dataset-root data/yolo11s-sar-512 \
@@ -39,7 +39,7 @@ python -u yolo_baseline/train_image_head.py \
     --output "$RUN_ROOT/image_classifier.pt" \
     --epochs 100 --batch 32 --workers 4
 
-python -u yolo_baseline/run_experiment.py \
+python -u models/yolo/run_experiment.py \
     --data data/course-data \
     --dataset-yaml data/yolo11s-sar-512/dataset.yaml \
     --dataset-root data/yolo11s-sar-512 \
@@ -56,10 +56,10 @@ python -u yolo_baseline/run_experiment.py \
 
 python reports/training-comparison/build_comparison.py
 
-PACKAGE_DIR="nonsubmissions/161026/tests-no-submit/${MODEL_NAME}-100-p2-${SLURM_JOB_ID}"
+PACKAGE_DIR="nonsubmissions/161026/${MODEL_NAME}-100-p2-${SLURM_JOB_ID}"
 mkdir -p "$PACKAGE_DIR/scoring_result"
 touch "$PACKAGE_DIR/scoring_result/.gitkeep"
-python -u yolo_baseline/make_submission.py \
+python -u models/yolo/make_submission.py \
     --weights "$RUN_ROOT/train/weights/best.pt" \
     --classifier-checkpoint "$RUN_ROOT/image_classifier.pt" \
     --box-class-policy native_detector_classes \

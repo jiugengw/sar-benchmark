@@ -43,9 +43,9 @@ seed 0); "clean" means the 720 holdout images with no near-duplicate in training
 **Why.** Establish an official score with the reference code and pick the best of the four compliant
 backbone/adapter combinations. The TA's own validation table put TerraMind + MoE-LoRA highest (+4.4 ± 0.3).
 
-**What we did.** `train.py` (code in `sarbench/`): frozen ViT-B/16 (ImageNet-21k) or TerraMind-1.0-base,
+**What we did.** `models/terramind/train.py` (code in `sarbench/`): frozen ViT-B/16 (ImageNet-21k) or TerraMind-1.0-base,
 LoRA or MoE-LoRA adapters, image-class head plus ViTDet feature pyramid and Faster R-CNN. 24 epochs, batch 16,
-AdamW, LR 1e-4, weight decay 0.05, seed 0, final-epoch checkpoint. ZIPs via `make_submission.py`. One extra
+AdamW, LR 1e-4, weight decay 0.05, seed 0, final-epoch checkpoint. ZIPs via `models/terramind/make_submission.py`. One extra
 screening run unfroze the last two TerraMind blocks (`--unfreeze-last 2`, unfrozen LR 2e-5, 12 epochs).
 The first plan aimed to beat a leaderboard snapshot of +8.22 (leader: F1 92.13%, mAP 30.75%) within the
 limit of five uploads per day.
@@ -69,9 +69,9 @@ Partial unfreezing on a short schedule hurt badly. Local Δm under-estimated off
 ## Part 2. TerraMind detection ablations (Oct 14–16)
 
 All runs: pretrained TerraMind + MoE-LoRA, seed 0, same 90/10 split, batch 16, LR 1e-4, frozen original blocks,
-stretched 512 px input, unless stated. Code: `train.py` options `--anchor-profile`, `--geometry`,
+stretched 512 px input, unless stated. Code: `models/terramind/train.py` options `--anchor-profile`, `--geometry`,
 `--class-sampling`, `--box-loss-weight`, `--photometric`, `--select-best`, `--loss-weighting`,
-`--small-object-sampling`, `--detail-branch`; calibration in `calibrate_submission.py`.
+`--small-object-sampling`, `--detail-branch`; calibration in `models/terramind/calibrate_submission.py`.
 
 ### 2.1 Single-factor ablations, 24 epochs (Oct 14)
 
@@ -181,12 +181,12 @@ stayed at 2–3% AP in every backbone.
 512 px images). Ultralytics detectors fit entirely within the 40M trainable budget, so they can be fully
 fine-tuned, and a stride-4 **P2** detection level gives tiny objects more feature cells.
 
-**What we did.** `yolo_baseline/prepare_dataset.py` converts the same 8,453/939 split. Code:
+**What we did.** `models/yolo/prepare_dataset.py` converts the same 8,453/939 split. Code:
 `train_100_epoch.py` (YOLO11), `train_yolo26s_p2.py` (YOLO26 n–l with P2), `train_rtdetr_p2.py`,
-`train_image_head.py`, `run_experiment.py` (holdout scoring), `make_submission.py`. Sequential method: train
+`train_image_head.py`, `run_experiment.py` (holdout scoring), `models/terramind/make_submission.py`. Sequential method: train
 the detector (official COCO weights; P2 branch random), freeze it, then train an image head (global-average-pool
 each P2–P5 map, LayerNorm, Dropout 0.2, Linear) on the 8,453 training labels for 100 epochs. Batch 16, 512 px,
-seed 0. Details in [yolo_baseline/README.md](../yolo_baseline/README.md).
+seed 0. Details in [models/yolo/README.md](../models/yolo/README.md).
 
 ### 3.1 24-epoch screens and 100-epoch YOLO11s standard vs P2
 
@@ -244,11 +244,11 @@ in the Phase 1 table.
 
 **Why.** E5 had the best detector but weak F1 (official 89.75); E2 showed joint training buys about 3 F1 points.
 
-**What we did.** `yolo_baseline/train_joint.py`, config `experiment_configs/phase3_yolo26m.yaml`, run via
+**What we did.** `models/yolo/train_joint.py`, config `experiment_configs/phase3_yolo26m.yaml`, run via
 `scripts/run_phase3_joint.sh` / `sbatch/phase3_joint_finetuning.sbatch`. 15 epochs from E5's detector and
 classifier, detection + 0.5 × image cross-entropy, shared-layer LR scale 0.1, `lr0` 0.001, mosaic/mixup/
 copy-paste off, best epoch by local Δm; 0.80 GPU-hours. Checkpoints staged under
-`yolo_baseline/phase3_assets/` (Git LFS). The RT-DETR-L joint run was prepared (preflight, config) but no
+`models/yolo/phase3_assets/` (Git LFS). The RT-DETR-L joint run was prepared (preflight, config) but no
 result is recorded.
 
 | Measurement | F1 | mAP | Δm |
@@ -267,7 +267,7 @@ also showed that only the exact submission pipeline should be trusted for local 
 
 ## Part 5. Deadline push (Oct 17, from 18:16 SGT, six hours and two uploads left; target ≥ 30)
 
-Code: `yolo_baseline/deadline_recovery.py` (continuation + spatial head), `quick_classifier.py`,
+Code: `models/yolo/deadline_recovery.py` (continuation + spatial head), `quick_classifier.py`,
 `quick_box_bias.py` + `package_box_bias.py`, `paired_holdout_audit.py`, `train_yolo26m_p1.py`;
 Slurm `sbatch/deadline_yolo26m.sbatch`, `deadline_yolo26m_p1.sbatch`, `quick_classifier.sbatch`.
 
@@ -339,7 +339,7 @@ breakdown was not downloaded. Details: [submission folder](../submissions/yolo26
 |---|---|
 | P1 (stride-2) level on E5, job 329663 | Failed at startup after the slot opened; no result. Rule status of internal upsampling was also unconfirmed with the TA. |
 | Map-only groups (teammate): 40 detection-only epochs from a Phase 3 continuation checkpoint, old head | Local 93.62 / 41.81 / +30.17; not recommended ([package](../nonsubmissions/yolo26m-map-only-groups-20261017/)) |
-| DenoDet V2 (FFTResNet-50 + GFL, ImageNet init, 32.94M params, `denodet_baseline/train.py`) | 329456 → 329477 (48 ep) failed at epoch 20 on disk quota; 329870 recovered to epoch 32; resume 330220 saved no epoch-48 evaluation. Epoch 32: 92.66 / 33.75 / +14.23 full, 90.86 / 30.07 / +6.23 clean ([denodet_baseline/README.md](../denodet_baseline/README.md)) |
+| DenoDet V2 (FFTResNet-50 + GFL, ImageNet init, 32.94M params, `models/denodet/train.py`) | 329456 → 329477 (48 ep) failed at epoch 20 on disk quota; 329870 recovered to epoch 32; resume 330220 saved no epoch-48 evaluation. Epoch 32: 92.66 / 33.75 / +14.23 full, 90.86 / 30.07 / +6.23 clean ([models/denodet/README.md](../models/denodet/README.md)) |
 
 **Lesson.** Cheap post-hoc steps on a frozen strong detector (head capacity, deterministic box calibration
 validated by cross-fitting) were worth more in the last hours than new architectures. Infrastructure (file-count
@@ -429,7 +429,7 @@ P1 level, IoU-aware ranking, bridge/playground oversampling and class-conditione
 | [submissions/](../submissions/README.md) | One folder per ZIP uploaded to Codabench (25), with packaging metadata and, where downloaded, `scoring_result/scores.json`. The index is the authoritative list of official scores. |
 | [nonsubmissions/](../nonsubmissions/) | ZIPs packaged but never uploaded (ablations, ViT/ResNet comparisons, second continuation, quick head, box-only, map-only, DenoDet). |
 | [results/](../results/README.md) | Local metrics, holdout predictions and annotations per run, including clean-holdout scores and the twin audits in [results/yolo26m_p2_finetune_329644/](../results/yolo26m_p2_finetune_329644/). |
-| [checkpoints/](../checkpoints/README.md) | TerraMind/ViT/ResNet weights and configuration (Git LFS). YOLO checkpoints for Phase 3 are in `yolo_baseline/phase3_assets/`; the final image head is in the candidate's submission folder. |
+| [checkpoints/](../checkpoints/README.md) | TerraMind/ViT/ResNet weights and configuration (Git LFS). YOLO checkpoints for Phase 3 are in `models/yolo/phase3_assets/`; the final image head is in the candidate's submission folder. |
 | `reports/` | [Training comparison](../reports/training-comparison/README.md) (curves, official-vs-local audit) and the [ViT/TerraMind paired review](../reports/vit-terramind-48/FINDINGS.md). |
 
 Code entry points and Slurm scripts per model family are mapped in the [README](../README.md); training

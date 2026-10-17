@@ -31,13 +31,13 @@ CHECKPOINT_ROOT="checkpoints/targeted-small-${SLURM_ARRAY_JOB_ID}"
 case "$SLURM_ARRAY_TASK_ID" in
     0)
         echo "Experiment: 15.32 recipe + tiny-object image sampling"
-        python -u train.py "${COMMON[@]}" --small-object-sampling \
+        python -u models/terramind/train.py "${COMMON[@]}" --small-object-sampling \
             --out "$RUN_ROOT/small_sampling" --results "$RESULT_ROOT/small_sampling" \
             --checkpoints "$CHECKPOINT_ROOT/small_sampling"
         ;;
     1)
         echo "Experiment: 15.32 recipe + stride-4 image detail branch"
-        python -u train.py "${COMMON[@]}" --detail-branch \
+        python -u models/terramind/train.py "${COMMON[@]}" --detail-branch \
             --out "$RUN_ROOT/detail_branch" --results "$RESULT_ROOT/detail_branch" \
             --checkpoints "$CHECKPOINT_ROOT/detail_branch"
         ;;

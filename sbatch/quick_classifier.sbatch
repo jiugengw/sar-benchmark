@@ -16,4 +16,4 @@ export OMP_NUM_THREADS=4
 export OPENBLAS_NUM_THREADS=4
 export PYTHONUNBUFFERED=1
 export MPLCONFIGDIR="/tmp/sar-quick-head-${SLURM_JOB_ID}"
-python -u yolo_baseline/quick_classifier.py --output "runs/yolo26m_p2_quick_head_${SLURM_JOB_ID}" --max-minutes 21
+python -u models/yolo/quick_classifier.py --output "runs/yolo26m_p2_quick_head_${SLURM_JOB_ID}" --max-minutes 21

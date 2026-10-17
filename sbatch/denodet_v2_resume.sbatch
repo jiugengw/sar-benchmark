@@ -19,6 +19,6 @@ export CUDA_HOME=/opt/apps/software/CUDA/12.8.0
 export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
 export PYTHONPATH="${SLURM_SUBMIT_DIR}:${SLURM_SUBMIT_DIR}/third_party/GrokSAR${PYTHONPATH:+:${PYTHONPATH}}"
 export MPLCONFIGDIR="/tmp/sar-denodet-resume-${SLURM_JOB_ID}"
-python -u denodet_baseline/train.py \
+python -u models/denodet/train.py \
     --output runs/denodet-v2-329477 --resume --epochs 48 \
     --batch 8 --workers 4

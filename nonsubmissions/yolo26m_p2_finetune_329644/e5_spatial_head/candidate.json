@@ -1,5 +1,5 @@
 {
-  "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/yolo_baseline/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt",
+  "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/models/yolo/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt",
   "classifier": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/deadline-yolo26m-329644/e5_spatial_head/image_classifier.pt",
   "branch": "one2many",
   "holdout": {

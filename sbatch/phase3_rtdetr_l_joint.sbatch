@@ -22,12 +22,12 @@ export OMP_NUM_THREADS=4
 export MPLCONFIGDIR="/tmp/sar-phase3-rtdetr-${SLURM_JOB_ID}"
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
-export PYTHONPATH="${SLURM_SUBMIT_DIR}:${SLURM_SUBMIT_DIR}/yolo_baseline${PYTHONPATH:+:${PYTHONPATH}}"
+export PYTHONPATH="${SLURM_SUBMIT_DIR}:${SLURM_SUBMIT_DIR}/models/yolo${PYTHONPATH:+:${PYTHONPATH}}"
 
 for input in \
-    yolo_baseline/phase3_assets/checkpoints/E7_rtdetr_l_p2_best.pt \
-    yolo_baseline/phase3_assets/checkpoints/E7_rtdetr_l_image_classifier.pt \
-    yolo_baseline/experiment_configs/phase3_rtdetr_l.yaml \
+    models/yolo/phase3_assets/checkpoints/E7_rtdetr_l_p2_best.pt \
+    models/yolo/phase3_assets/checkpoints/E7_rtdetr_l_image_classifier.pt \
+    models/yolo/experiment_configs/phase3_rtdetr_l.yaml \
     data/course-data/train/labels.csv \
     data/yolo11s-sar-512/dataset.yaml \
     results/yolo26m-100-p2-328339/seed_0/split.json; do
@@ -51,12 +51,12 @@ JOB_TAG="${SLURM_JOB_ID}"
 OUTPUT="runs/phase3-rtdetr-l-joint-${JOB_TAG}"
 mkdir -p "$OUTPUT"
 
-python -u yolo_baseline/preflight_rtdetr_joint.py \
-    --config yolo_baseline/experiment_configs/phase3_rtdetr_l.yaml \
+python -u models/yolo/preflight_rtdetr_joint.py \
+    --config models/yolo/experiment_configs/phase3_rtdetr_l.yaml \
     --output "$OUTPUT/preflight.json"
 
-python -u yolo_baseline/train_rtdetr_joint.py \
-    --config yolo_baseline/experiment_configs/phase3_rtdetr_l.yaml \
+python -u models/yolo/train_rtdetr_joint.py \
+    --config models/yolo/experiment_configs/phase3_rtdetr_l.yaml \
     --experiment E2 \
     --output "$OUTPUT"
 

@@ -14,6 +14,6 @@ source .venv/bin/activate
 export PYTHONPATH="${SLURM_SUBMIT_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 export OMP_NUM_THREADS=4
 export PYTHONUNBUFFERED=1
-python -u yolo_baseline/screen_detection_branch.py \
-    --weights yolo_baseline/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt \
+python -u models/yolo/screen_detection_branch.py \
+    --weights models/yolo/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt \
     --output "results/deadline-screen-${SLURM_JOB_ID}/branch_metrics.json"

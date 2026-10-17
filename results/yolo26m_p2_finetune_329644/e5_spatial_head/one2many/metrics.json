@@ -212,7 +212,7 @@
     "classification_fallback_class": 4,
     "batch_size": 16,
     "inference_seconds_including_resize_and_zip": 25.94608480297029,
-    "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/yolo_baseline/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt",
+    "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/models/yolo/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt",
     "weights_sha256": "75631501420ac93e109fec9ec490b8a8adba8461f9e8f146d039f644081beea0",
     "zip": "/tmp/sar-deadline-holdout-fowsaq4j/holdout.zip",
     "zip_sha256": "c54781cf16a4b1a31e1022116f9354cebcf85907884fec8e15a5eb31d4934140"

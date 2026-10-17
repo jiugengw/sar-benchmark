@@ -30,7 +30,7 @@ if [[ "$SLURM_ARRAY_TASK_ID" == 3 ]]; then
         else
             MODEL_DIR="checkpoints/$MODEL_NAME"
         fi
-        python -u calibrate_submission.py --run "$MODEL_DIR" \
+        python -u models/terramind/calibrate_submission.py --run "$MODEL_DIR" \
             --holdout "results/$MODEL_NAME/instances_val_holdout.json" \
             --out "$SUBMISSION_ROOT/${MODEL_NAME}_calibrated.zip"
     done
@@ -44,10 +44,10 @@ case "$SLURM_ARRAY_TASK_ID" in
     2) TRIAL=longer_boxloss_photometric; BOX_WEIGHT=2; EXTRA_ARGS+=(--photometric) ;;
     *) exit 2 ;;
 esac
-python -u train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \
+python -u models/terramind/train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \
     --epochs 36 --batch-size 16 --lr 1e-4 --seed 0 --workers 4 --eval-every 2 \
     --box-loss-weight "$BOX_WEIGHT" --select-best \
     --out "$TASK_ROOT/$TRIAL" --results "results/overnight-improve-${SLURM_ARRAY_JOB_ID}/$TRIAL" \
     --checkpoints "checkpoints/overnight-improve-${SLURM_ARRAY_JOB_ID}/$TRIAL" "${EXTRA_ARGS[@]}"
-python -u calibrate_submission.py --run "$TASK_ROOT/$TRIAL/terramind_pretrained_moelora" \
+python -u models/terramind/calibrate_submission.py --run "$TASK_ROOT/$TRIAL/terramind_pretrained_moelora" \
     --out "$SUBMISSION_ROOT/${TRIAL}_calibrated.zip"

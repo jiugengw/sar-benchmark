@@ -97,8 +97,8 @@ test classification/detection balancing; it is not a demonstrated fix for
 these detection errors. A direct fixed-weight TerraMind run with the same new
 anchors is needed to isolate the effect of learned weighting.
 
-Reproduce numerical analysis with `analyze_backbone_predictions.py --runs`
+Reproduce numerical analysis with `tools/analyze_backbone_predictions.py --runs`
 followed by the three run paths in `paired_error_analysis.json`, then
 `--labels TerraMind ViT_loss1 ViT_loss2 --out reports/vit-terramind-48`.
-Reproduce the gallery with `inspect_detections.py`, those same run paths and
+Reproduce the gallery with `tools/inspect_detections.py`, those same run paths and
 labels, and `--out reports/vit-terramind-48/gallery --examples 36`.

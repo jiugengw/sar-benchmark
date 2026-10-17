@@ -15,5 +15,5 @@ export PYTHONPATH="${SLURM_SUBMIT_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 export OMP_NUM_THREADS=4
 export PYTHONUNBUFFERED=1
 export MPLCONFIGDIR="/tmp/sar-y26-recovery-${SLURM_JOB_ID}"
-python -u yolo_baseline/deadline_recovery.py \
+python -u models/yolo/deadline_recovery.py \
     --output "runs/deadline-yolo26m-${SLURM_JOB_ID}" --epochs 40 --stages 2

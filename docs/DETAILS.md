@@ -46,7 +46,7 @@ configuration directory name and rejects settings that exceed the parameter budg
 - Hold out a seeded random 10% of the labeled training rows. With 9,392 images this gives 8,453 training images
   and 939 local validation images. This split is not stratified; a different `--seed` changes it.
 - AdamW, weight decay 0.05, batch size 16, bf16 autocast, 24 epochs.
-- Learning rate 1e-4. `--backbone-lr` defaults to that rate; `run_all.sh` sets it to 2e-5 for the two pretrained
+- Learning rate 1e-4. `--backbone-lr` defaults to that rate; `models/terramind/run_all.sh` sets it to 2e-5 for the two pretrained
   `full` runs, so their pretrained backbones are fine-tuned gently.
 - One epoch of linear warmup, then cosine decay to 0, updated every iteration.
 - Validate every `--eval-every` epochs (default 4) and after the last epoch. Use `--eval-every 1` for every epoch.
@@ -60,7 +60,7 @@ configuration directory name and rejects settings that exceed the parameter budg
   results/<run>/seed_0` re-grades a saved run.
 - Save the final-epoch model. There is no best-checkpoint selection, and the weights do not contain optimizer or
   scheduler state for exact training resumption.
-- The trainer does not score the separate course validation or test splits. Use `make_submission.py` to predict
+- The trainer does not score the separate course validation or test splits. Use `models/terramind/make_submission.py` to predict
   their images; Codabench provides the official scores for the submitted predictions.
 
 ## Design notes
@@ -126,7 +126,7 @@ generation is a separate command and writes prediction ZIPs rather than local va
 
 ```bash
 # Short training-pipeline check; this is not a useful score comparison
-python train.py --data data/course-data --backbone vit --init pretrained --adapt lora \
+python models/terramind/train.py --data data/course-data --backbone vit --init pretrained --adapt lora \
   --limit 64 --epochs 1 --out runs/smoke --results results/smoke --checkpoints checkpoints/smoke
 
 # Original tests that do not read the dataset (require a GPU and may download weights)

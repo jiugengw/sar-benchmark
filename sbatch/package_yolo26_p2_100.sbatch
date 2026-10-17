@@ -18,7 +18,7 @@ export OMP_NUM_THREADS=4
 export MPLCONFIGDIR="/tmp/yolo26-p2-package-${SLURM_JOB_ID}"
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
-export PYTHONPATH="${SLURM_SUBMIT_DIR}/yolo_baseline${PYTHONPATH:+:${PYTHONPATH}}"
+export PYTHONPATH="${SLURM_SUBMIT_DIR}/models/yolo${PYTHONPATH:+:${PYTHONPATH}}"
 
 for MODEL_SCALE in s m l; do
     MODEL_NAME="yolo26${MODEL_SCALE}"
@@ -31,7 +31,7 @@ for MODEL_SCALE in s m l; do
     RUN_NAME="${RUN_ROOT##*/}"
     JOB_SUFFIX="${RUN_NAME##*-}"
     RESULT_ROOT="results/${RUN_NAME}/seed_0"
-    PACKAGE_DIR="nonsubmissions/161026/tests-no-submit/${RUN_NAME}"
+    PACKAGE_DIR="nonsubmissions/161026/${RUN_NAME}"
     CHECKPOINT="$RUN_ROOT/train/weights/best.pt"
     CLASSIFIER="$RUN_ROOT/image_classifier.pt"
     if [[ ! -f "$CHECKPOINT" || ! -f "$CLASSIFIER" || ! -f "$RESULT_ROOT/metrics.json" ]]; then
@@ -40,7 +40,7 @@ for MODEL_SCALE in s m l; do
     fi
     mkdir -p "$PACKAGE_DIR/scoring_result"
     touch "$PACKAGE_DIR/scoring_result/.gitkeep"
-    python -u yolo_baseline/make_submission.py \
+    python -u models/yolo/make_submission.py \
         --weights "$CHECKPOINT" \
         --classifier-checkpoint "$CLASSIFIER" \
         --box-class-policy native_detector_classes \

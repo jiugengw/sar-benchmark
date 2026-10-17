@@ -392,7 +392,7 @@ def main():
     max_ov = np.array(max_ov)
     P(f'crowding: boxes overlapping another box with IoU>0.3: {(max_ov>0.3).mean()*100:.1f}%, IoU>0.5: {(max_ov>0.5).mean()*100:.1f}% (of boxes in multi-box images)'
       f' | box area / image area: median {np.median(cover)*100:.1f}%  p95 {np.percentile(cover,95)*100:.1f}%')
-    P('   (NMS in train.py uses 0.5 at RoI level and 0.7 at RPN; IoU>0.5 overlaps between true boxes get suppressed)')
+    P('   (NMS in models/terramind/train.py uses 0.5 at RoI level and 0.7 at RPN; IoU>0.5 overlaps between true boxes get suppressed)')
     # anchor coverage
     sizes_def = ((8, 11), (16, 23), (32, 45), (64, 91), (128, 181))
     cov = {}
@@ -584,7 +584,7 @@ def main():
     if SUMMARY['duplicates']['near_pairs'] or SUMMARY['duplicates']['exact_groups']:
         P('- Duplicates / near-duplicates exist inside train: a random 90/10 split puts copies on both sides and inflates local scores; group duplicates before splitting.')
     P(f'- Normalisation: train mean/std at native res = {hist_stats(gh["train"])["mean"]:.4f}/{hist_stats(gh["train"])["std"]:.4f} vs {CODE_MEAN}/{CODE_STD} in data.py. '
-      'Recompute after ANY intensity transform and apply it identically in make_submission.py.')
+      'Recompute after ANY intensity transform and apply it identically in models/terramind/make_submission.py.')
 
     (args.out / 'report.txt').write_text('\n'.join(REPORT))
     (args.out / 'summary.json').write_text(json.dumps(SUMMARY, indent=2, default=float))

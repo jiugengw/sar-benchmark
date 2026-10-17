@@ -1,5 +1,5 @@
 """Diagnostic matching must distinguish duplicates, wrong labels and loose boxes."""
-from inspect_detections import diagnose
+from tools.inspect_detections import diagnose
 
 
 def test_matching_counts_and_ground_truth_identity():

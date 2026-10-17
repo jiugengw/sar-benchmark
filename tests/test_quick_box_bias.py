@@ -1,6 +1,6 @@
 import numpy as np
 
-from yolo_baseline.quick_box_bias import apply, fit
+from models.yolo.quick_box_bias import apply, fit
 
 
 def test_fit_corrects_edge_direction_with_fixed_shrinkage():

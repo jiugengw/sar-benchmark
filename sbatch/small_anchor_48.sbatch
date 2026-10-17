@@ -54,13 +54,13 @@ fi
 RUN_ROOT="runs/small48-${BACKBONE}-${SLURM_JOB_ID}"
 RESULT_ROOT="results/small48-${BACKBONE}-${SLURM_JOB_ID}"
 CHECKPOINT_ROOT="checkpoints/small48-${BACKBONE}-${SLURM_JOB_ID}"
-SUBMISSION_ROOT="nonsubmissions/151026/tests-no-submit/small48-${BACKBONE}-${SLURM_JOB_ID}"
+SUBMISSION_ROOT="nonsubmissions/151026/small48-${BACKBONE}-${SLURM_JOB_ID}"
 mkdir -p "$RUN_ROOT" "$SUBMISSION_ROOT"
 
-python -u train.py --data data/course-data --backbone "$BACKBONE" --init pretrained --adapt "$ADAPT" \
+python -u models/terramind/train.py --data data/course-data --backbone "$BACKBONE" --init pretrained --adapt "$ADAPT" \
     --backbone-lr "$BACKBONE_LR" --loss-weighting "$LOSS_WEIGHTING" \
     --epochs 48 --batch-size 16 --lr 1e-4 --seed 0 --workers 4 --eval-every 2 \
     --box-loss-weight 2 --photometric --select-best --anchor-profile small_extreme \
     --out "$RUN_ROOT" --results "$RESULT_ROOT" --checkpoints "$CHECKPOINT_ROOT" "${EXTRA_ARGS[@]}"
-python -u calibrate_submission.py --run "$RUN_ROOT/$CONFIGURATION" \
+python -u models/terramind/calibrate_submission.py --run "$RUN_ROOT/$CONFIGURATION" \
     --out "$SUBMISSION_ROOT/${BACKBONE}_small_extreme_calibrated.zip"

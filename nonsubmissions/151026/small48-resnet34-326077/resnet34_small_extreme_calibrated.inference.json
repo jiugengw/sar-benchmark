@@ -1,0 +1,190 @@
+{
+  "record_id": "fd605df128154827890b8ada6db4feca",
+  "phase": "submission_inference",
+  "status": "completed",
+  "started_utc": "2026-10-15T18:15:35.385890+00:00",
+  "hostname": "block",
+  "pid": 3798210,
+  "command": [
+    "make_submission.py",
+    "--run",
+    "runs/small48-resnet34-326077/resnet34_pretrained_full",
+    "--data",
+    "data/course-data",
+    "--out",
+    "nonsubmissions/151026/small48-resnet34-326077/resnet34_small_extreme_calibrated.zip",
+    "--class-score-power",
+    "0.5"
+  ],
+  "slurm": {
+    "SLURM_JOB_ID": "326077",
+    "SLURM_ARRAY_JOB_ID": null,
+    "SLURM_ARRAY_TASK_ID": null,
+    "SLURM_JOB_PARTITION": "student",
+    "SLURM_JOB_GPUS": "1",
+    "SLURM_GPUS_ON_NODE": "1"
+  },
+  "metadata": {
+    "python": "3.12.8",
+    "libraries": {
+      "torch": "2.9.0+cu128",
+      "torchvision": "0.24.0+cu128",
+      "timm": "1.0.24",
+      "terratorch": "1.2.7",
+      "torchgeo": "0.9.0",
+      "pycocotools": "2.0.11",
+      "Pillow": "12.3.0",
+      "numpy": "2.5.4"
+    },
+    "git_commit": "7156aba51b14e90e369b983e68ac74f384f2ea06",
+    "tracked_files_modified": false,
+    "pretrained_models": [
+      {
+        "name": "torchvision ResNet34_Weights.IMAGENET1K_V1",
+        "source": "https://download.pytorch.org/models/resnet34-b627a593.pth",
+        "pretraining_data": "ImageNet-1k",
+        "input_adaptation": "sum RGB first-convolution weights into one grayscale channel",
+        "local_weights": "checkpoints/resnet34-imagenet1k-b627a593.pth",
+        "local_weights_sha256": "b627a593bcbe140c234610266fe4f8ae95ea42fc881d091c9b6052e6b1d0590f"
+      }
+    ],
+    "input": {
+      "size": [
+        1,
+        512,
+        512
+      ],
+      "geometry": "stretch",
+      "pixel_scale": "uint8 / 255",
+      "mean": 0.2526,
+      "std": 0.2133,
+      "training_flips": "independent horizontal/vertical, each probability 0.5",
+      "training_photometric": true
+    },
+    "configuration": {
+      "data": "data/course-data",
+      "backbone": "resnet34",
+      "init": "pretrained",
+      "backbone_weights": "checkpoints/resnet34-imagenet1k-b627a593.pth",
+      "adapt": "full",
+      "unfreeze_last": 0,
+      "unfrozen_lr": 2e-05,
+      "epochs": 48,
+      "batch_size": 16,
+      "lr": 0.0001,
+      "backbone_lr": 2e-05,
+      "weight_decay": 0.05,
+      "eval_every": 2,
+      "workers": 4,
+      "limit": null,
+      "seed": 0,
+      "fold": null,
+      "folds": 5,
+      "split_seed": 0,
+      "photometric": true,
+      "select_best": true,
+      "anchor_profile": "small_extreme",
+      "geometry": "stretch",
+      "class_sampling": "uniform",
+      "box_loss_weight": 2.0,
+      "loss_weighting": "fixed",
+      "out": "runs/small48-resnet34-326077",
+      "results": "results/small48-resnet34-326077",
+      "checkpoints": "checkpoints/small48-resnet34-326077"
+    }
+  },
+  "updated_utc": "2026-10-15T18:15:51.864633+00:00",
+  "process_wall_hours": 0.0045774346646956275,
+  "model_gpu_count": 1,
+  "process_gpu_hours": 0.0045774346646956275,
+  "gpu_hours_definition": "process wall time \u00d7 model GPU count; includes CPU setup, excludes queue time",
+  "checkpoint": "runs/small48-resnet34-326077/resnet34_pretrained_full",
+  "split": "val",
+  "images": 1426,
+  "batch_size": 16,
+  "workers": 8,
+  "precision": "bf16 autocast",
+  "class_score_power": 0.5,
+  "parameters": 38460280,
+  "anchor_configuration": {
+    "sizes": [
+      [
+        6,
+        8,
+        11
+      ],
+      [
+        16,
+        23
+      ],
+      [
+        32,
+        45
+      ],
+      [
+        64,
+        91
+      ],
+      [
+        128,
+        181
+      ]
+    ],
+    "aspect_ratios": [
+      [
+        0.25,
+        0.5,
+        1.0,
+        2.0,
+        4.0
+      ],
+      [
+        0.25,
+        0.5,
+        1.0,
+        2.0,
+        4.0
+      ],
+      [
+        0.25,
+        0.5,
+        1.0,
+        2.0,
+        4.0
+      ],
+      [
+        0.25,
+        0.5,
+        1.0,
+        2.0,
+        4.0
+      ],
+      [
+        0.25,
+        0.5,
+        1.0,
+        2.0,
+        4.0
+      ]
+    ],
+    "strides": [
+      4,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  "prediction_wall_seconds": 15.787216744851321,
+  "prediction_seconds_per_image": 0.011070979484467967,
+  "prediction_timing_scope": "data loading, preprocessing, host-to-device copy, model, calibration, CPU predictions; excludes model loading and ZIP writing",
+  "steady_state_model_seconds_per_image": 0.010487798274435262,
+  "steady_state_timed_images": 1410,
+  "model_timing_scope": "synchronized model forward including detector postprocessing; excludes first batch, data loading and host-to-device copy; batch amortized throughput, not batch-1 latency",
+  "gpu_type": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition MIG 1g.24gb",
+  "cuda_version": "12.8",
+  "peak_gpu_memory_allocated_gib": 2.1073732376098633,
+  "peak_gpu_memory_reserved_gib": 7.69140625,
+  "ended_utc": "2026-10-15T18:15:51.864613+00:00",
+  "error": null
+}

@@ -9,10 +9,10 @@ from PIL import Image
 from torch import nn
 from torchvision import tv_tensors
 
-from make_submission import inference_transform, write_submission
+from models.terramind.make_submission import inference_transform, write_submission
 from sarbench.data import ResizePad, SARMultiTask, to_original_xywh
 from sarbench.model import MultiTaskModel
-from train import make_loader
+from models.terramind.train import make_loader
 
 
 @pytest.mark.parametrize('height,width', [(100, 200), (200, 100), (73, 219), (512, 512)])

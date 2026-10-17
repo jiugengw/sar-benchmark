@@ -36,7 +36,7 @@
       "status": "completed",
       "configuration": "Default anchors; box-loss weight 1; fixed loss weights; no photometric augmentation.",
       "metrics_path": "results/tm-48baseline-326894/terramind_pretrained_moelora/seed_0/metrics.json",
-      "zip_path": "nonsubmissions/161026/tests-no-submit/tm-48baseline-326894/terramind_48epoch_baseline_calibrated.zip",
+      "zip_path": "nonsubmissions/161026/tm-48baseline-326894/terramind_48epoch_baseline_calibrated.zip",
       "compare_by_default": false
     },
     {

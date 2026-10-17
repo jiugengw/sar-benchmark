@@ -60,7 +60,7 @@ def archive_curves(tag):
         if not audit.exists():
             candidate = ROOT / 'results' / tag / stage / record['branch']
             command = [str(ROOT / '.venv/bin/python'), '-u',
-                       str(ROOT / 'yolo_baseline/paired_holdout_audit.py'),
+                       str(ROOT / 'models/yolo/paired_holdout_audit.py'),
                        '--baseline', str(ROOT / 'results/yolo26m-100-p2-328339/seed_0'),
                        '--candidate', str(candidate), '--output', str(audit), '--replicates', '200']
             print('AUDIT_START', tag, stage, flush=True)
@@ -103,7 +103,7 @@ def main():
                 output = ROOT / 'runs' / f'{args.denodet_source.name}-deadline-2300'
                 command = ['srun', '--jobid', args.denodet_job, '--overlap', '--ntasks=1',
                            '--cpus-per-task=1', str(ROOT / '.denodet-venv/bin/python'), '-u',
-                           str(ROOT / 'denodet_baseline/export_checkpoint.py'),
+                           str(ROOT / 'models/denodet/export_checkpoint.py'),
                            '--source', str(args.denodet_source.resolve()), '--output', str(output),
                            '--batch', '2', '--workers', '1']
                 print('DENODET_EXPORT_START', ' '.join(command), flush=True)
@@ -120,7 +120,7 @@ def main():
                 output = ROOT / 'runs' / f'{args.p1_source.name}-deadline-snapshot'
                 command = ['srun', '--jobid', args.p1_job, '--overlap', '--ntasks=1',
                            '--cpus-per-task=1', str(ROOT / '.venv/bin/python'), '-u',
-                           str(ROOT / 'yolo_baseline/export_training_snapshot.py'),
+                           str(ROOT / 'models/yolo/export_training_snapshot.py'),
                            '--weights', str(args.p1_source.resolve() / 'train/weights/best.pt'),
                            '--output', str(output), '--feature-batch', '4']
                 print('P1_SNAPSHOT_EXPORT_START', ' '.join(command), flush=True)

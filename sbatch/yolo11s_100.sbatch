@@ -28,7 +28,7 @@ RUN_ROOT="runs/yolo11s-100-${YOLO_VARIANT}-${SLURM_JOB_ID}"
 RESULT_ROOT="results/yolo11s-100-${YOLO_VARIANT}-${SLURM_JOB_ID}/seed_0"
 mkdir -p "$RUN_ROOT" "$RESULT_ROOT"
 
-python -u yolo_baseline/train_100_epoch.py \
+python -u models/yolo/train_100_epoch.py \
     --variant "$YOLO_VARIANT" \
     --weights pretrained/yolo11s.pt \
     --dataset-yaml data/yolo11s-sar-512/dataset.yaml \
@@ -36,7 +36,7 @@ python -u yolo_baseline/train_100_epoch.py \
     --train-output "$RUN_ROOT" \
     --epochs 100 --batch 16 --workers 4
 
-python -u yolo_baseline/train_image_head.py \
+python -u models/yolo/train_image_head.py \
     --detector-checkpoint "$RUN_ROOT/train/weights/best.pt" \
     --data data/course-data \
     --dataset-root data/yolo11s-sar-512 \
@@ -44,7 +44,7 @@ python -u yolo_baseline/train_image_head.py \
     --output "$RUN_ROOT/image_classifier.pt" \
     --epochs 100 --batch 32 --workers 4
 
-python -u yolo_baseline/run_experiment.py \
+python -u models/yolo/run_experiment.py \
     --data data/course-data \
     --dataset-yaml data/yolo11s-sar-512/dataset.yaml \
     --dataset-root data/yolo11s-sar-512 \

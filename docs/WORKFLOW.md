@@ -38,20 +38,20 @@ live elsewhere; pass its path with `--data /path/to/course-data`.
 
 ## Run experiments
 
-Use the CLI to select the configuration. For the supported experiment choices, there is no need to edit `train.py`:
+Use the CLI to select the configuration. For the supported experiment choices, there is no need to edit `models/terramind/train.py`:
 choose `--backbone vit|terramind`, `--init pretrained|scratch`, and `--adapt full|lora|moelora`. Add code only when
 you want to change training behavior or add a new method.
 
 ```bash
 # One configuration, using the data downloaded above
-python train.py --data data/course-data --backbone vit --init pretrained --adapt lora
+python models/terramind/train.py --data data/course-data --backbone vit --init pretrained --adapt lora
 
 # Change the model mode and keep this run's files under runs/
-python train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \
+python models/terramind/train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \
   --seed 1 --out runs/seed-1
 
 # Short run for checking the setup
-python train.py --data data/course-data --backbone vit --init pretrained --adapt lora \
+python models/terramind/train.py --data data/course-data --backbone vit --init pretrained --adapt lora \
   --limit 64 --epochs 1 --eval-every 1 --out runs/smoke \
   --results results/smoke --checkpoints checkpoints/smoke
 ```
@@ -69,7 +69,7 @@ use `--lr`. The trainer checks the total/trainable parameter budget for this mod
 For example, TerraMind + MoE-LoRA with two unfrozen blocks has 35.30M trainable parameters. A 12-epoch screen:
 
 ```bash
-python train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \
+python models/terramind/train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \
   --unfreeze-last 2 --unfrozen-lr 2e-5 --epochs 12 --seed 0 --eval-every 1 \
   --out runs/partial-screen --results results/partial-screen --checkpoints checkpoints/partial-screen
 ```
@@ -82,7 +82,7 @@ epoch count and schedule before interpreting a difference as an improvement.
 contains `log.txt`, `metrics.json` (including validation history and Δm), `predictions_val.json`, and `model.pt`.
 The default parent folder is `runs/`.
 
-At the end of a successful run, `train.py` also copies `metrics.json`, `predictions_val.json`, and
+At the end of a successful run, `models/terramind/train.py` also copies `metrics.json`, `predictions_val.json`, and
 `instances_val_holdout.json` into `results/<backbone>_<init>_<adapt>/seed_<seed>/`. Different seeds have separate
 result folders. Use `--results results/my-experiment` to choose a different parent folder for a learning-rate or
 epoch-count variant with the same configuration and seed; reusing the same result path replaces its JSON files.
@@ -98,7 +98,7 @@ Compare saved predictions on the same local holdout without another GPU inferenc
 must contain `metrics.json`, `predictions_val.json`, and `instances_val_holdout.json`:
 
 ```bash
-python inspect_detections.py \
+python tools/inspect_detections.py \
   --runs results/terramind_pretrained_moelora results/vit_pretrained_moelora \
   --data data/course-data --out reports/detection-review
 ```
@@ -153,7 +153,7 @@ git commit -m "Save experiment results"
 Prepare deterministic, stratified folds from `train/labels.csv`:
 
 ```bash
-bash run_anchor_cv5.sh
+bash models/terramind/run_anchor_cv5.sh
 ```
 
 Inspect `runs/anchor48-cv5/fold_plan.json` for row assignments, class counts,
@@ -164,7 +164,7 @@ are not used. The seed for partitions is independent of the training seed.
 Run all five folds sequentially on one CUDA GPU:
 
 ```bash
-bash run_anchor_cv5.sh --run
+bash models/terramind/run_anchor_cv5.sh --run
 ```
 
 Defaults use 48-epoch TerraMind MoE-LoRA with normal anchors,

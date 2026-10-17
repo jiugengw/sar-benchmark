@@ -21,7 +21,7 @@ export OMP_NUM_THREADS=4
 export MPLCONFIGDIR="/tmp/sar-phase2-${SLURM_JOB_ID}"
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
-export PYTHONPATH="${SLURM_SUBMIT_DIR}:${SLURM_SUBMIT_DIR}/yolo_baseline${PYTHONPATH:+:${PYTHONPATH}}"
+export PYTHONPATH="${SLURM_SUBMIT_DIR}:${SLURM_SUBMIT_DIR}/models/yolo${PYTHONPATH:+:${PYTHONPATH}}"
 
 DATA="data/course-data"
 DATASET="data/yolo11s-sar-512"
@@ -118,7 +118,7 @@ package_completed_e5() {
     local pretrained="$3"
     local run_name="${run_root##*/}"
     local run_suffix="${run_name##*-}"
-    local source_package="nonsubmissions/161026/tests-no-submit/${run_name}"
+    local source_package="nonsubmissions/161026/${run_name}"
     local source_zip="$source_package/yolo26m_100_p2_${run_suffix}.zip"
     local package_dir="nonsubmissions/sar-experiments/E5-${SLURM_JOB_ID}"
     local best="$run_root/train/weights/best.pt"
@@ -147,7 +147,7 @@ except (OSError, json.JSONDecodeError):
     raise SystemExit(1)
 PY
     then
-        python -u yolo_baseline/run_experiment.py \
+        python -u models/yolo/run_experiment.py \
             --data "$DATA" --dataset-yaml "$DATASET/dataset.yaml" \
             --dataset-root "$DATASET" --split "$SPLIT" \
             --baseline-results "$BASELINE_RESULTS" --baseline-checkpoint "$BASELINE_CHECKPOINT" \
@@ -160,7 +160,7 @@ PY
     if [[ ! -s "$source_zip" ]]; then
         mkdir -p "$source_package/scoring_result"
         touch "$source_package/scoring_result/.gitkeep"
-        python -u yolo_baseline/make_submission.py \
+        python -u models/yolo/make_submission.py \
             --weights "$best" --classifier-checkpoint "$run_root/image_classifier.pt" \
             --box-class-policy native_detector_classes --data "$DATA" --classes "$MANIFEST" \
             --out "$source_zip" --batch 16 --workers 4
@@ -190,7 +190,7 @@ package_prior_yolo26s() {
     mkdir -p "$package_dir/scoring_result"
     touch "$package_dir/scoring_result/.gitkeep"
     if [[ ! -s "$zip_path" ]]; then
-        python -u yolo_baseline/make_submission.py \
+        python -u models/yolo/make_submission.py \
             --weights "$best" --classifier-checkpoint "$run_root/image_classifier.pt" \
             --box-class-policy native_detector_classes --data "$DATA" --classes "$MANIFEST" \
             --out "$zip_path" --batch 16 --workers 4
@@ -218,11 +218,11 @@ train_evaluate_package() {
     local package_dir="nonsubmissions/sar-experiments/${experiment}-${SLURM_JOB_ID}"
 
     mkdir -p "$result_root"
-    python -u yolo_baseline/train_image_head.py \
+    python -u models/yolo/train_image_head.py \
         --architecture "$architecture" --detector-checkpoint "$best_checkpoint" \
         --data "$DATA" --dataset-root "$DATASET" --split "$SPLIT" \
         --output "$classifier_checkpoint" --epochs 100 --batch 32 --workers 4
-    python -u yolo_baseline/run_experiment.py \
+    python -u models/yolo/run_experiment.py \
         --data "$DATA" --dataset-yaml "$DATASET/dataset.yaml" \
         --dataset-root "$DATASET" --split "$SPLIT" \
         --baseline-results "$BASELINE_RESULTS" --baseline-checkpoint "$BASELINE_CHECKPOINT" \
@@ -235,7 +235,7 @@ train_evaluate_package() {
 
     mkdir -p "$package_dir/scoring_result"
     touch "$package_dir/scoring_result/.gitkeep"
-    python -u yolo_baseline/make_submission.py \
+    python -u models/yolo/make_submission.py \
         --weights "$best_checkpoint" --architecture "$architecture" \
         --classifier-checkpoint "$classifier_checkpoint" \
         --box-class-policy native_detector_classes --data "$DATA" --classes "$MANIFEST" \
@@ -260,20 +260,20 @@ package_completed_e5 "$E5_RUN" "results/${E5_RUN##*/}/seed_0" pretrained/yolo26m
 python reports/training-comparison/build_comparison.py
 
 E6_RUN="runs/yolo26n-100-p2-${SLURM_JOB_ID}"
-python -u yolo_baseline/train_yolo26s_p2.py \
+python -u models/yolo/train_yolo26s_p2.py \
     --scale n --weights pretrained/yolo26n.pt --train-output "$E6_RUN" \
     --epochs 100 --batch 16 --workers 4
 train_evaluate_package E6 "YOLO26n-P2 E6" yolo "$E6_RUN/pretrained_yolo26n.pt" \
     "$E6_RUN" 100 16 "$E6_RUN/image_classifier.pt" "$E6_RUN/train/weights/best.pt"
 
 E7_RUN="runs/E7-rtdetr-l-p2-${SLURM_JOB_ID}"
-python -u yolo_baseline/train_rtdetr_p2.py \
+python -u models/yolo/train_rtdetr_p2.py \
     --weights pretrained/rtdetr-l.pt --output "$E7_RUN" --epochs 100 --batch 8 --workers 4
 train_evaluate_package E7 "RT-DETR-L-P2 E7" rtdetr pretrained/rtdetr-l.pt \
     "$E7_RUN" 100 8 "$E7_RUN/image_classifier.pt" "$E7_RUN/train/weights/best.pt"
 
 E9_RUN="runs/yolo11n-100-p2-${SLURM_JOB_ID}"
-python -u yolo_baseline/train_100_epoch.py \
+python -u models/yolo/train_100_epoch.py \
     --scale n --variant p2 --weights pretrained/yolo11n.pt \
     --dataset-yaml "$DATASET/dataset.yaml" --classes "$MANIFEST" \
     --train-output "$E9_RUN" --epochs 100 --batch 16 --workers 4
