@@ -1,5 +1,5 @@
 #!/bin/bash
-# One uninterrupted architecture bundle: reuse completed E5, then run E6-E9.
+# One uninterrupted architecture bundle: reuse completed E5, then run E6, E7, and E9.
 # Submit with --dependency=afterok:<phase1_job_id> after E5's existing task ends.
 # The student partition has a 24-hour maximum allocation.
 #SBATCH --job-name=sar-phase2-architectures
@@ -272,15 +272,6 @@ python -u yolo_baseline/train_rtdetr_p2.py \
 train_evaluate_package E7 "RT-DETR-L-P2 E7" rtdetr pretrained/rtdetr-l.pt \
     "$E7_RUN" 100 8 "$E7_RUN/image_classifier.pt" "$E7_RUN/train/weights/best.pt"
 
-E8_RUN="runs/E8-deformable-detr-p2-${SLURM_JOB_ID}"
-python -u yolo_baseline/train_deformable_detr.py \
-    --checkpoint pretrained/deformable-detr-standard --dataset-root "$DATASET" \
-    --split "$SPLIT" --ground-truth "$BASELINE_RESULTS/instances_val_holdout.json" \
-    --output "$E8_RUN" --epochs 50 --batch 4 --workers 4
-train_evaluate_package E8 "Deformable-DETR-R50-P2 E8" deformable_detr \
-    pretrained/deformable-detr-standard "$E8_RUN" 50 4 \
-    "$E8_RUN/image_classifier.pt" "$E8_RUN/train/weights/best"
-
 E9_RUN="runs/yolo11n-100-p2-${SLURM_JOB_ID}"
 python -u yolo_baseline/train_100_epoch.py \
     --scale n --variant p2 --weights pretrained/yolo11n.pt \
@@ -298,7 +289,7 @@ from pathlib import Path
 
 job_id = sys.argv[1]
 rows = []
-for experiment in ("E5", "E6", "E7", "E8", "E9"):
+for experiment in ("E5", "E6", "E7", "E9"):
     package = Path("submissions/sar-experiments") / f"{experiment}-{job_id}"
     metrics_files = sorted(package.glob(f"{experiment}_*.metrics.json"))
     compute_files = sorted(package.glob(f"{experiment}_*.compute.json"))
@@ -353,4 +344,4 @@ with summary.open("w", newline="") as stream:
     writer.writerows(rows)
 print(summary)
 PY
-echo "Phase 2 bundle completed: E5 reused; E6-E9 trained, evaluated, and packaged."
+echo "Phase 2 bundle completed: E5 reused; E6, E7, and E9 trained, evaluated, and packaged."

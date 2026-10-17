@@ -6,7 +6,7 @@ training holdout; the TA's original benchmark scores are retained below as refer
 
 **Detection experiment results:** see the [submission comparison](submissions/README.md#detection-experiments) for the changes tested, local scores, and ready-to-upload ZIPs.
 
-**YOLO SAR experiment plan:** see the [YOLO11s-P2 strategy and architecture plan](yolo_baseline/README.md#sar-classification-and-detection-experiment-plan) for the confirmed E1 feature path, grouped E2-E9 runs, metric controls, and per-experiment submission ZIP requirement.
+**YOLO SAR experiment plan:** see the [YOLO11s-P2 strategy and architecture plan](yolo_baseline/README.md#sar-classification-and-detection-experiment-plan) for the confirmed E1 feature path, E2-E7 and E9 runs, metric controls, and per-experiment submission ZIP requirement. Deformable DETR E8 is dropped from the run sequence because its runtime exceeded the 24-hour limit at the available VRAM-limited batch size; its code remains available.
 
 **Phase 3 joint fine-tuning:** the [YOLO26m + RT-DETR-L handoff](yolo_baseline/PHASE3_JOINT_FINETUNING.md) includes its Git LFS checkpoints, dataset conversion, RT-DETR preflight, and an interactive run script (`bash scripts/run_phase3_joint.sh`).
 
