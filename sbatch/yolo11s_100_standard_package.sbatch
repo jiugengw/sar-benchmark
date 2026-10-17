@@ -20,7 +20,7 @@ export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 export PYTHONPATH="${SLURM_SUBMIT_DIR}/yolo_baseline${PYTHONPATH:+:${PYTHONPATH}}"
 
-PACKAGE_DIR="submissions/161026/tests-no-submit/yolo11s-100-standard-328063"
+PACKAGE_DIR="nonsubmissions/161026/tests-no-submit/yolo11s-100-standard-328063"
 mkdir -p "$PACKAGE_DIR/scoring_result"
 touch "$PACKAGE_DIR/scoring_result/.gitkeep"
 

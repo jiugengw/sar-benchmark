@@ -4,7 +4,7 @@ Course-data training code adapted from the TA's CS701 reference implementation. 
 on SAR images: **classify** the image (9 classes) and **detect** its objects. The current trainer uses a labeled
 training holdout; the TA's original benchmark scores are retained below as reference results.
 
-**Detection experiment results:** see the [submission comparison](submissions/README.md#detection-experiments) for the changes tested, local scores, and ready-to-upload ZIPs.
+**Official submissions:** every ZIP uploaded to Codabench, with its official Δm, is indexed in [submissions/README.md](submissions/README.md); the best is `yolo26m_p2_candidate_330230.zip` at Δm +36.80. Packaged ZIPs that were never uploaded are in [nonsubmissions/](nonsubmissions/), and older detection experiments are compared in [nonsubmissions/README.md](nonsubmissions/README.md#detection-experiments).
 
 **YOLO SAR experiment plan:** see the [YOLO11s-P2 strategy and architecture plan](yolo_baseline/README.md#sar-classification-and-detection-experiment-plan) for the confirmed E1 feature path, E2-E7 and E9 runs, metric controls, and per-experiment submission ZIP requirement. Deformable DETR E8 is dropped from the run sequence because its runtime exceeded the 24-hour limit at the available VRAM-limited batch size; its code remains available.
 

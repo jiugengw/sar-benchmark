@@ -55,7 +55,7 @@ image at 512x512, one backbone forward, one selected detector branch, and one he
 The detector has 21,071,016 parameters and the classifier has 4,347,401, for
 25,418,417 total, conservatively below the 40M full-training limit.
 
-Package: `submissions/yolo26m_p2_finetune_329644/e5_spatial_head/`.
+Package: `nonsubmissions/yolo26m_p2_finetune_329644/e5_spatial_head/`.
 Both exact holdout prediction sets are under `results/yolo26m_p2_finetune_329644/`.
 No official score is available for this intermediate candidate.
 
@@ -101,7 +101,7 @@ retained. Local gains do not establish the official target.
 | One-to-many (selected) | 94.5821% | 44.7547% | +36.3202 |
 | One-to-one | 94.5821% | 43.4731% | +33.8678 |
 
-Package: `submissions/yolo26m_p2_finetune_329644/continue_1/yolo26m_p2_finetune_40ep_329644.zip`.
+Package: `submissions/yolo26m_p2_finetune_40ep_329644/yolo26m_p2_finetune_40ep_329644.zip`.
 The ZIP passed archive integrity and schema checks with all 1,426 unique image labels and 103,065 valid detections.
 Official scores supplied by the user: **macro-F1 93.3310%, mAP 44.1919%, Delta m 34.5697**, accuracy 93.6886%, AP50 70.8679%. The target of 30 is exceeded by 4.5697 points. Raw values are saved under the candidate scoring_result directory.
 

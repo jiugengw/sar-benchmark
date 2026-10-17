@@ -50,7 +50,7 @@ evaluate_and_package() {
         --classifier-checkpoint "$run_root/image_classifier.pt" \
         --model-label "$label" --eval-only
 
-    local package_dir="submissions/sar-experiments/${experiment}-${JOB_SUFFIX}"
+    local package_dir="nonsubmissions/sar-experiments/${experiment}-${JOB_SUFFIX}"
     mkdir -p "$package_dir/scoring_result"
     touch "$package_dir/scoring_result/.gitkeep"
     python -u yolo_baseline/make_submission.py \

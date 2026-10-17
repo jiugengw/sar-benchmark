@@ -24,7 +24,7 @@ def write(path, value):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--tag', required=True)
-    parser.add_argument('--base-zip', type=Path, default=Path('submissions/yolo26m_p2_finetune_329644/continue_1/yolo26m_p2_finetune_40ep_329644.zip'))
+    parser.add_argument('--base-zip', type=Path, default=Path('submissions/yolo26m_p2_finetune_40ep_329644/yolo26m_p2_finetune_40ep_329644.zip'))
     parser.add_argument('--results', type=Path, default=Path('results/yolo26m_p2_finetune_329644/continue_1/one2many'))
     parser.add_argument('--audit', type=Path, default=Path('results/yolo26m_p2_finetune_329644/quick_box_bias_crossfit.json'))
     args = parser.parse_args()

@@ -482,7 +482,7 @@
         },
         "delta_m": 26.631302861580476
       },
-      "metrics_source": "submissions/sar-experiments/E5-328598/E5_328598.metrics.json",
+      "metrics_source": "submissions/E5_yolo26m_p2_328339/E5_328598.metrics.json",
       "official_metrics": {
         "delta_m": 23.176114587785666,
         "macro_f1": 0.8974727237142797,

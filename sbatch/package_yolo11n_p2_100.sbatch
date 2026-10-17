@@ -29,7 +29,7 @@ RUN_ROOT="${RUN_CANDIDATES[0]#* }"
 RUN_NAME="${RUN_ROOT##*/}"
 JOB_SUFFIX="${RUN_NAME##*-}"
 RESULT_ROOT="results/${RUN_NAME}/seed_0"
-PACKAGE_DIR="submissions/161026/tests-no-submit/${RUN_NAME}"
+PACKAGE_DIR="nonsubmissions/161026/tests-no-submit/${RUN_NAME}"
 CHECKPOINT="$RUN_ROOT/train/weights/best.pt"
 CLASSIFIER="$RUN_ROOT/image_classifier.pt"
 if [[ ! -f "$CHECKPOINT" || ! -f "$CLASSIFIER" || ! -f "$RESULT_ROOT/metrics.json" ]]; then

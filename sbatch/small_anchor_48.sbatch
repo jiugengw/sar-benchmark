@@ -54,7 +54,7 @@ fi
 RUN_ROOT="runs/small48-${BACKBONE}-${SLURM_JOB_ID}"
 RESULT_ROOT="results/small48-${BACKBONE}-${SLURM_JOB_ID}"
 CHECKPOINT_ROOT="checkpoints/small48-${BACKBONE}-${SLURM_JOB_ID}"
-SUBMISSION_ROOT="submissions/151026/tests-no-submit/small48-${BACKBONE}-${SLURM_JOB_ID}"
+SUBMISSION_ROOT="nonsubmissions/151026/tests-no-submit/small48-${BACKBONE}-${SLURM_JOB_ID}"
 mkdir -p "$RUN_ROOT" "$SUBMISSION_ROOT"
 
 python -u train.py --data data/course-data --backbone "$BACKBONE" --init pretrained --adapt "$ADAPT" \

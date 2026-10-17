@@ -8,11 +8,11 @@
 |---|---|---:|---:|---:|---|
 | E5 YOLO26m-P2 | 100-epoch detector, then classifier fitted on frozen detector features | 91.08% | 40.67% | +26.63% | `yolo_baseline/phase3_assets/checkpoints/E5_yolo26m_p2_best.pt` and `E5_yolo26m_image_classifier.pt` |
 | E7 RT-DETR-L-P2 | 100-epoch detector, then classifier fitted on frozen detector features | 91.34% | 40.80% | +27.02% | `yolo_baseline/phase3_assets/checkpoints/E7_rtdetr_l_p2_best.pt` and `E7_rtdetr_l_image_classifier.pt` |
-| YOLO26s E2 | 15-epoch joint fine-tuning from its sequential detector and classifier | 93.46% | 38.09% | +22.96% | `runs/yolo26s-p2-E2-328622/`; metrics in `submissions/sar-experiments/E2-328622/` |
+| YOLO26s E2 | 15-epoch joint fine-tuning from its sequential detector and classifier | 93.46% | 38.09% | +22.96% | `runs/yolo26s-p2-E2-328622/`; metrics in `nonsubmissions/sar-experiments/E2-328622/` |
 
 The completed sequential YOLO26m-P2 run is higher than the sequential YOLO26s-P2 run on both macro-F1 (91.08% vs 90.10%) and mAP (40.67% vs 37.47%). YOLO26s E2's 93.46% macro-F1 came from joint fine-tuning and had 38.09% mAP, so it is evidence that joint training can shift the balance between tasks; it does not show that the larger model has worse classification.
 
-The source records for E5, E7, and E2 are under `submissions/sar-experiments/`. E7's baseline comparison found that using the image classifier to relabel or score-weight every detection reduced mAP. The Phase 3 outputs therefore retain the detector's native object classes.
+The source records for E5, E7, and E2 are under `nonsubmissions/sar-experiments/`. E7's baseline comparison found that using the image classifier to relabel or score-weight every detection reduced mAP. The Phase 3 outputs therefore retain the detector's native object classes.
 
 ## Shared method
 

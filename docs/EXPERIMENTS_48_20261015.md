@@ -34,7 +34,7 @@ Each task requests one Blackwell GPU and an eight-hour limit, with up to two
 tasks concurrent. Prior 36-epoch runs took about 4h 48m each; estimate about
 6–7 hours per task plus queue time. Outputs use the unique array job ID:
 `runs/improve-48-<job>/`, `results/improve-48-<job>/`,
-`checkpoints/improve-48-<job>/`, and `submissions/improve-48-<job>/`.
+`checkpoints/improve-48-<job>/`, and `nonsubmissions/improve-48-<job>/`.
 Log files are `runs/improve-48-<job>_<task>.out`.
 
 The ZIPs are generated automatically but must be uploaded separately for

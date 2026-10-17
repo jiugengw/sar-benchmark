@@ -72,19 +72,19 @@ Joint training must align each detector batch with image-level labels, omit clas
 
 ### Phase 2 — architecture comparison
 
-The requested grouping is one architecture-comparison Slurm job bundle. E5 (YOLO26m-P2) completed as array task `328337_1`; its local holdout metrics, compute record, and course-format ZIP are archived under `submissions/sar-experiments/E5-328598/`.
+The requested grouping is one architecture-comparison Slurm job bundle. E5 (YOLO26m-P2) completed as array task `328337_1`; its local holdout metrics, compute record, and course-format ZIP are archived under `submissions/E5_yolo26m_p2_328339/`.
 
 | ID | Architecture | Priority | Plan |
 |---|---|---|---|
-| E5 | YOLO26m + P2 | High | Completed as array task `328337_1`; result artifacts are archived under `submissions/sar-experiments/E5-328598/`. |
+| E5 | YOLO26m + P2 | High | Completed as array task `328337_1`; result artifacts are archived under `submissions/E5_yolo26m_p2_328339/`. |
 | E6 | YOLO26n + P2 | Medium | Use the matching pretrained checkpoint and confirm P2 use. |
-| E7 | RT-DETR + P2 | Medium | Completed as job `328598`; result artifacts are archived under `submissions/sar-experiments/E7-328598/`. |
+| E7 | RT-DETR + P2 | Medium | Completed as job `328598`; result artifacts are archived under `submissions/E7_328598/`. |
 | E8 | Deformable DETR + P2 | Dropped | Training code is retained. The 50-epoch run was stopped at epoch 3 after the measured pace was about 41 minutes per epoch, projecting roughly 34 hours and exceeding the student partition's 24-hour job limit. The available GPU was a 24 GB MIG slice; at 512 × 512 with four feature levels, batch size 4 was needed to fit, leaving too little VRAM for a larger batch. Partial generated run files were removed and are not treated as results. |
 | E9 | YOLO11n + P2 | Running, job `329376` | Use the matching pretrained checkpoint and the same sequential evaluation method. The E9-only runner is `sbatch/phase2_e9_yolo11n.sbatch`. |
 
 Each architecture starts with sequential detector training, frozen detector features, and a separately trained classifier. Do not assume YOLO hooks or feature dimensions transfer to either DETR implementation. The RT-DETR and Deformable DETR stages must save their standard-pretrained validation results before training their P2 variants.
 
-An additional completed comparison run, YOLO26s-P2 array task `328337_0`, scored **90.10% macro-F1** and **37.47% mAP** on the saved 939-image holdout. The metrics are at `results/yolo26s-100-p2-328338/seed_0/metrics.json`; YOLO26s is an additional result, not E5. The completed E5 YOLO26m-P2 run scored **91.08% macro-F1**, **40.67% mAP**, and **+26.63% local Δm**. Its detector and classifier checkpoints are in `runs/yolo26m-100-p2-328339/`; metrics and ZIP are under `submissions/sar-experiments/E5-328598/`. E7 RT-DETR-L-P2 scored **91.34% macro-F1**, **40.80% mAP**, and **+27.02% local Δm**; its metrics, compute record, and ZIP are under `submissions/sar-experiments/E7-328598/`. A separate YOLO26l-P2 run, job `329019`, completed outside the Phase 2 architecture comparison with **91.14% macro-F1**, **40.24% mAP**, and **+25.83% local Δm**; its artifacts are under `submissions/sar-experiments/yolo26l-100-p2-329019/`. Array element `_2` was cancelled before starting, so YOLO26l remains a supplementary run.
+An additional completed comparison run, YOLO26s-P2 array task `328337_0`, scored **90.10% macro-F1** and **37.47% mAP** on the saved 939-image holdout. The metrics are at `results/yolo26s-100-p2-328338/seed_0/metrics.json`; YOLO26s is an additional result, not E5. The completed E5 YOLO26m-P2 run scored **91.08% macro-F1**, **40.67% mAP**, and **+26.63% local Δm**. Its detector and classifier checkpoints are in `runs/yolo26m-100-p2-328339/`; metrics and ZIP are under `submissions/E5_yolo26m_p2_328339/`. E7 RT-DETR-L-P2 scored **91.34% macro-F1**, **40.80% mAP**, and **+27.02% local Δm**; its metrics, compute record, and ZIP are under `submissions/E7_328598/`. A separate YOLO26l-P2 run, job `329019`, completed outside the Phase 2 architecture comparison with **91.14% macro-F1**, **40.24% mAP**, and **+25.83% local Δm**; its artifacts are under `nonsubmissions/sar-experiments/yolo26l-100-p2-329019/`. Array element `_2` was cancelled before starting, so YOLO26l remains a supplementary run.
 
 ### Phase 3 — joint fine-tuning of YOLO26m-P2 and RT-DETR-L-P2
 

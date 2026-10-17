@@ -12,7 +12,7 @@
     "--data",
     "data/course-data",
     "--out",
-    "submissions/151026/tests-no-submit/tm-64baseline-326397/terramind_64epoch_baseline_calibrated.zip",
+    "nonsubmissions/151026/tests-no-submit/tm-64baseline-326397/terramind_64epoch_baseline_calibrated.zip",
     "--class-score-power",
     "0.0"
   ],

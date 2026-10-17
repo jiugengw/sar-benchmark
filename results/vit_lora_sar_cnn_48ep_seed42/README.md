@@ -1,6 +1,6 @@
 # ViT + LoRA + SAR CNN, 48 epochs, seed 42
 
-Upload **`submission_val.zip`** to the Codabench validation phase. It contains
+The packaged validation ZIP, [`submission_val.zip`](../../nonsubmissions/vit_lora_sar_cnn_48ep_seed42/submission_val.zip), was never submitted. It contains
 `classification.csv` and `detection.json` at the ZIP root, with predictions for
 all **1,426 official validation images**. The archive has 29,290 detections.
 Classification labels are 0–8; detection categories are 1–9; boxes use original
@@ -34,7 +34,7 @@ and confidence scores without label calibration against hidden validation data.
 
 Files:
 
-- `submission_val.zip`: the file to upload to Codabench.
+- `submission_val.zip`: moved to `nonsubmissions/vit_lora_sar_cnn_48ep_seed42/`; never submitted.
 - `submission_val.metadata.json`: inference counts, parameter counts, and timing.
 - `local_validation_metrics.json`: full local holdout metrics at epoch 48.
 - `local_comparison.csv`: local scores for the three training runs.

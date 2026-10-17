@@ -1,0 +1,19 @@
+{
+  "format": "project classification.csv + COCO detection.json",
+  "split": "course validation; unlabeled leaderboard split",
+  "images": 1426,
+  "detections": 143050,
+  "image_size": 512,
+  "input_channels": "grayscale; Ultralytics expands one channel to three identical channels",
+  "resize": "PIL bilinear stretch to 512 x 512; boxes mapped back to original image coordinates",
+  "classification_rule": "supervised image-classification head top-1 class",
+  "box_class_policy": "native_detector_classes",
+  "classifier_checkpoint": "runs/yolo26s-p2-E2-328622/image_classifier.pt",
+  "classification_fallback_class": 4,
+  "batch_size": 16,
+  "inference_seconds_including_resize_and_zip": 34.537457178812474,
+  "weights": "runs/yolo26s-p2-E2-328622/train/weights/best.pt",
+  "weights_sha256": "f4e34c618a7d257aec239079a3cd65df1196bf880b9a387f83fa93ed2afb0099",
+  "zip": "nonsubmissions/sar-experiments/E2-328622/E2_328622.zip",
+  "zip_sha256": "9055b5b099139928a7f851ab7cbb9ff70190807ae0d128f03726ec53132479b5"
+}

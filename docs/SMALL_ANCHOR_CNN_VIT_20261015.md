@@ -24,7 +24,7 @@ Artifacts are archived under `results/small48-resnet34-326077/`,
 and `checkpoints/small48-terramind-326154/`. Results include holdout predictions,
 annotations, split, training history and compute records. Model weights use Git
 LFS. Calibration metrics, inference records and ZIPs are under the corresponding
-`submissions/151026/tests-no-submit/small48-*/` directories. These ZIPs have not
+`nonsubmissions/151026/tests-no-submit/small48-*/` directories. These ZIPs have not
 been uploaded to Codabench.
 
 Additional jobs submitted for comparison:
@@ -104,7 +104,7 @@ Submitted on 15 October 2026:
 
 Logs: `runs/small48-326077.out` and `runs/small48-326086.out`. Outputs use
 `small48-resnet34-326077` and `small48-vit-326086` under runs/results/checkpoints;
-ZIPs use those names under `submissions/151026/tests-no-submit/`.
+ZIPs use those names under `nonsubmissions/151026/tests-no-submit/`.
 
 | Backbone | Pretraining | Adaptation | Backbone LR | Total / trainable parameters |
 |---|---|---|---:|---:|

@@ -37,4 +37,4 @@ files live under `results/`, and generated reports live under `reports/detection
 The original ViT + LoRA model weights are unavailable in this checkout. Its existing submission ZIP and metrics
 are preserved separately; they cannot reconstruct the model weights.
 
-The five detection experiment checkpoints are stored as `terramind_pretrained_moelora_<experiment>_seed0/`, with `model.pt` and `metrics.json` directly inside each folder. See the [submission comparison](../submissions/README.md#detection-experiments) for changes, local results, and matching ZIPs.
+The five detection experiment checkpoints are stored as `terramind_pretrained_moelora_<experiment>_seed0/`, with `model.pt` and `metrics.json` directly inside each folder. See the [submission comparison](../nonsubmissions/README.md#detection-experiments) for changes, local results, and matching ZIPs.

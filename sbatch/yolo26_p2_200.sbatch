@@ -65,7 +65,7 @@ python -u yolo_baseline/run_experiment.py \
 
 python reports/training-comparison/build_comparison.py
 
-PACKAGE_DIR="submissions/161026/tests-no-submit/${MODEL_NAME}-200-p2-${SLURM_JOB_ID}"
+PACKAGE_DIR="nonsubmissions/161026/tests-no-submit/${MODEL_NAME}-200-p2-${SLURM_JOB_ID}"
 mkdir -p "$PACKAGE_DIR/scoring_result"
 touch "$PACKAGE_DIR/scoring_result/.gitkeep"
 python -u yolo_baseline/make_submission.py \

@@ -20,8 +20,8 @@ export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 export PYTHONPATH="${SLURM_SUBMIT_DIR}/yolo_baseline${PYTHONPATH:+:${PYTHONPATH}}"
 
-P2_PACKAGE_DIR="submissions/161026/tests-no-submit/yolo11s-100-p2-328058"
-STANDARD_PACKAGE_DIR="submissions/161026/tests-no-submit/yolo11s-100-standard-328063"
+P2_PACKAGE_DIR="nonsubmissions/161026/tests-no-submit/yolo11s-100-p2-328058"
+STANDARD_PACKAGE_DIR="nonsubmissions/161026/tests-no-submit/yolo11s-100-standard-328063"
 mkdir -p "$P2_PACKAGE_DIR/scoring_result" "$STANDARD_PACKAGE_DIR/scoring_result"
 touch "$P2_PACKAGE_DIR/scoring_result/.gitkeep" "$STANDARD_PACKAGE_DIR/scoring_result/.gitkeep"
 

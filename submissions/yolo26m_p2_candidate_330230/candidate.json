@@ -1,5 +1,5 @@
 {
-  "base_zip": "submissions/yolo26m_p2_quick_head_330230/yolo26m_p2_quick_head_330230.zip",
+  "base_zip": "nonsubmissions/yolo26m_p2_quick_head_330230/yolo26m_p2_quick_head_330230.zip",
   "base_zip_sha256": "9cd97a93aad1489678d08bac5b5c4daa2a6f3907192a5d8b0d72538785255ba5",
   "zip_sha256": "2940daf2d7c6cf55369c62a530b858c1b2997524ac6473f87578ed3b8e120079",
   "official_score": null,

@@ -22,7 +22,7 @@ export TRANSFORMERS_OFFLINE=1
 RUN_ROOT="runs/small-fixed-${SLURM_JOB_ID}"
 RESULT_ROOT="results/small-fixed-${SLURM_JOB_ID}"
 CHECKPOINT_ROOT="checkpoints/small-fixed-${SLURM_JOB_ID}"
-SUBMISSION_ROOT="submissions/151026/tests-no-submit/small-fixed-${SLURM_JOB_ID}"
+SUBMISSION_ROOT="nonsubmissions/151026/tests-no-submit/small-fixed-${SLURM_JOB_ID}"
 mkdir -p "$RUN_ROOT" "$SUBMISSION_ROOT"
 
 python -u train.py --data data/course-data --backbone terramind --init pretrained --adapt moelora \

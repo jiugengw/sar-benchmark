@@ -37,7 +37,7 @@ run_and_package() {
     local label="$4"
     local run_root="runs/${model_key}-100-p2-${SLURM_JOB_ID}"
     local result_root="results/${model_key}-100-p2-${SLURM_JOB_ID}/seed_0"
-    local package_dir="submissions/sar-experiments/${model_key}-100-p2-${SLURM_JOB_ID}"
+    local package_dir="nonsubmissions/sar-experiments/${model_key}-100-p2-${SLURM_JOB_ID}"
     local weights="pretrained/${model_key}.pt"
 
     if [[ ! -f "$weights" ]]; then

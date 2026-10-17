@@ -7,7 +7,7 @@
       "name": "YOLO26m-P2 \u00b7 100-epoch baseline",
       "status": "completed",
       "configuration": "100 detector epochs; supervised classifier fitted on frozen features. Native detector box classes.",
-      "metrics_path": "submissions/sar-experiments/E5-328598/E5_328598.metrics.json",
+      "metrics_path": "submissions/E5_yolo26m_p2_328339/E5_328598.metrics.json",
       "results_root": "results/yolo26m-100-p2-328339",
       "predictions_path": "results/yolo26m-100-p2-328339/seed_0/predictions_val.json",
       "ground_truth_path": "results/yolo26m-100-p2-328339/seed_0/instances_val_holdout.json",
@@ -36,7 +36,7 @@
       "status": "completed",
       "configuration": "Default anchors; box-loss weight 1; fixed loss weights; no photometric augmentation.",
       "metrics_path": "results/tm-48baseline-326894/terramind_pretrained_moelora/seed_0/metrics.json",
-      "zip_path": "submissions/161026/tests-no-submit/tm-48baseline-326894/terramind_48epoch_baseline_calibrated.zip",
+      "zip_path": "nonsubmissions/161026/tests-no-submit/tm-48baseline-326894/terramind_48epoch_baseline_calibrated.zip",
       "compare_by_default": false
     },
     {

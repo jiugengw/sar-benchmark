@@ -94,7 +94,7 @@ def export_run(model, args, metadata, dataset, checkpoint, settings):
           f"mAP={clean_scores['detection']['mAP']:.4f}, delta_m={clean_scores['delta_m']:.2f}", flush=True)
     images = json.loads((args.data / "val/images.json").read_text())["images"]
     public = predict(model, [(int(im["id"]), args.data / "val" / im["file_name"]) for im in images], args.batch, args.workers)
-    package = Path("submissions/sar-experiments") / args.output.name
+    package = Path("nonsubmissions/sar-experiments") / args.output.name
     package.mkdir(parents=True, exist_ok=True)
     output = package / f"{args.output.name}.zip"
     if output.exists():

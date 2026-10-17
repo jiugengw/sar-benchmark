@@ -31,7 +31,7 @@ BASELINE_CHECKPOINT="checkpoints/tm-48baseline-326894/terramind_pretrained_moelo
 MANIFEST="$DATASET/conversion_manifest.json"
 RUN_ROOT="runs/yolo11n-100-p2-${SLURM_JOB_ID}"
 RESULT_ROOT="results/yolo11n-100-p2-${SLURM_JOB_ID}/seed_0"
-PACKAGE_DIR="submissions/sar-experiments/E9-${SLURM_JOB_ID}"
+PACKAGE_DIR="nonsubmissions/sar-experiments/E9-${SLURM_JOB_ID}"
 
 for input in \
     pretrained/yolo11n.pt \
