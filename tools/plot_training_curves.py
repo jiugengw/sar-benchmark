@@ -37,7 +37,10 @@ def load(source):
         losses = {}
         for name in ('box_loss', 'cls_loss', 'image_cls_loss'):
             if f'train/{name}' in rows[0]:
-                losses[name] = ([r[f'train/{name}'] for r in rows], [r.get(f'val/{name}') for r in rows])
+                val = [r.get(f'val/{name}') for r in rows]
+                if all(not v for v in val):  # logged as 0 when it was never measured
+                    val = [None] * len(rows)
+                losses[name] = ([r[f'train/{name}'] for r in rows], val)
         metrics = {'mAP50-95': [r['metrics/mAP50-95(B)'] for r in rows], 'mAP50': [r['metrics/mAP50(B)'] for r in rows]}
         if 'metrics/image_macro_f1' in rows[0]:
             metrics['macro-F1'] = [r['metrics/image_macro_f1'] for r in rows]
@@ -84,8 +87,8 @@ def plot(run, out):
     import matplotlib.pyplot as plt
 
     histories = [(source.get('label', source['type']), load(source)) for source in run['histories']]
-    fig, axes = plt.subplots(len(histories), 2, figsize=(12, 3.6 * len(histories)), squeeze=False)
-    for (label, h), (loss_ax, metric_ax) in zip(histories, axes):
+    fig, axes = plt.subplots(len(histories), 3, figsize=(16, 3.6 * len(histories)), squeeze=False)
+    for (label, h), (loss_ax, metric_ax, dm_ax) in zip(histories, axes):
         loss_epochs = h.get('loss_epochs') or h['epochs']
         for i, (name, (train, val)) in enumerate(h['losses'].items()):
             color = f'C{i}'
@@ -95,20 +98,22 @@ def plot(run, out):
         loss_ax.set_title(f'{label}: loss (solid = train, dashed = validation)', fontsize=10)
         if not h['losses']:
             loss_ax.text(0.5, 0.5, 'no loss history saved', ha='center', va='center', transform=loss_ax.transAxes)
-        dm = h['metrics'].get('Δm')
-        for i, (name, values) in enumerate(h['metrics'].items()):
-            if name == 'Δm':
-                continue
+            loss_ax.set_xticks([]); loss_ax.set_yticks([])
+        for i, (name, values) in enumerate((k, v) for k, v in h['metrics'].items() if k != 'Δm'):
             metric_ax.plot(h['epochs'], values, color=f'C{i}', label=name)
-        if dm:
-            twin = metric_ax.twinx()
-            twin.plot(h['epochs'], dm, color='black', linewidth=1, label='Δm (right axis)')
-            twin.set_ylabel('Δm')
+        metric_ax.set_title(f'{label}: validation mAP / F1', fontsize=10)
+        dm = h['metrics'].get('Δm')
+        if dm:  # Δm gets its own panel: one y-axis per chart
+            dm_ax.plot(h['epochs'], dm, color='C0', label='Δm')
             best = max(range(len(dm)), key=dm.__getitem__)
-            metric_ax.axvline(h['epochs'][best], color='grey', linestyle=':', label=f'best Δm, epoch {h["epochs"][best]:g}')
-            twin.legend(loc='lower right', fontsize=8)
-        metric_ax.set_title(f'{label}: validation metrics', fontsize=10)
-        for ax in (loss_ax, metric_ax):
+            for ax in (metric_ax, dm_ax):
+                ax.axvline(h['epochs'][best], color='grey', linestyle=':', label=f'best Δm, epoch {h["epochs"][best]:g}')
+        else:
+            dm_ax.text(0.5, 0.5, 'Δm not recorded per epoch\n(needs F1 and mAP in the same epoch)', ha='center', va='center',
+                       transform=dm_ax.transAxes, color='dimgray')
+            dm_ax.set_xticks([]); dm_ax.set_yticks([])
+        dm_ax.set_title(f'{label}: validation Δm', fontsize=10)
+        for ax in (loss_ax, metric_ax, dm_ax):
             ax.set_xlabel('epoch')
             ax.grid(alpha=0.3)
             if ax.get_legend_handles_labels()[0]:

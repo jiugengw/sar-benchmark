@@ -54,6 +54,7 @@ python tools/plot_training_curves.py
 python tools/plot_training_curves.py --check
 ```
 
-The first command draws every ZIP's curves and refreshes [TRAINING_CURVES.md](TRAINING_CURVES.md). The second must
+The first command draws every ZIP's curves and refreshes [TRAINING_CURVES.md](TRAINING_CURVES.md); then run
+`python tools/build_curve_compare.py` so the run appears in the comparison page. The second must
 report no problems for the new run. Then add a short entry for the run to [HISTORY.md](HISTORY.md): why, what,
 result, lesson.

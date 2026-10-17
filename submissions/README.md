@@ -4,7 +4,7 @@ Every ZIP uploaded to the [Codabench competition](https://www.codabench.org/comp
 
 | Codabench ID | Uploaded | ZIP | Status | Official Δm | Scoring result |
 |---:|---|---|---|---:|---|
-| 995999 | 2026-10-17 23:49 | [yolo26m_p2_candidate_330230.zip](yolo26m_p2_candidate_330230/yolo26m_p2_candidate_330230.zip) | Finished | +36.80 | not downloaded |
+| 995999 | 2026-10-17 23:49 | [yolo26m_p2_candidate_330230.zip](yolo26m_p2_candidate_330230/yolo26m_p2_candidate_330230.zip) | Finished | +36.80 | [scores.json](yolo26m_p2_candidate_330230/scoring_result/scores.json) |
 | 995698 | 2026-10-17 20:12 | [yolo26m_p2_finetune_40ep_329644.zip](yolo26m_p2_finetune_40ep_329644/yolo26m_p2_finetune_40ep_329644.zip) | Finished | +34.57 | [scores.json](yolo26m_p2_finetune_40ep_329644/scoring_result/scores.json) |
 | 995516 | 2026-10-17 17:36 | [E7_328598.zip](E7_328598/E7_328598.zip) | Finished | +22.85 | not downloaded |
 | 995418 | 2026-10-17 16:17 | [E5_yolo26m_p2_328339.zip](E5_yolo26m_p2_328339/E5_yolo26m_p2_328339.zip) | Finished | +23.18 | [scores.json](E5_yolo26m_p2_328339/scoring_result/scores.json) |

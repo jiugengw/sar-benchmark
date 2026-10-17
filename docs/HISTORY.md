@@ -30,7 +30,7 @@ which is why official scores land between our full and twin-free ("clean") local
 | Oct 17 | E5 YOLO26m-P2, 100 epochs + image head | 89.75 | 39.24 | +23.18 |
 | Oct 17 | Phase 3 joint fine-tune of E5 | 92.56 | 38.78 | +23.80 |
 | Oct 17 | E5 + 40 detector-only epochs + spatial head | 93.33 | 44.19 | +34.57 |
-| Oct 17 | Same detector + 1024-unit head + box-edge correction | not downloaded | not downloaded | **+36.80** |
+| Oct 17 | Same detector + 1024-neuron image classifier + box-edge correction | 94.69 | 44.98 | **+36.80** |
 
 All 25 uploads, with Codabench IDs, are in [submissions/README.md](../submissions/README.md). Unless stated,
 "local" scores below are on the fixed 939-image holdout of the labelled training set (8,453 train / 939 holdout,
@@ -331,7 +331,7 @@ fit all 720 clean images (descriptive scores: box-only 94.58 / 45.58 / +37.91 fu
 `yolo26m_p2_candidate_330230.zip`: first-continuation detector (one-to-many), 1024-unit head, box-edge
 correction; 29,748,913 parameters, one forward pass, no TTA. Local (includes calibration images): 96.06 / 45.58 /
 +38.70 full, 95.10 / 42.71 / +32.68 clean. **Official Δm +36.80**, +2.23 over the continuation alone; the F1/mAP
-breakdown was not downloaded. Details: [submission folder](../submissions/yolo26m_p2_candidate_330230/).
+official breakdown is macro-F1 94.69%, mAP 44.98% (AP50 71.41%). Details: [submission folder](../submissions/yolo26m_p2_candidate_330230/).
 
 ### 5.7 Other deadline attempts (none uploaded)
 

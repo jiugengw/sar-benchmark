@@ -13,6 +13,9 @@ classifier and a per-class box-edge correction.
 - **[submissions/README.md](submissions/README.md): official scores.** Every ZIP uploaded to Codabench, with its Δm.
   Packaged ZIPs that were never uploaded are in [nonsubmissions/](nonsubmissions/).
 - **[reports/training-comparison/index.html](reports/training-comparison/index.html):** compare runs side by side.
+- **[reports/curve-compare/index.html](reports/curve-compare/index.html): compare training curves.** Tick any runs
+  (or best 5 / all) to overlay validation mAP, F1, Δm and train vs validation loss; rebuild its data with
+  `python tools/build_curve_compare.py`.
 - **[docs/TRAINING_CURVES.md](docs/TRAINING_CURVES.md): training curves** for every packaged ZIP (train vs validation
   loss, validation mAP / F1 / Δm per epoch), with how to spot overfitting.
 - **[docs/RUN_TEMPLATE.md](docs/RUN_TEMPLATE.md): what every new run must save** so it can be graphed and compared.

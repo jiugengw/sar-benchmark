@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Training Curve Comparison</title>
+<style>
+.viz-root {
+  color-scheme: light;
+  --surface-0: #f4f4f2; --surface-1: #fcfcfb; --border: #dddcd7;
+  --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #77756f;
+  --grid: #e8e7e3; --context: #c9c8c1; --accent: #2a78d6;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --series-5: #e87ba4; --series-6: #008300; --series-7: #6250d6; --series-8: #e34948;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .viz-root {
+    color-scheme: dark;
+    --surface-0: #121211; --surface-1: #1a1a19; --border: #33332f;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8e86;
+    --grid: #2a2a27; --context: #4a4a45; --accent: #3987e5;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+  }
+}
+:root[data-theme="dark"] .viz-root {
+  color-scheme: dark;
+  --surface-0: #121211; --surface-1: #1a1a19; --border: #33332f;
+  --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8e86;
+  --grid: #2a2a27; --context: #4a4a45; --accent: #3987e5;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--surface-0); }
+.viz-root { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text-primary);
+  background: var(--surface-0); min-height: 100vh; display: grid; grid-template-columns: 320px 1fr; }
+aside { border-right: 1px solid var(--border); background: var(--surface-1); padding: 16px; height: 100vh;
+  position: sticky; top: 0; overflow: auto; }
+main { padding: 16px 20px 40px; min-width: 0; }
+h1 { font-size: 18px; margin: 0 0 4px; }
+.sub { color: var(--text-secondary); margin: 0 0 12px; font-size: 13px; }
+.quick { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+button, select, input[type=search] { font: inherit; font-size: 13px; color: var(--text-primary);
+  background: var(--surface-0); border: 1px solid var(--border); border-radius: 6px; padding: 4px 9px; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: #fff; }
+input[type=search] { width: 100%; margin-bottom: 8px; }
+.group { margin: 14px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+.run { display: grid; grid-template-columns: 18px 12px 1fr auto; gap: 6px; align-items: center; padding: 3px 4px;
+  border-radius: 6px; cursor: pointer; }
+.run:hover { background: var(--surface-0); }
+.run .sw { width: 12px; height: 12px; border-radius: 3px; background: transparent; }
+.run .nm { font-size: 12.5px; overflow-wrap: anywhere; }
+.run .sc { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.run .star { border: none; background: none; padding: 0 2px; color: var(--text-muted); font-size: 13px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 4px 0 14px; color: var(--text-secondary); font-size: 13px; }
+.toolbar label { display: inline-flex; gap: 6px; align-items: center; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 12px; font-size: 13px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 14px; }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 12px 6px; position: relative; }
+.card h2 { font-size: 14px; margin: 0; }
+.card p { margin: 2px 0 6px; color: var(--text-muted); font-size: 12px; }
+svg { width: 100%; height: auto; display: block; overflow: visible; }
+svg text { fill: var(--text-muted); font-size: 11px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 8px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12); display: none;
+  z-index: 5; max-width: 340px; }
+.tip b { font-weight: 600; }
+.tip .row { display: grid; grid-template-columns: 10px 1fr auto; gap: 6px; align-items: center; }
+.tip .row i { width: 10px; height: 3px; border-radius: 2px; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; background: var(--surface-1);
+  border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-top: 14px; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: right; font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--text-secondary); font-weight: 600; background: var(--surface-0); }
+.empty { color: var(--text-muted); padding: 30px; text-align: center; }
+@media (max-width: 900px) { .viz-root { grid-template-columns: 1fr; } aside { position: static; height: auto; }
+  .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="viz-root">
+<aside>
+  <h1>Training curves</h1>
+  <p class="sub">Tick runs to overlay their per-epoch curves. Up to 8 get a colour; more are drawn as grey context lines (☆ promotes one).</p>
+  <div class="quick">
+    <button data-q="top5">Best 5 official</button><button data-q="submitted">All submitted</button>
+    <button data-q="yolo">YOLO</button><button data-q="tm">ViT / TerraMind</button>
+    <button data-q="all">All</button><button data-q="none">None</button>
+  </div>
+  <input type="search" id="search" placeholder="Filter runs by name…" aria-label="Filter runs">
+  <div id="list"></div>
+</aside>
+<main>
+  <div class="toolbar">
+    <label><input type="checkbox" id="chain" checked> Chain parent stages end to end (e.g. E5 100 epochs → continuation 40)</label>
+    <label><input type="checkbox" id="table"> Show table</label>
+    <button id="theme" aria-label="Toggle dark mode">Light / dark</button>
+  </div>
+  <div class="legend" id="legend"></div>
+  <div class="grid" id="charts"></div>
+  <div id="tablewrap"></div>
+</main>
+</div>
+<script src="data.js"></script>
+<script>
+(() => {
+'use strict';
+const RUNS = window.CURVE_RUNS || [];
+const byId = new Map(RUNS.map(r => [r.id, r]));
+const DETECTOR = new Set(['ultralytics', 'terramind']);
+const CHARTS = [
+  {key: 'mAP50-95', title: 'Validation mAP (COCO, IoU 0.50–0.95)', note: 'Detection quality per epoch. Higher is better.', fmt: v => (v * 100).toFixed(1) + '%', kind: 'metric', det: true},
+  {key: 'macro-F1', title: 'Validation macro-F1 (image class)', note: 'From the stage that trained the image classifier.', fmt: v => (v * 100).toFixed(1) + '%', kind: 'metric', det: false},
+  {key: 'Δm', title: 'Validation Δm', note: 'Only stages that recorded F1 and mAP in the same epoch (joint and train.py runs).', fmt: v => (v >= 0 ? '+' : '') + v.toFixed(2), kind: 'metric', det: false},
+  {key: 'loss', title: 'Loss: training (solid) vs validation (dashed)', note: 'Detection box loss for YOLO, total training loss for train.py runs; compare within a family only. A falling solid line with a flat or rising dashed line means overfitting.', fmt: v => v.toFixed(3), kind: 'loss', det: true},
+];
+let selected = [];               // selection order; first 8 are coloured
+const slotOf = new Map();         // id -> colour slot (stable while selected)
+const state = {chain: true, table: false, search: ''};
+
+function series(run, chart) {
+  // Returns [{x, y, dashed}] polylines for one run and chart.
+  const stages = run.stages;
+  const lines = [];
+  if (chart.kind === 'loss') {
+    const det = stages.filter(s => DETECTOR.has(s.type) && Object.keys(s.losses).length);
+    const use = state.chain ? det : det.slice(-1);
+    let offset = 0, train = [], val = [];
+    for (const s of use) {
+      const name = s.losses.box_loss ? 'box_loss' : Object.keys(s.losses)[0];
+      const [tr, va] = s.losses[name];
+      s.lossEpochs.forEach((e, i) => { train.push([e + offset, tr[i]]); val.push([e + offset, va[i]]); });
+      offset += s.lossEpochs[s.lossEpochs.length - 1];
+      if (!state.chain) offset = 0;
+    }
+    lines.push({pts: train.filter(p => p[1] != null), dashed: false});
+    lines.push({pts: val.filter(p => p[1] != null), dashed: true});
+    return lines;
+  }
+  const have = stages.filter(s => s.metrics[chart.key]);
+  if (!have.length) return lines;
+  if (chart.det && state.chain) {
+    let offset = 0, pts = [];
+    for (const s of stages.filter(s => DETECTOR.has(s.type))) {
+      if (s.metrics[chart.key]) s.epochs.forEach((e, i) => pts.push([e + offset, s.metrics[chart.key][i]]));
+      offset += s.epochs[s.epochs.length - 1];
+    }
+    lines.push({pts: pts.filter(p => p[1] != null), dashed: false});
+  } else {
+    const s = have[have.length - 1];
+    lines.push({pts: s.epochs.map((e, i) => [e, s.metrics[chart.key][i]]).filter(p => p[1] != null), dashed: false});
+  }
+  return lines;
+}
+
+function boundaries(run, chart) {
+  // Epochs where a new detector stage starts when stages are chained, e.g. E5 -> continuation at epoch 100.
+  if (!state.chain || !(chart.det || chart.kind === 'loss')) return [];
+  const det = run.stages.filter(s => DETECTOR.has(s.type));
+  const out = []; let offset = 0;
+  det.forEach((s, i) => { if (i) out.push({x: offset, label: s.label}); offset += s.epochs[s.epochs.length - 1]; });
+  return out;
+}
+
+function colourFor(id) { return slotOf.has(id) ? `var(--series-${slotOf.get(id) + 1})` : 'var(--context)'; }
+function assignSlots() {
+  const coloured = selected.slice(0, 8);
+  for (const id of [...slotOf.keys()]) if (!coloured.includes(id)) slotOf.delete(id);
+  const used = new Set(slotOf.values());
+  for (const id of coloured) if (!slotOf.has(id)) {
+    let slot = 0; while (used.has(slot)) slot++; slotOf.set(id, slot); used.add(slot);
+  }
+}
+
+function renderList() {
+  const list = document.getElementById('list');
+  const q = state.search.toLowerCase();
+  const groups = [['Submitted (official Δm)', RUNS.filter(r => r.submitted)], ['Not submitted', RUNS.filter(r => !r.submitted)]];
+  list.innerHTML = '';
+  for (const [title, runs] of groups) {
+    const shown = runs.filter(r => r.name.toLowerCase().includes(q));
+    if (!shown.length) continue;
+    const h = document.createElement('div'); h.className = 'group'; h.textContent = title; list.append(h);
+    for (const r of shown) {
+      const row = document.createElement('label'); row.className = 'run'; row.title = r.id + (r.note ? ' — ' + r.note : '');
+      const on = selected.includes(r.id);
+      row.innerHTML = `<input type="checkbox" ${on ? 'checked' : ''}><span class="sw" style="background:${on ? colourFor(r.id) : 'transparent'}"></span>`
+        + `<span class="nm"></span><span class="sc">${r.official == null ? '' : (r.official >= 0 ? '+' : '') + r.official.toFixed(2)}</span>`;
+      row.querySelector('.nm').textContent = r.name;
+      row.querySelector('input').addEventListener('change', e => toggle(r.id, e.target.checked));
+      if (on && !slotOf.has(r.id)) {
+        const star = document.createElement('button'); star.className = 'star'; star.textContent = '☆';
+        star.title = 'Give this run a colour'; star.addEventListener('click', e => { e.preventDefault(); promote(r.id); });
+        row.querySelector('.nm').append(' ', star);
+      }
+      list.append(row);
+    }
+  }
+}
+
+function toggle(id, on) {
+  selected = selected.filter(x => x !== id);
+  if (on) selected.push(id);
+  update();
+}
+function promote(id) {
+  selected = [id, ...selected.filter(x => x !== id)];
+  const coloured = selected.slice(0, 8);
+  for (const k of [...slotOf.keys()]) if (!coloured.includes(k)) slotOf.delete(k);
+  update();
+}
+function quick(kind) {
+  const pick = {
+    top5: RUNS.filter(r => r.official != null).sort((a, b) => b.official - a.official).slice(0, 5),
+    submitted: RUNS.filter(r => r.submitted), yolo: RUNS.filter(r => r.family.startsWith('YOLO')),
+    tm: RUNS.filter(r => r.family.startsWith('ViT')), all: RUNS, none: [],
+  }[kind];
+  selected = pick.map(r => r.id); slotOf.clear(); update();
+}
+
+function niceTicks(lo, hi, n) {
+  const span = hi - lo || 1, step0 = span / n, mag = 10 ** Math.floor(Math.log10(step0));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= n) || step0;
+  const ticks = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) ticks.push(+v.toFixed(10));
+  return ticks;
+}
+
+function renderCharts() {
+  const host = document.getElementById('charts'); host.innerHTML = '';
+  if (!selected.length) { host.innerHTML = '<div class="empty">Tick one or more runs on the left.</div>'; return; }
+  const ordered = [...selected].reverse();  // coloured runs draw last (on top)
+  ordered.sort((a, b) => (slotOf.has(a) ? 1 : 0) - (slotOf.has(b) ? 1 : 0));
+  for (const chart of CHARTS) {
+    const data = ordered.map(id => ({id, run: byId.get(id), lines: series(byId.get(id), chart)}))
+      .filter(d => d.lines.some(l => l.pts.length));
+    const card = document.createElement('section'); card.className = 'card';
+    card.innerHTML = `<h2>${chart.title}</h2><p>${chart.note}</p>`;
+    host.append(card);
+    if (!data.length) { card.insertAdjacentHTML('beforeend', '<div class="empty">No selected run recorded this.</div>'); continue; }
+    const pts = data.flatMap(d => d.lines.flatMap(l => l.pts));
+    let x0 = Math.min(...pts.map(p => p[0])), x1 = Math.max(...pts.map(p => p[0]));
+    let y0 = Math.min(...pts.map(p => p[1])), y1 = Math.max(...pts.map(p => p[1]));
+    const pad = (y1 - y0) * 0.06 || 0.01; y0 -= pad; y1 += pad;
+    if (chart.kind === 'metric' && chart.key !== 'Δm') y0 = Math.max(0, y0);
+    const W = 560, H = 272, m = {l: 50, r: 14, t: 8, b: 40};
+    const sx = x => m.l + (x - x0) / ((x1 - x0) || 1) * (W - m.l - m.r);
+    const sy = y => H - m.b - (y - y0) / ((y1 - y0) || 1) * (H - m.t - m.b);
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', chart.title);
+    let g = '';
+    for (const t of niceTicks(y0, y1, 5)) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${sy(t)}" y2="${sy(t)}" stroke="var(--grid)"/>`
+      + `<text x="${m.l - 6}" y="${sy(t) + 4}" text-anchor="end">${chart.fmt(t)}</text>`;
+    for (const t of niceTicks(x0, x1, 8)) g += `<text x="${sx(t)}" y="${H - 12}" text-anchor="middle">${t}</text>`;
+    g += `<text x="${(m.l + W - m.r) / 2}" y="${H + 4}" text-anchor="middle" style="font-style:italic">epoch</text>`;
+    const marks = new Map();
+    for (const d of data) if (slotOf.has(d.id)) for (const b of boundaries(d.run, chart)) marks.set(b.x, b.label);
+    for (const [bx, label] of marks) g += `<line x1="${sx(bx)}" x2="${sx(bx)}" y1="${m.t}" y2="${H - m.b}" stroke="var(--text-muted)" stroke-dasharray="1 4"/>`
+      + `<text x="${sx(bx) + 4}" y="${H - m.b - 6}" style="fill:var(--text-muted)">${escapeHtml(short(label))} →</text>`;
+    for (const d of data) for (const l of d.lines) {
+      if (!l.pts.length) continue;
+      const coloured = slotOf.has(d.id);
+      g += `<polyline fill="none" stroke="${colourFor(d.id)}" stroke-width="${coloured ? 2 : 1.2}" stroke-linejoin="round" `
+        + `${l.dashed ? 'stroke-dasharray="5 4"' : ''} points="${l.pts.map(p => sx(p[0]).toFixed(1) + ',' + sy(p[1]).toFixed(1)).join(' ')}"/>`;
+    }
+    // direct end labels when few coloured series
+    const labelled = data.filter(d => slotOf.has(d.id) && d.lines[0].pts.length);
+    if (labelled.length <= 4) {
+      // Label each line at its end; keep labels inside the plot and at least 13 px apart vertically.
+      const labels = labelled.map(d => {
+        const p = d.lines[0].pts[d.lines[0].pts.length - 1], text = short(d.run.name), width = text.length * 6.1;
+        const x = sx(p[0]), fitsLeft = x - 6 - width >= m.l;
+        return {text, x: fitsLeft ? x - 6 : Math.min(x + 6, W - m.r - width), anchor: 'start', width, y: sy(p[1]) - 7, fitsLeft};
+      }).sort((a, b) => a.y - b.y);
+      for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 13) labels[i].y = labels[i - 1].y + 13;
+      for (const lb of labels) {
+        const x = lb.fitsLeft ? lb.x - lb.width : lb.x;
+        g += `<text x="${x.toFixed(1)}" y="${Math.max(m.t + 10, Math.min(lb.y, H - m.b - 4)).toFixed(1)}" style="fill:var(--text-secondary)">${escapeHtml(lb.text)}</text>`;
+      }
+    }
+    g += `<line class="cross" y1="${m.t}" y2="${H - m.b}" stroke="var(--text-muted)" stroke-dasharray="2 3" style="display:none"/>`;
+    svg.innerHTML = g;
+    card.append(svg);
+    const seen = new Map(), overlaps = [];
+    for (const d of [...data].reverse()) {
+      if (!slotOf.has(d.id)) continue;
+      const sig = JSON.stringify(d.lines.map(l => l.pts));
+      if (seen.has(sig)) overlaps.push(`${short(d.run.name)} is hidden under ${short(seen.get(sig))}: identical curve (same trained model for this stage).`);
+      else seen.set(sig, d.run.name);
+    }
+    if (overlaps.length) {
+      const note = document.createElement('p'); note.style.margin = '2px 0 6px';
+      note.textContent = overlaps.join(' '); card.append(note);
+    }
+    const tip = document.createElement('div'); tip.className = 'tip'; card.append(tip);
+    const cross = svg.querySelector('.cross');
+    svg.addEventListener('mousemove', ev => {
+      const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) / r.width * W;
+      const ex = x0 + (px - m.l) / (W - m.l - m.r) * (x1 - x0);
+      if (px < m.l || px > W - m.r) { tip.style.display = 'none'; cross.style.display = 'none'; return; }
+      const rows = [];
+      for (const d of [...data].reverse()) {
+        const vals = d.lines.map(l => { let best = null; for (const p of l.pts) if (best == null || Math.abs(p[0] - ex) < Math.abs(best[0] - ex)) best = p; return best; });
+        if (!vals[0] || Math.abs(vals[0][0] - ex) > Math.max(1.5, (x1 - x0) / 60)) continue;
+        const v = chart.kind === 'loss' ? vals.map((p, i) => p ? (i ? 'val ' : 'train ') + chart.fmt(p[1]) : '').filter(Boolean).join(' · ') : chart.fmt(vals[0][1]);
+        rows.push(`<div class="row"><i style="background:${colourFor(d.id)}"></i><span>${escapeHtml(short(d.run.name))}</span><b>${v}</b></div>`);
+        if (rows.length >= 10) break;
+      }
+      if (!rows.length) { tip.style.display = 'none'; cross.style.display = 'none'; return; }
+      cross.setAttribute('x1', sx(Math.round(ex))); cross.setAttribute('x2', sx(Math.round(ex))); cross.style.display = '';
+      tip.innerHTML = `<div style="margin-bottom:4px;color:var(--text-secondary)">epoch ${Math.round(ex)}</div>` + rows.join('');
+      tip.style.display = 'block';
+      const cardBox = card.getBoundingClientRect();
+      tip.style.left = Math.min(ev.clientX - cardBox.left + 14, cardBox.width - 350) + 'px';
+      tip.style.top = (ev.clientY - cardBox.top + 10) + 'px';
+    });
+    svg.addEventListener('mouseleave', () => { tip.style.display = 'none'; cross.style.display = 'none'; });
+  }
+}
+
+function short(name) { return name.length > 34 ? name.slice(0, 32) + '…' : name; }
+function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c])); }
+
+function renderLegend() {
+  const legend = document.getElementById('legend');
+  const coloured = selected.filter(id => slotOf.has(id));
+  const grey = selected.length - coloured.length;
+  legend.innerHTML = coloured.map(id => `<span><i style="background:${colourFor(id)}"></i>${escapeHtml(byId.get(id).name)}</span>`).join('')
+    + (grey ? `<span><i style="background:var(--context)"></i>${grey} more run${grey > 1 ? 's' : ''} in grey</span>` : '');
+}
+
+function summary(run) {
+  const det = series(run, CHARTS[0])[0] || {pts: []};
+  const f1 = series(run, CHARTS[1])[0] || {pts: []};
+  const loss = series(run, CHARTS[3]);
+  const best = det.pts.reduce((a, p) => (!a || p[1] > a[1] ? p : a), null);
+  const last = det.pts[det.pts.length - 1];
+  const val = (loss[1] || {pts: []}).pts;
+  let trend = '—';
+  if (val.length > 4) {
+    const min = Math.min(...val.map(p => p[1])), end = val[val.length - 1][1];
+    trend = end > min * 1.02 ? 'rising after its minimum (possible overfit)' : 'at or near its minimum';
+  }
+  return {best, last, f1: f1.pts.length ? Math.max(...f1.pts.map(p => p[1])) : null, trend};
+}
+
+function renderTable() {
+  const wrap = document.getElementById('tablewrap');
+  if (!state.table || !selected.length) { wrap.innerHTML = ''; return; }
+  const rows = selected.map(id => {
+    const r = byId.get(id), s = summary(r);
+    return `<tr><td>${escapeHtml(r.name)}</td><td>${r.official == null ? '—' : (r.official >= 0 ? '+' : '') + r.official.toFixed(2)}</td>`
+      + `<td>${s.best ? (s.best[1] * 100).toFixed(2) + '% @ ' + s.best[0] : '—'}</td><td>${s.last ? (s.last[1] * 100).toFixed(2) + '%' : '—'}</td>`
+      + `<td>${s.f1 == null ? '—' : (s.f1 * 100).toFixed(2) + '%'}</td><td style="text-align:left">${s.trend}</td></tr>`;
+  }).join('');
+  wrap.innerHTML = `<table><thead><tr><th>Run</th><th>Official Δm</th><th>Best val mAP @ epoch</th><th>Last val mAP</th><th>Best val F1</th><th style="text-align:left">Validation loss</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function update() { assignSlots(); renderList(); renderLegend(); renderCharts(); renderTable(); }
+
+document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => quick(b.dataset.q)));
+document.getElementById('search').addEventListener('input', e => { state.search = e.target.value; renderList(); });
+document.getElementById('chain').addEventListener('change', e => { state.chain = e.target.checked; update(); });
+document.getElementById('table').addEventListener('change', e => { state.table = e.target.checked; renderTable(); });
+document.getElementById('theme').addEventListener('click', () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+});
+if (!RUNS.length) document.getElementById('charts').innerHTML = '<div class="empty">No data: run python tools/build_curve_compare.py</div>';
+else quick('top5');
+})();
+</script>
+</body>
+</html>
