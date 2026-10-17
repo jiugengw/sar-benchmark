@@ -1,0 +1,6 @@
+model,best_epoch,macro_f1_percent,mAP_percent,AP50_percent,AP75_percent,AP_small_percent,evaluation
+"ViT + LoRA + SAR CNN,48 epochs",48,94.82714302878651,29.146859418806237,59.82842282881443,24.95582259446662,25.89631072286315,Same1408-image original local holdout; not official Codabench scores
+"TerraMind + CNN,batch256,48 epochs",48,93.82408640654708,29.083297987251814,59.39890760927269,24.70464816119562,25.923072175046208,Same1408-image original local holdout; not official Codabench scores
+"TerraMind + CNN,batch64,48 epochs",48,92.99947070865637,29.1802697643258,59.340909902985096,25.828057734921916,26.119108854761535,Same1408-image original local holdout; not official Codabench scores
+"TerraMind + CNN + v2,48 epochs",42,92.49403239236749,29.328636722220942,59.24256365654909,24.984848900950706,25.84011716078265,Same1408-image original local holdout; not official Codabench scores
+"ViT + LoRA + SAR CNN,48+48 continuation",96,94.92250426309938,33.033016886209104,63.57308925587959,30.219029945838898,28.604566474539332,Same1408-image original local holdout; not official Codabench scores

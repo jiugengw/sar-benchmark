@@ -1,0 +1,52 @@
+seed: 42
+data:
+  raw: data/raw
+  processed: data/processed/seed42
+  train_manifest: train_expanded.json
+  normalization:
+  - 0.2526
+  - 0.2133
+  derived: data/derived
+model:
+  adaptation: lora
+  weights: weights/vit_base_patch16_224.augreg_in21k/model.safetensors
+  lora_rank: 64
+  lora_alpha: 128
+  neck_channels: 384
+  roi_hidden_dim: auto
+  sar_cnn: true
+augmentation:
+  horizontal_flip_p: 0.5
+  vertical_flip_p: 0.5
+  rotate90_p: 0.25
+  intensity_p: 0.35
+  speckle_p: 0.15
+  background_cutout_p: 0.1
+  brightness_delta: 0.05
+  contrast_delta: 0.15
+  gamma_delta: 0.15
+  speckle_sigma:
+  - 0.02
+  - 0.06
+  cutout_side:
+  - 8
+  - 24
+training:
+  epochs: 48
+  batch_size: 128
+  workers: 8
+  lr: 0.0004
+  backbone_lr: 0.0004
+  weight_decay: 0.05
+  warmup_epochs: 2
+  eval_every: 6
+  classification_loss_weight: 1.0
+  detection_loss_weight: 1.0
+  amp: bf16
+  log_every: 5
+  eval_batch_size: 32
+  cpu_threads: 4
+  expected_world_size: 1
+  save_every: 6
+  accumulation_steps: 2
+  schedule_start_epoch: 0

@@ -1,0 +1,46 @@
+{
+  "checkpoint": "/node2/jinyang_node2_1110/project_node2_1110/cv_project/experiments/07_vit_lora_cnn_continue96/results/run/best.pt",
+  "checkpoint_epoch": 96,
+  "checkpoint_sha256": "a773164e0a90b7b7fda063cbb6437061ad11a5bb3a079087979563364a82a514",
+  "split": "val",
+  "parameters": {
+    "total": 126038011,
+    "trainable": 39996667,
+    "frozen": 86041344,
+    "total_budget_remaining": 3961989,
+    "trainable_budget_remaining": 3333,
+    "resolved_architecture": {
+      "adaptation": "lora",
+      "lora_rank": 64,
+      "neck_channels": 384,
+      "roi_hidden_dim": 1300,
+      "sar_cnn": true,
+      "cnn_fusion_strides": [
+        4,
+        8
+      ],
+      "cnn_parameters": 110274
+    },
+    "trainable_by_module": {
+      "backbone": 3538944,
+      "cls_head": 8457,
+      "neck": 8781504,
+      "rpn": 1339038,
+      "roi_heads": 26218450,
+      "sar_cnn": 110274
+    }
+  },
+  "tta": false,
+  "views_per_image": 1,
+  "ensemble": false,
+  "tiling": false,
+  "export_slurm_job": "10217",
+  "cpu_cores": 4,
+  "batch_size": 32,
+  "workers": 2,
+  "forward_seconds_per_image": 0.008886794287314296,
+  "export_wall_seconds": 23.83562585245818,
+  "images": 1426,
+  "detections": 21239,
+  "max_detections_per_image_class": 100
+}

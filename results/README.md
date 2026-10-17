@@ -51,6 +51,20 @@ inference provenance and local holdout comparisons for an external ViT + LoRA + 
 was never uploaded and now lives in `../nonsubmissions/vit_lora_sar_cnn_48ep_seed42/`. Its local Macro-F1 / mAP
 are 94.83% / 29.15%. See [docs/HISTORY.md](../docs/HISTORY.md) for how this run compares.
 
+## ViT + LoRA + SAR CNN, 96 epochs
+
+[`vit_lora_sar_cnn_96ep_seed42/`](vit_lora_sar_cnn_96ep_seed42/) packages the
+epoch-96 continuation of the external ViT + LoRA + SAR CNN experiment.
+Its [submission_val.zip](vit_lora_sar_cnn_96ep_seed42/submission_val.zip) is a candidate
+for the Codabench validation phase, covering all 1,426 official validation images.
+It is bundled here with its configurations, local results and integrity manifest;
+**official Codabench scores are pending**.
+
+On the same 1,408-image original local holdout used by its parent, the checkpoint
+achieves Macro-F1 94.92%, mAP 33.03%, AP50 63.57% and AP small 28.60%.
+The 48 + 48 continuation improves local mAP by 3.89 percentage points over its parent.
+These local metrics are separate from the official leaderboard Score/Delta-m.
+
 ## Detection experiment comparison
 
 The five `terramind_pretrained_moelora_<experiment>_seed0/` folders preserve final metrics and holdout detection artifacts. See the [submission comparison](../nonsubmissions/README.md#detection-experiments) for each change's rationale, scores, and corresponding ZIP. Shared data diagnostics and completion records live in `detection_experiments/`.
