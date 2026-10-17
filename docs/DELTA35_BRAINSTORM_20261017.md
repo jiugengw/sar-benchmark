@@ -38,6 +38,40 @@ connected same-scene twin groups together in training or validation; changing
 the split cannot remove information already learned by existing checkpoints.
 This improves evaluation reliability rather than directly increasing official AP.
 
+### Soft twins in official validation
+
+The 0.9 cutoff misses many same-scene images. Each official validation image was matched to its most correlated
+labeled training image (all 9,392). A match counts as the same scene when the training image's boxes coincide
+(same class, IoU ≥ 0.5) with the officially scored first continuation's boxes (score ≥ 0.3) on the validation
+image. Its predicted image class also checks the match's class:
+
+| Best-match correlation | Official images | Predicted class = match's class | Match's boxes found |
+|---|---:|---:|---:|
+| > 0.97 | 57 | 100% | 90% |
+| 0.9–0.97 | 50 | 98% | 93% |
+| 0.8–0.9 | 109 | 95% | 82% |
+| 0.7–0.8 | 133 | 87% | 83% |
+| 0.6–0.7 | 127 | 76% | 66% |
+| ≤ 0.6 | 950 | 27% | 13% |
+
+The 107 candidates above 0.9 are confirmed same-scene twins (106/107 class agreement, 92% of boxes found). About
+240 more images at 0.7–0.9 are "soft twins": same framing and boxes, but more different in appearance. In total
+about 350 of the 1,426 official images (25%) are training scenes. So the 7.50% figure above understates the
+overlap. The local holdout is about one third same-scene (219 twins plus 92 images at 0.7–0.9; that local band
+was not box-checked). The 720-image clean subset still contains those 92 soft twins.
+
+Consequences:
+
+- Official scores sit between the clean and full holdout scores. They land nearer the full score for models that
+  memorize scenes robustly enough to recognize soft twins. That fits all three officially scored runs: E5 and
+  Phase 3 (100–115 detector epochs) landed nearer clean, and the 140-epoch first continuation nearer full.
+- When choosing between continuation blocks, the full holdout is the closer proxy for official scores. Use the
+  clean score to check that a gain is not only memorization.
+- Retraining on all 9,392 images gives only 25 official images (1.8%) a same-scene match they lack today
+  (correlation > 0.7 only with a holdout image). Expect little beyond the general effect of 11% more data.
+- Photometric or speckle augmentation that mimics the differences between twins could help memorized scenes
+  transfer to soft twins. Untested.
+
 ### Thirty-minute follow-up: deterministic box-edge correction
 
 The first continuation's frozen predictions support a quick calibration candidate:
