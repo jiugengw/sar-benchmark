@@ -1,0 +1,8 @@
+{
+  "sources": [
+    "runs/denodet-v2-329477/20261017_164759/vis_data/scalars.json",
+    "runs/denodet-v2-329477/20261017_203124/vis_data/scalars.json",
+    "runs/denodet-v2-329477/20261017_231821/vis_data/scalars.json"
+  ],
+  "note": "Later resumed epochs replace earlier attempts; losses average logged moving windows, not every training batch. Validation loss and per-image holdout classification labels were not saved."
+}

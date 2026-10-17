@@ -1,0 +1,56 @@
+{
+  "training_wall_seconds": 9588.615828623995,
+  "peak_cuda_memory_bytes": 2592013824,
+  "architecture": "DenoDet V2 FFTResNet50 + FPN + GFL with shared image head",
+  "upstream_commit": "d41fb0e5cbaaf9121174357c7a48547b278fe458",
+  "initialization": "torchvision ImageNet-1K ResNet50 V1 only",
+  "pretrained_checkpoint": "/common/scratch/users/j/jgwong.2023/sar-benchmark/pretrained/resnet50-0676ba61.pth",
+  "pretrained_sha256": "0676ba61b6795bbe1773cffd859882e5e297624d384b6993f7c9e683e722fb8a",
+  "sar_pretrained_checkpoint": false,
+  "seed": 0,
+  "epochs": 48,
+  "batch": 8,
+  "stop_after_epoch": null,
+  "resumed": true,
+  "run_settings": null,
+  "precision": "float32 (including FFT denoising)",
+  "parameters": 32939931,
+  "trainable_parameters": 32939931,
+  "gpu": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition MIG 1g.24gb",
+  "torch_version": "2.9.0+cu128",
+  "slurm_job_id": "330220",
+  "dataset": {
+    "classes": [
+      "aircraft",
+      "airport",
+      "bridge",
+      "car",
+      "harbor",
+      "oil_tank",
+      "playground",
+      "ship",
+      "wind_turbine"
+    ],
+    "mean": 64.49589435410869,
+    "std": 54.51271241987604,
+    "train_images": 8453,
+    "val_images": 939,
+    "source_split": "/common/scratch/users/j/jgwong.2023/sar-benchmark/results/yolo26m-100-p2-328339/seed_0/split.json",
+    "image_root": "/common/scratch/users/j/jgwong.2023/sar-benchmark/data/yolo11s-sar-512",
+    "image_size": 512,
+    "normalization_source": "training split only",
+    "source_hashes": {
+      "/common/scratch/users/j/jgwong.2023/sar-benchmark/results/yolo26m-100-p2-328339/seed_0/split.json": "5e1f2523c8e23fd331f000db64190fd9e698ab00308d32e6843870478c819442",
+      "/common/scratch/users/j/jgwong.2023/sar-benchmark/data/yolo11s-sar-512/conversion_manifest.json": "0f6b597bbe65234416463824a89491153b56f7ea317bd0acefb318f35bab9489",
+      "/common/scratch/users/j/jgwong.2023/sar-benchmark/data/course-data/train/instances.json": "36e1c6682d69fbddb6916439a90611e09b29930a679f46919482f64acf87f090"
+    }
+  },
+  "preflight_losses": {
+    "loss": 5.167654991149902,
+    "loss_cls": 0.00651793135330081,
+    "loss_bbox": 1.9728296995162964,
+    "loss_dfl": 0.7856283187866211,
+    "loss_image_cls": 2.402678966522217
+  },
+  "scope": "Resume job 330220 only, epochs 33\u201348; excludes jobs 329477 and 329870."
+}

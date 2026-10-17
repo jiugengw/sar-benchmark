@@ -31,6 +31,14 @@ def load(source):
     """One history as {'title', 'epochs', 'losses': {name: (train, val)}, 'metrics': {name: values}, 'note'}."""
     path = ROOT / source['path']
     kind = source['type']
+    if kind == 'mmengine':
+        rows = json.loads(path.read_text())
+        return dict(epochs=[r['epoch'] for r in rows],
+                    losses={'logged training loss': ([r['train_loss'] for r in rows], [None] * len(rows))},
+                    metrics={'mAP50-95': [r['mAP'] for r in rows], 'mAP50': [r['AP50'] for r in rows],
+                             'macro-F1': [r['macro_f1'] for r in rows],
+                             'Δm': [delta_m(r['macro_f1'], r['mAP']) for r in rows]},
+                    note='loss averages logged windows; validation loss was not recorded; epoch mAP rounded by MMEngine')
     if kind == 'ultralytics':  # Ultralytics results.csv, optionally with the joint image-classification columns
         rows = read_csv(path)
         epochs = [r['epoch'] for r in rows]

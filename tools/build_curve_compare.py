@@ -12,7 +12,7 @@ from pathlib import Path
 from plot_training_curves import ROOT, load, resolve
 
 OUT = ROOT / 'reports/curve-compare/data.js'
-DETECTOR_TYPES = {'ultralytics', 'terramind'}
+DETECTOR_TYPES = {'ultralytics', 'terramind', 'mmengine'}
 
 
 def official_scores():
@@ -54,7 +54,7 @@ def main():
             continue
         stages = [stage(source) for source in run['histories']]
         types = {s['type'] for s in stages}
-        family = ('YOLO / RT-DETR' if 'ultralytics' in types else
+        family = ('DenoDet' if 'mmengine' in types else 'YOLO / RT-DETR' if 'ultralytics' in types else
                   'ViT / TerraMind / ResNet' if 'terramind' in types else 'other')
         submitted = zip_path.relative_to(ROOT).parts[0] == 'submissions'
         runs.append({'id': str(zip_path.relative_to(ROOT)), 'name': zip_path.stem, 'submitted': submitted,

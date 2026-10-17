@@ -1,0 +1,14 @@
+{
+  "format": "classification.csv + COCO detection.json",
+  "images": 1426,
+  "detections": 142600,
+  "checkpoint": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/denodet-v2-329477/best_coco_bbox_mAP_epoch_48.pth",
+  "checkpoint_sha256": "63f3544b7620eb7a8767da76bb3a414b4f19841220112dba9355c7b4143f084a",
+  "zip_sha256": "9db9927ab3b4d3dff21df195e64eae58cb9dc5313d24f5eb8857a2b634091b04",
+  "image_size": 512,
+  "batch_size": 8,
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "inference_seconds": null,
+  "note": "Inference timing was not recorded by the original exporter. No official score."
+}

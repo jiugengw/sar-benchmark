@@ -6,6 +6,17 @@ import pytest
 from tools import plot_training_curves as curves
 
 
+def test_mmengine_history_marks_missing_validation_loss(tmp_path, monkeypatch):
+    monkeypatch.setattr(curves, 'ROOT', tmp_path)
+    (tmp_path / 'history.json').write_text(json.dumps([
+        {'epoch': 48, 'train_loss': 0.37, 'mAP': 0.374, 'AP50': 0.623, 'macro_f1': 0.9375}]))
+    history = curves.load({'type': 'mmengine', 'path': 'history.json'})
+    assert history['epochs'] == [48]
+    assert history['losses']['logged training loss'] == ([0.37], [None])
+    assert history['metrics']['Δm'] == [pytest.approx(curves.delta_m(0.9375, 0.374))]
+    assert 'validation loss was not recorded' in history['note']
+
+
 def test_ultralytics_history_keeps_train_and_validation_losses(tmp_path, monkeypatch):
     monkeypatch.setattr(curves, 'ROOT', tmp_path)
     (tmp_path / 'results.csv').write_text(

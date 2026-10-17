@@ -40,7 +40,7 @@ Example `run.json` for a new detector run, and for a package built on top of it:
  "histories": [], "note": "box-edge correction only; no extra training"}
 ```
 
-History types: `ultralytics` (results.csv), `terramind` (train.py `metrics.json`), `classifier_csv` (image head
+History types: `mmengine` (merged per-epoch JSON, with logged training-loss means), `ultralytics` (results.csv), `terramind` (train.py `metrics.json`), `classifier_csv` (image head
 `classifier_training.csv`), `quick_head` (`head_comparison.json`). Add a loader in `tools/plot_training_curves.py`
 for any new format.
 

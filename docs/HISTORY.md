@@ -340,7 +340,7 @@ official breakdown is macro-F1 94.69%, mAP 44.98% (AP50 71.41%). Details: [submi
 |---|---|
 | P1 (stride-2) level on E5, job 329663 | Failed at startup after the slot opened; no result. Rule status of internal upsampling was also unconfirmed with the TA. |
 | Map-only groups (teammate): 40 detection-only epochs from a Phase 3 continuation checkpoint, old head | Local 93.62 / 41.81 / +30.17; not recommended ([package](../nonsubmissions/171026/yolo26m-map-only-groups-20261017/)) |
-| DenoDet V2 (FFTResNet-50 + GFL, ImageNet init, 32.94M params, `models/denodet/train.py`) | 329456 → 329477 (48 ep) failed at epoch 20 on disk quota; 329870 recovered to epoch 32; resume 330220 saved no epoch-48 evaluation. Epoch 32: 92.66 / 33.75 / +14.23 full, 90.86 / 30.07 / +6.23 clean ([models/denodet/README.md](../models/denodet/README.md)) |
+| DenoDet V2 (FFTResNet-50 + GFL, ImageNet init, 32.94M params, `models/denodet/train.py`) | Original job 329477 failed saving epoch 20; job 329870 recovered to epoch 32; job 330220 completed 48 epochs (best checkpoint: 48). Export: macro-F1 93.75%, mAP 37.41%, Δm +21.83 full; 91.99%, 32.71%, +11.89 clean. Improved from +14.23 / +6.23 at epoch 32, still below YOLO26m. [ZIP and curves](../nonsubmissions/181026/denodet-v2-329477/), [settings/results](../results/denodet-v2-329477/seed_0/). Official scoring pending; ImageNet initialization only. |
 
 **Lesson.** Cheap post-hoc steps on a frozen strong detector (head capacity, deterministic box calibration
 validated by cross-fitting) were worth more in the last hours than new architectures. Infrastructure (file-count

@@ -86,9 +86,22 @@ preserving the original learning-rate drops at epochs 32 and 44. Its completed
 [results](../../results/denodet-v2-329477-epoch32/) and
 [submission](../../nonsubmissions/161026/denodet-v2-329477-epoch32/) are archived.
 
-Job `330220` resumed the saved epoch-32 optimizer/model state toward epoch 48
-using `sbatch/denodet_v2_resume.sbatch` (four-hour allocation, 32 GB host memory).
-No epoch-48 evaluation has been saved to the repository, so the epoch-32 snapshot
-(local Δm +14.23 full, +6.23 clean) is the latest DenoDet result. It was never
-submitted officially and stays well below the YOLO26m-P2 line. Local weights and
+Job `330220` completed the resume through epoch 48 successfully in 2h42m06s.
+The best detection-mAP checkpoint is epoch 48. Exported local scores:
+
+| Holdout | Macro-F1 | mAP | Delta m |
+|---|---:|---:|---:|
+| Full (939 images) | 93.7500% | 37.4147% | 21.8292 |
+| Clean (720 images) | 91.9947% | 32.7103% | 11.8866 |
+
+This improves on the epoch-32 snapshot (Delta m 14.2341 full, 6.2251 clean),
+but remains below the YOLO26m-P2 results. Official scoring is pending.
+The [unsubmitted ZIP](../../nonsubmissions/181026/denodet-v2-329477/denodet-v2-329477.zip)
+covers all 1,426 course validation images. [Saved results](../../results/denodet-v2-329477/seed_0/)
+include all 48 epochs, initialization/configuration, predictions, and compute.
+Validation loss and per-image holdout classification labels were not saved by the
+original exporter. Training-loss curves average logged windows; the epoch mAP is
+rounded and uses 512px annotations, while exported scores use original pixels.
+The saved compute record covers resume job 330220 only; add earlier job allocations
+329477 and 329870 when accounting for total training cost. Local weights and raw
 logs remain in `runs/denodet-v2-329477/` on the cluster.

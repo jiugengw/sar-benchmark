@@ -1,0 +1,11 @@
+{
+  "zip": "denodet-v2-329477.zip",
+  "histories": [
+    {
+      "type": "mmengine",
+      "path": "results/denodet-v2-329477/seed_0/training_history.json",
+      "label": "DenoDet V2, 48 epochs"
+    }
+  ],
+  "note": "Best detection-mAP checkpoint: epoch 48. Curves use 512px annotations; exported scores use original pixels. Validation loss was not recorded."
+}

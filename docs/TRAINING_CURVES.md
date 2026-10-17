@@ -66,3 +66,4 @@ How to read them:
 | `submissions/yolo11s_100_p2_328058/yolo11s_100_p2_328058.zip` | [curves](../submissions/yolo11s_100_p2_328058/yolo11s_100_p2_328058.curves.png) |  |
 | `submissions/yolo26m_p2_candidate_330230/yolo26m_p2_candidate_330230.zip` | [curves](../submissions/yolo26m_p2_candidate_330230/yolo26m_p2_candidate_330230.curves.png) | box-edge correction on the quick-head ZIP; no extra training |
 | `submissions/yolo26m_p2_finetune_40ep_329644/yolo26m_p2_finetune_40ep_329644.zip` | [curves](../submissions/yolo26m_p2_finetune_40ep_329644/yolo26m_p2_finetune_40ep_329644.curves.png) |  |
+| `nonsubmissions/181026/denodet-v2-329477/denodet-v2-329477.zip` | [curves](../nonsubmissions/181026/denodet-v2-329477/denodet-v2-329477.curves.png) | DenoDet V2, all 48 epochs; logged training loss, validation mAP/F1/Δm. Validation loss not recorded. |
