@@ -1,7 +1,8 @@
 # Beating official Δm +35: brainstorm (2026-10-17)
 
-Latest recorded official result: YOLO26m-P2 first continuation, macro-F1 93.3310%, mAP 44.1919%,
-**Δm +34.5697**. The original brainstorm used the older Phase 3 joint model
+Best official result: `yolo26m_p2_candidate_330230.zip`, **Δm +36.80**: the first continuation's
+detector with a wider image head and the box-edge correction below. The first continuation alone scored
+macro-F1 93.3310%, mAP 44.1919%, Δm +34.5697. The original brainstorm used the older Phase 3 joint model
 (macro-F1 92.56%, mAP 38.78%, Δm +23.80); its historical diagnostics and scenarios remain below.
 Those diagnostics were run on the 939-image local holdout using that model's exact submission-pipeline
 predictions (`results/phase3-yolo26m-joint-20261017-1516/submission-pipeline/`). They are local evidence,
@@ -85,7 +86,8 @@ The final offsets fit all 720 clean images. Their final fitted full/clean scores
 are descriptive because those images participate in calibration; the four
 held-out checks above are the evidence for transfer. Classification is unchanged.
 The [candidate ZIP and calibration audit](../nonsubmissions/yolo26m_p2_box_bias_20261017/)
-are ready; official scoring is pending. Reproduce with
+were not uploaded on their own. The same correction, combined with a wider image head, is part of the
+best submission (official Δm +36.80). Reproduce with
 `yolo_baseline/quick_box_bias.py` and `yolo_baseline/package_box_bias.py`.
 
 ## 1. What +35 requires

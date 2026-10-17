@@ -4,15 +4,13 @@ Course-data training code adapted from the TA's CS701 reference implementation. 
 on SAR images: **classify** the image (9 classes) and **detect** its objects. The current trainer uses a labeled
 training holdout; the TA's original benchmark scores are retained below as reference results.
 
-**Official submissions:** every ZIP uploaded to Codabench, with its official Δm, is indexed in [submissions/README.md](submissions/README.md); the best is `yolo26m_p2_candidate_330230.zip` at Δm +36.80. Packaged ZIPs that were never uploaded are in [nonsubmissions/](nonsubmissions/), and older detection experiments are compared in [nonsubmissions/README.md](nonsubmissions/README.md#detection-experiments).
+**Start here**
 
-**YOLO SAR experiment plan:** see the [YOLO11s-P2 strategy and architecture plan](yolo_baseline/README.md#sar-classification-and-detection-experiment-plan) for the confirmed E1 feature path, E2-E7 and E9 runs, metric controls, and per-experiment submission ZIP requirement. Deformable DETR E8 is dropped from the run sequence because its runtime exceeded the 24-hour limit at the available VRAM-limited batch size; its code remains available.
-
-**Phase 3 joint fine-tuning:** the [YOLO26m + RT-DETR-L handoff](yolo_baseline/PHASE3_JOINT_FINETUNING.md) includes its Git LFS checkpoints, dataset conversion, RT-DETR preflight, and an interactive run script (`bash scripts/run_phase3_joint.sh`).
-
-**DenoDet V2:** the [DenoDet V2 setup](denodet_baseline/README.md) trains the authors' FFTResNet-50 + GFL detector with a shared image classification head, ImageNet initialization, and the existing saved split. Submit with `sbatch sbatch/denodet_v2.sbatch` after environment setup.
-
-**Current 48-epoch TerraMind comparison:** [select runs and compare metrics](reports/training-comparison/index.html). The report includes the completed 326894 baseline, the two running 327063 variants, and the queued fixed-weight run.
+- **What we tried, why, and what we learned:** [docs/HISTORY.md](docs/HISTORY.md), part by part, with official scores.
+- **Official submissions:** [submissions/README.md](submissions/README.md) lists every ZIP uploaded to Codabench with its official Δm. The best is `yolo26m_p2_candidate_330230.zip` at **Δm +36.80**. ZIPs that were packaged but never uploaded are in [nonsubmissions/](nonsubmissions/).
+- **Where the training code is:** [Code Structure](#4-code-structure) maps each model family to its training entry point, Slurm script and packaging step.
+- **Current analysis and next ideas:** [docs/DELTA35_BRAINSTORM_20261017.md](docs/DELTA35_BRAINSTORM_20261017.md).
+- **Compare runs visually:** [reports/training-comparison/index.html](reports/training-comparison/index.html).
 
 ![One SAR image, one shared backbone, two heads: a class and the boxes](docs/task_pipeline.png)
 
@@ -31,7 +29,8 @@ training holdout; the TA's original benchmark scores are retained below as refer
    - [2.5 Saved Files and Detection Report](#25-saved-files-and-detection-report)
 3. [TA Reference Results](#3-ta-reference-results)
 4. [Code Structure](#4-code-structure)
-5. [Links](#5-links)
+5. [Report checklist and compute records](#5-report-checklist-and-compute-records)
+6. [Links](#6-links)
 
 ## 1. SAR Task Introduction
 
@@ -228,35 +227,49 @@ Accuracy and AP50: [docs/DETAILS.md](docs/DETAILS.md#results-in-full).
 
 ## 4. Code Structure
 
+Three model families, each with its own training code. Run everything from the repository root; Slurm scripts are in
+`sbatch/`.
+
+| Family | Train | Slurm | Evaluate / package | Docs |
+|---|---|---|---|---|
+| **YOLO / RT-DETR detectors** with an image-classification head (best: YOLO26m-P2, Δm +36.80) | `yolo_baseline/train_yolo26s_p2.py` (YOLO26 n–l with a P2 level), `train_100_epoch.py` (YOLO11), `train_rtdetr_p2.py`, `train_image_head.py` (image head on frozen features), `train_joint.py` / `train_rtdetr_joint.py` (Phase 3), `deadline_recovery.py` (detector continuation + spatial head), `train_yolo26m_p1.py` (stride-2 level) | `sbatch/yolo26_all_p2_100.sbatch`, `sbatch/sar_phase2_architectures.sbatch`, `sbatch/phase3_*.sbatch`, `sbatch/deadline_yolo26m*.sbatch`, `sbatch/quick_classifier.sbatch` | `yolo_baseline/run_experiment.py` (holdout scoring), `make_submission.py`, `quick_box_bias.py` + `package_box_bias.py`, `paired_holdout_audit.py` | [yolo_baseline/README.md](yolo_baseline/README.md) |
+| **ViT / TerraMind / ResNet34 + Faster R-CNN** (TA reference and our first experiments) | `train.py` (code in `sarbench/`), `run_all.sh`, `cross_validate.py` | `sbatch/terramind_*.sbatch`, `sbatch/small_anchor_48.sbatch`, `sbatch/targeted_small_*.sbatch`, `sbatch/vit_compare_48.sbatch` | `make_submission.py`, `calibrate_submission.py` | [docs/DETAILS.md](docs/DETAILS.md), [docs/WORKFLOW.md](docs/WORKFLOW.md) |
+| **DenoDet V2** (SAR-specific FFTResNet-50 + GFL) | `denodet_baseline/train.py` | `sbatch/denodet_v2.sbatch`, `sbatch/denodet_v2_resume.sbatch` | `denodet_baseline/export.py`, `export_checkpoint.py` | [denodet_baseline/README.md](denodet_baseline/README.md) |
+
+How the best submission (`yolo26m_p2_candidate_330230.zip`, Δm +36.80) was built:
+
+1. **E5 detector:** YOLO26m with a P2 level, 100 epochs from COCO weights: `yolo_baseline/train_yolo26s_p2.py` via `sbatch/yolo26_all_p2_100.sbatch`.
+2. **Continuation:** 40 more detector-only epochs from E5, then a spatial image head on the frozen features: `yolo_baseline/deadline_recovery.py` via `sbatch/deadline_yolo26m.sbatch` (official Δm +34.57 on its own).
+3. **Wider image head:** a 1024-unit classifier on the same frozen features: `yolo_baseline/quick_classifier.py` via `sbatch/quick_classifier.sbatch`.
+4. **Box-edge correction:** per class and image width, fitted on clean holdout images: `yolo_baseline/quick_box_bias.py`, packaged with `yolo_baseline/package_box_bias.py`.
+
+Shared pieces:
+
 ```
-train.py              entry: train + evaluate one configuration
-archive/train.py.old  archived previous version of train.py; not used by training
-run_all.sh            the eight reference runs (calls train.py)
-make_submission.py    write_submission(): predictions -> submission.zip
-inspect_detections.py saved predictions + correct boxes -> HTML detection report
-sarbench/             the code behind train.py
+sarbench/             model, data, metrics and twin-aware evaluation used by train.py and the YOLO scorer
 ├── data.py           images + boxes at 512 × 512, flips; boxes back to original pixels
-├── backbones.py      ViT (ImageNet-21k), TerraMind-1.0-base
+├── backbones.py      ViT (ImageNet-21k), TerraMind-1.0-base, ResNet34
 ├── adapters.py       LoRA, MoE-LoRA on a frozen backbone
 ├── model.py          backbone + class head + ViTDet feature pyramid + Faster R-CNN
 ├── metrics.py        accuracy, macro-F1, COCO box AP
+├── twins.py          near-duplicate twins and the clean holdout subset (python -m sarbench.twins)
 └── optim.py          learning-rate groups for adapters, heads, and unfrozen backbone weights
-tests/                CPU partial-fine-tuning checks and original tests; dataset-dependent tests need adaptation
-docs/DETAILS.md       model, training protocol, design notes, time and memory
+inspect_detections.py saved predictions + correct boxes -> HTML detection report
+account_compute.py    Slurm GPU-hour accounting for the report
+scripts/              interactive setup and run helpers (Phase 3, DenoDet)
+tests/                CPU tests; dataset-dependent tests need the course data
+submissions/          ZIPs uploaded to Codabench, with official scoring results
+nonsubmissions/       ZIPs packaged but never uploaded
 results/              saved metrics, holdout predictions, and correct annotations
 checkpoints/          saved model.pt weights (Git LFS) and model configuration
-reports/detection-review/  generated HTML and image overlays (ignored by Git)
+reports/              comparison reports, galleries and audits
+archive/              old code kept for reference; not used
 ```
-
-More: [docs/DETAILS.md](docs/DETAILS.md).
 
 ## 5. Report checklist and compute records
 
-The new ImageNet CNN and TerraMind small-anchor/loss-weighting jobs, exact parameter counts and
-configuration are recorded in [the experiment notes](docs/SMALL_ANCHOR_CNN_VIT_20261015.md).
-The queued small-anchor ViT job was replaced with TerraMind; the two original
-large-anchor ViT runs continue. Learned task weights and component losses are
-recorded in `training_history.json` for future runs.
+Parameter counts, configurations and results of every attempt are summarised in [docs/HISTORY.md](docs/HISTORY.md).
+Learned task weights and component losses are recorded in each run's `training_history.json`.
 
 Use our saved experiment results for the report. The reference mean ± std tables
 above are the TA's measurements, not repeated runs by our team.

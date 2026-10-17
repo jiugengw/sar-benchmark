@@ -86,9 +86,9 @@ preserving the original learning-rate drops at epochs 32 and 44. Its completed
 [results](../results/denodet-v2-329477-epoch32/) and
 [submission](../nonsubmissions/sar-experiments/denodet-v2-329477-epoch32/) are archived.
 
-Job `330220` resumes the saved epoch-32 optimizer/model state through epoch 48
+Job `330220` resumed the saved epoch-32 optimizer/model state toward epoch 48
 using `sbatch/denodet_v2_resume.sbatch` (four-hour allocation, 32 GB host memory).
-The log confirms `resumed epoch: 32, iter: 33824`; epoch 33 uses learning rate 0.1.
-The best detection-mAP checkpoint is evaluated and exported after training.
-Local weights, logs, and the epoch-32 metadata/weights snapshot remain in
-`runs/denodet-v2-329477/`. Do not resubmit the resume script while this job runs.
+No epoch-48 evaluation has been saved to the repository, so the epoch-32 snapshot
+(local Δm +14.23 full, +6.23 clean) is the latest DenoDet result. It was never
+submitted officially and stays well below the YOLO26m-P2 line. Local weights and
+logs remain in `runs/denodet-v2-329477/` on the cluster.

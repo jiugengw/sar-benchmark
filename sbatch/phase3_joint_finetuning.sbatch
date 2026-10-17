@@ -30,7 +30,7 @@ else
     fi
     if ! .phase3-venv/bin/python -c 'import torch, torchvision, ultralytics' >/dev/null 2>&1; then
         .phase3-venv/bin/python -m pip install --upgrade pip
-        .phase3-venv/bin/python -m pip install -r requirements-phase3.txt
+        .phase3-venv/bin/python -m pip install -r yolo_baseline/requirements.txt
     fi
     VENV_DIR=".phase3-venv"
 fi
