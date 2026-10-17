@@ -44,21 +44,20 @@ classifier and a per-class box-edge correction.
 
 ## Best model: test and rebuild it
 
-`yolo26m_p2_candidate_330230.zip`, official Δm +36.80, 29.7 M parameters. It was built in four steps
+`yolo26m_p2_candidate_330230.zip`, official Δm +36.80, 29.7 M parameters. It was built in three steps
 ([details](docs/HISTORY.md)):
 
-1. E5: YOLO26m with a stride-4 (P2) detection level, trained 100 epochs (detector only). A simple image
-   classifier (one linear layer on the averaged detector features) was then trained on the frozen detector:
-   holdout macro-F1 91.08%.
-2. The detector was trained 40 more epochs (detector only, job 329644; one-to-many prediction branch). A new
-   "spatial" classifier (feature averages, maxima and 2 × 2 regional averages, one 512-neuron hidden layer) was
-   trained on the frozen result: holdout macro-F1 94.58%, official Δm +34.57 on its own.
-3. That classifier was replaced by a larger one (the small network that names the image's class), again trained
-   while the detector stayed frozen, so the boxes did not change. Its hidden layer has 1024 neurons instead of 512 (a layer width, not
-   an image size: images stay 512 × 512 px, one pass). It raised holdout macro-F1 from 94.58% to 96.06% (job 330230, `models/yolo/quick_classifier.py`).
-4. A small fixed nudge to every predicted box: for each class and image size, the box edges move by half the
-   typical offset seen between predicted and true boxes (at most 1 px). It was learned on the 720 twin-free holdout
-   images and checked by learning on one half and testing on the other (+0.6 to +0.9 mAP points each time).
+1. **Detector:** YOLO26m with a stride-4 (P2) detection level, trained **140 detector-only epochs** in two stages.
+   First 100 epochs from COCO weights (E5: learning rate 0.01 decaying, mosaic augmentation), then 40 more
+   (job 329644: learning rate restarted at 0.002, no mosaic). It predicts with the one-to-many branch. A single
+   140-epoch run with one schedule has not been tried, so it is not known to match.
+2. **Image classifier:** the small network that names the image's class, trained on the frozen detector's
+   features, so the boxes do not change. Its hidden layer has 1024 neurons (a layer width, not an image size:
+   images stay 512 × 512 px, one pass). Holdout macro-F1 96.06% (job 330230, `models/yolo/quick_classifier.py`).
+   An earlier 512-neuron classifier on the same detector reached 94.58% and scored official Δm +34.57.
+3. **Box nudge:** for each class and image size, every predicted box edge moves by half the typical offset seen
+   between predicted and true boxes (at most 1 px). It was learned on the 720 twin-free holdout images and checked
+   by learning on one half and testing on the other (+0.6 to +0.9 mAP points each time).
 
 Files: the ZIP, `image_classifier.pt` and `box_bias_crossfit.json` are in
 [submissions/yolo26m_p2_candidate_330230/](submissions/yolo26m_p2_candidate_330230/). Its holdout predictions are in
@@ -100,10 +99,12 @@ Three model families, each with its own training code. Run everything from the r
 
 How the best submission (`yolo26m_p2_candidate_330230.zip`, Δm +36.80) was built:
 
-1. **E5 detector:** YOLO26m with a P2 level, 100 epochs from COCO weights: `models/yolo/train_yolo26s_p2.py` via `sbatch/yolo26_all_p2_100.sbatch`.
-2. **Continuation:** 40 more detector-only epochs from E5, then a spatial image head on the frozen features: `models/yolo/deadline_recovery.py` via `sbatch/deadline_yolo26m.sbatch` (official Δm +34.57 on its own).
-3. **Larger image classifier:** the detector stays frozen (boxes unchanged) while a new classifier with a 1024-neuron hidden layer (wider than the old 512; input images stay 512 × 512) learns the image class from its features: `models/yolo/quick_classifier.py` via `sbatch/quick_classifier.sbatch`.
-4. **Box-edge correction:** each predicted box edge moves by half the typical predicted-vs-true offset for its class and image size (at most 1 px), learned on clean holdout images: `models/yolo/quick_box_bias.py`, packaged with `models/yolo/package_box_bias.py`.
+1. **Detector, 140 epochs in two stages:** 100 epochs from COCO weights with `models/yolo/train_yolo26s_p2.py` via
+   `sbatch/yolo26_all_p2_100.sbatch` (E5), then 40 more with `models/yolo/deadline_recovery.py` via
+   `sbatch/deadline_yolo26m.sbatch`.
+2. **Image classifier (1024 neurons) on the frozen detector:** `models/yolo/quick_classifier.py` via
+   `sbatch/quick_classifier.sbatch`.
+3. **Box nudge:** fitted with `models/yolo/quick_box_bias.py`, packaged with `models/yolo/package_box_bias.py`.
 
 Repository layout:
 
