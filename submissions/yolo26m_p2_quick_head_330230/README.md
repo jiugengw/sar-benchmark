@@ -12,7 +12,7 @@ and 95.0974% (720 clean images). Detection mAP is unchanged at 44.7547% full and
 these images, so these are not independent estimates. Official scoring is pending.
 
 This ZIP has the new classifier only. The recommended combined classifier and
-box-correction ZIP is in `../yolo26m_p2_final_330230/`, which also preserves the
+box-correction ZIP is in `../yolo26m_p2_candidate_330230/`, which also preserves the
 selected `image_classifier.pt` checkpoint. Code: `yolo_baseline/quick_classifier.py`;
 full head histories and baseline comparisons are in `candidate.json` and matching
 `results/yolo26m_p2_quick_head_330230/`. No ensemble or test-time augmentation.

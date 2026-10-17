@@ -134,7 +134,7 @@
     0.8698234861961529,
     0.8408431170423947
   ],
-  "classifier_checkpoint": "submissions/yolo26m_p2_final_330230/image_classifier.pt",
+  "classifier_checkpoint": "submissions/yolo26m_p2_candidate_330230/image_classifier.pt",
   "classifier_sha256": "f79aa4b71bf2ac0b31fffe1fda0f781242e21d8312c8d812cf89348e1dbf782a",
   "classifier_training": {
     "recipe": {

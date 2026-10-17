@@ -1,6 +1,6 @@
-# YOLO26m-P2 with conservative box-edge correction
+# YOLO26m-P2 candidate with wider classifier and box correction
 
-Submission: [yolo26m_p2_final_330230.zip](yolo26m_p2_final_330230.zip). Official score pending.
+Submission: [yolo26m_p2_candidate_330230.zip](yolo26m_p2_candidate_330230.zip). Official score pending.
 
 Uses the frozen detector from the first continuation (that original model scored
 official Delta m 34.5697), with classification predictions copied from
@@ -19,9 +19,9 @@ estimates. See `box_bias_crossfit.json` for the held-out calibration evidence.
 Classifications in this ZIP are byte-for-byte unchanged from its base ZIP.
 `candidate.json` records hashes, parameters, and image counts.
 
-## Final recommendation and local results
+## Candidate and local results
 
-This is the final candidate from GPU job 330230: the original first-continuation
+This is the candidate from GPU job 330230: the original first-continuation
 YOLO26m-P2 detector, a new 1024-hidden-unit classifier on its frozen shared
 features, and the conservative box-edge correction. Total parameters: 29,748,913.
 The classifier was trained on the same 8,453 images, with training flips only;
@@ -38,10 +38,10 @@ These scores include calibration fit images. They are local selection scores,
 not independent estimates or official scores. The classifier-only exact submission
 path reproduces F1 96.0566% / 95.0974% and unchanged original detection mAP.
 The separate grouped cross-validation checks above support the box correction.
-`candidate.json` records classifier provenance and parameter count. The final ZIP
+`candidate.json` records classifier provenance and parameter count. The candidate ZIP
 was checked for all 1,426 image labels, valid boxes, archive integrity, and hashes;
 its boxes match the separately verified box-only candidate, with updated labels.
 
 The newly pulled `yolo26m-map-only-groups-20261017` candidate reports local Delta m
 30.1695, F1 93.6225%, and mAP 41.8091%; it is not the recommended replacement.
-Official scoring is pending for this final candidate. DenoDet continues separately.
+Official scoring is pending for this candidate. DenoDet continues separately.
