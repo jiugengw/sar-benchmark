@@ -1,6 +1,7 @@
 """Package the cross-validated edge correction without rerunning the detector."""
 from __future__ import annotations
 
+import time
 import argparse
 import hashlib
 import json
@@ -64,7 +65,7 @@ def main():
           'clean_scores_use_calibration_fit_images': True,
           'note': 'Final fitted scores use the calibration images; use the disjoint, twin-grouped '
                   'cross-validation results to judge the gain.'})
-    package_dir = ROOT / 'nonsubmissions' / args.tag
+    package_dir = ROOT / 'nonsubmissions' / time.strftime('%d%m%y') / args.tag
     package_dir.mkdir(parents=True, exist_ok=False)
     package = package_dir / f'{args.tag}.zip'
     official_images = json.loads((ROOT / 'data/course-data/val/images.json').read_text())['images']

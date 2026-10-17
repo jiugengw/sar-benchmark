@@ -58,7 +58,7 @@ For Slurm job `<id>`:
 | `runs/denodet-v2-<id>/mmcv-build.log` | First-run CUDA build log |
 | `runs/denodet-v2-<id>/` | Resolved config, weights, per-epoch MMEngine metrics, initialization provenance, parameter counts, compute |
 | `results/denodet-v2-<id>/seed_0/` | Final original-pixel COCO metrics, classification metrics, predictions, split |
-| `nonsubmissions/sar-experiments/denodet-v2-<id>/denodet-v2-<id>.zip` | `classification.csv` and `detection.json` |
+| `nonsubmissions/<DDMMYY>/denodet-v2-<id>/denodet-v2-<id>.zip` | `classification.csv` and `detection.json` |
 
 ```bash
 squeue -u "$USER"
@@ -84,7 +84,7 @@ Run `329477` failed while saving epoch 20 after a disk-quota error. Recovery job
 `329870` deliberately stopped at epoch 32 with `--epochs 48 --stop-after-epoch 32`,
 preserving the original learning-rate drops at epochs 32 and 44. Its completed
 [results](../../results/denodet-v2-329477-epoch32/) and
-[submission](../../nonsubmissions/sar-experiments/denodet-v2-329477-epoch32/) are archived.
+[submission](../../nonsubmissions/161026/denodet-v2-329477-epoch32/) are archived.
 
 Job `330220` resumed the saved epoch-32 optimizer/model state toward epoch 48
 using `sbatch/denodet_v2_resume.sbatch` (four-hour allocation, 32 GB host memory).

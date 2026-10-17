@@ -305,7 +305,7 @@ frozen features; one-to-many branch selected.
 Paired bootstrap vs E5: mAP +4.08 (95% interval +3.28 to +5.01), F1 +3.50 (+2.10 to +5.01).
 
 A **second 40-epoch block** reached 94.43 / 44.98 / +36.67 locally but only +0.12 Δm on the clean subset
-(30.04 vs 29.92), so it was not uploaded ([package](../nonsubmissions/yolo26m_p2_finetune_329644/)).
+(30.04 vs 29.92), so it was not uploaded ([package](../nonsubmissions/171026/yolo26m_p2_finetune_329644/)).
 
 **Lesson.** E5 was badly under-trained: the single largest gain of the project came from simply training the
 detector longer, without the classification loss. The one-to-many branch with NMS beat the NMS-free branch by
@@ -338,7 +338,7 @@ official breakdown is macro-F1 94.69%, mAP 44.98% (AP50 71.41%). Details: [submi
 | Attempt | Outcome |
 |---|---|
 | P1 (stride-2) level on E5, job 329663 | Failed at startup after the slot opened; no result. Rule status of internal upsampling was also unconfirmed with the TA. |
-| Map-only groups (teammate): 40 detection-only epochs from a Phase 3 continuation checkpoint, old head | Local 93.62 / 41.81 / +30.17; not recommended ([package](../nonsubmissions/yolo26m-map-only-groups-20261017/)) |
+| Map-only groups (teammate): 40 detection-only epochs from a Phase 3 continuation checkpoint, old head | Local 93.62 / 41.81 / +30.17; not recommended ([package](../nonsubmissions/171026/yolo26m-map-only-groups-20261017/)) |
 | DenoDet V2 (FFTResNet-50 + GFL, ImageNet init, 32.94M params, `models/denodet/train.py`) | 329456 → 329477 (48 ep) failed at epoch 20 on disk quota; 329870 recovered to epoch 32; resume 330220 saved no epoch-48 evaluation. Epoch 32: 92.66 / 33.75 / +14.23 full, 90.86 / 30.07 / +6.23 clean ([models/denodet/README.md](../models/denodet/README.md)) |
 
 **Lesson.** Cheap post-hoc steps on a frozen strong detector (head capacity, deterministic box calibration

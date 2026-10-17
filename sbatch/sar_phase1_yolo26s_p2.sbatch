@@ -9,6 +9,7 @@
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?Submit from the project directory}"
+export PACKAGE_ROOT="nonsubmissions/$(date +%d%m%y)"  # unsubmitted packages go under the job start date
 source /opt/apps/lmod/lmod/init/bash
 module load Python/3.12.8-GCCcore-13.3.0
 source .venv/bin/activate
@@ -50,7 +51,7 @@ evaluate_and_package() {
         --classifier-checkpoint "$run_root/image_classifier.pt" \
         --model-label "$label" --eval-only
 
-    local package_dir="nonsubmissions/sar-experiments/${experiment}-${JOB_SUFFIX}"
+    local package_dir="${PACKAGE_ROOT}/${experiment}-${JOB_SUFFIX}"
     mkdir -p "$package_dir/scoring_result"
     touch "$package_dir/scoring_result/.gitkeep"
     python -u models/yolo/make_submission.py \

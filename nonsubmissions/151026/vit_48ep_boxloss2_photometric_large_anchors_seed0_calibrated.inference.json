@@ -12,7 +12,7 @@
     "--data",
     "data/course-data",
     "--out",
-    "nonsubmissions/vit48-325636/boxloss2_photometric_large_anchors_calibrated.zip",
+    "nonsubmissions/151026/vit48-325636/boxloss2_photometric_large_anchors_calibrated.zip",
     "--class-score-power",
     "0.0"
   ],

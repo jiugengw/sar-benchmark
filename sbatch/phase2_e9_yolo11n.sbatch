@@ -12,6 +12,7 @@
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?Submit from the project directory}"
+export PACKAGE_ROOT="nonsubmissions/$(date +%d%m%y)"  # unsubmitted packages go under the job start date
 source /opt/apps/lmod/lmod/init/bash
 module load Python/3.12.8-GCCcore-13.3.0
 source .venv/bin/activate
@@ -31,7 +32,7 @@ BASELINE_CHECKPOINT="checkpoints/tm-48baseline-326894/terramind_pretrained_moelo
 MANIFEST="$DATASET/conversion_manifest.json"
 RUN_ROOT="runs/yolo11n-100-p2-${SLURM_JOB_ID}"
 RESULT_ROOT="results/yolo11n-100-p2-${SLURM_JOB_ID}/seed_0"
-PACKAGE_DIR="nonsubmissions/sar-experiments/E9-${SLURM_JOB_ID}"
+PACKAGE_DIR="${PACKAGE_ROOT}/E9-${SLURM_JOB_ID}"
 
 for input in \
     pretrained/yolo11n.pt \

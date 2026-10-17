@@ -25,7 +25,7 @@
       "validation_image_ids": 939,
       "precision_recall_confidence": 0.25,
       "precision_recall_iou": 0.5,
-      "image_classification_head": "nonsubmissions/yolo26m-map-only-groups-20261017/classifier.pt",
+      "image_classification_head": "nonsubmissions/171026/yolo26m-map-only-groups-20261017/classifier.pt",
       "image_classification_training": "Image-classification head carried forward unchanged from the joint source checkpoint; the map-only run optimized detection loss only.",
       "evaluated_box_class_policies": [
         "native_detector_classes",
@@ -53,7 +53,7 @@
     "validation_image_ids": 939,
     "precision_recall_confidence": 0.25,
     "precision_recall_iou": 0.5,
-    "image_classification_head": "nonsubmissions/yolo26m-map-only-groups-20261017/classifier.pt",
+    "image_classification_head": "nonsubmissions/171026/yolo26m-map-only-groups-20261017/classifier.pt",
     "image_classification_training": "Image-classification head carried forward unchanged from the joint source checkpoint; the map-only run optimized detection loss only.",
     "evaluated_box_class_policies": [
       "native_detector_classes",
@@ -718,7 +718,7 @@
     "best_weights": "runs/phase3-yolo26m-map-only-groups-20261017/train/weights/best.pt",
     "pretrained_weights_sha256": "20128411b9788d43e9621edf2d978d27b265a84a82cf66a4f43487996ea2f744",
     "best_weights_sha256": "51dfcf147ef429830cc5a6653e6383f86fa90ffeca2ba826ebd7ff231d2efbff",
-    "classifier_head_checkpoint": "nonsubmissions/yolo26m-map-only-groups-20261017/classifier.pt",
+    "classifier_head_checkpoint": "nonsubmissions/171026/yolo26m-map-only-groups-20261017/classifier.pt",
     "ultralytics_version": "8.4.178",
     "torch_version": "2.9.0+cu128",
     "cuda_name": "NVIDIA GeForce RTX 3090",

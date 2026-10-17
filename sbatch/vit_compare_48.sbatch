@@ -26,7 +26,7 @@ case "$SLURM_ARRAY_TASK_ID" in
 esac
 
 RUN_ROOT="runs/vit48-${SLURM_ARRAY_JOB_ID}"
-SUBMISSION_ROOT="nonsubmissions/vit48-${SLURM_ARRAY_JOB_ID}"
+SUBMISSION_ROOT="nonsubmissions/$(date +%d%m%y)/vit48-${SLURM_ARRAY_JOB_ID}"
 mkdir -p "$RUN_ROOT" "$SUBMISSION_ROOT"
 echo "Experiment: $TRIAL; 48 epochs; anchors=large; box loss weight=$BOX_LOSS_WEIGHT"
 python -u models/terramind/train.py --data data/course-data --backbone vit --init pretrained --adapt moelora \

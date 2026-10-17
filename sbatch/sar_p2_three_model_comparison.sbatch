@@ -12,6 +12,7 @@
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?Submit from the project directory}"
+export PACKAGE_ROOT="nonsubmissions/$(date +%d%m%y)"  # unsubmitted packages go under the job start date
 source /opt/apps/lmod/lmod/init/bash
 module load Python/3.12.8-GCCcore-13.3.0
 source .venv/bin/activate
@@ -37,7 +38,7 @@ run_and_package() {
     local label="$4"
     local run_root="runs/${model_key}-100-p2-${SLURM_JOB_ID}"
     local result_root="results/${model_key}-100-p2-${SLURM_JOB_ID}/seed_0"
-    local package_dir="nonsubmissions/sar-experiments/${model_key}-100-p2-${SLURM_JOB_ID}"
+    local package_dir="${PACKAGE_ROOT}/${model_key}-100-p2-${SLURM_JOB_ID}"
     local weights="pretrained/${model_key}.pt"
 
     if [[ ! -f "$weights" ]]; then

@@ -85,7 +85,7 @@ gives mAP gains of **0.6043, 0.8138, 0.8698, and 0.8408 percentage points**.
 The final offsets fit all 720 clean images. Their final fitted full/clean scores
 are descriptive because those images participate in calibration; the four
 held-out checks above are the evidence for transfer. Classification is unchanged.
-The [candidate ZIP and calibration audit](../nonsubmissions/yolo26m_p2_box_bias_20261017/)
+The [candidate ZIP and calibration audit](../nonsubmissions/171026/yolo26m_p2_box_bias_20261017/)
 were not uploaded on their own. The same correction, combined with a wider image head, is part of the
 best submission (official Δm +36.80). Reproduce with
 `models/yolo/quick_box_bias.py` and `models/yolo/package_box_bias.py`.

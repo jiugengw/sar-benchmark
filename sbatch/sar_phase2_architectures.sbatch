@@ -12,6 +12,7 @@
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?Submit from the project directory}"
+export PACKAGE_ROOT="nonsubmissions/$(date +%d%m%y)"  # unsubmitted packages go under the job start date
 source /opt/apps/lmod/lmod/init/bash
 module load Python/3.12.8-GCCcore-13.3.0
 source .venv/bin/activate
@@ -120,7 +121,7 @@ package_completed_e5() {
     local run_suffix="${run_name##*-}"
     local source_package="nonsubmissions/161026/${run_name}"
     local source_zip="$source_package/yolo26m_100_p2_${run_suffix}.zip"
-    local package_dir="nonsubmissions/sar-experiments/E5-${SLURM_JOB_ID}"
+    local package_dir="${PACKAGE_ROOT}/E5-${SLURM_JOB_ID}"
     local best="$run_root/train/weights/best.pt"
 
     if [[ ! -f "$best" || ! -f "$run_root/image_classifier.pt" ]]; then
@@ -180,7 +181,7 @@ package_prior_yolo26s() {
     local run_root="runs/yolo26s-100-p2-328338"
     local result_root="results/yolo26s-100-p2-328338/seed_0"
     local array_task="328337_0"
-    local package_dir="nonsubmissions/sar-experiments/YOLO26s-prior-${SLURM_JOB_ID}"
+    local package_dir="${PACKAGE_ROOT}/YOLO26s-prior-${SLURM_JOB_ID}"
     local zip_path="$package_dir/YOLO26s_P2_328338.zip"
     local best="$run_root/train/weights/best.pt"
     if [[ ! -f "$best" || ! -f "$run_root/image_classifier.pt" || ! -f "$result_root/metrics.json" ]]; then
@@ -215,7 +216,7 @@ train_evaluate_package() {
     local classifier_checkpoint="$8"
     local result_root="results/${run_root##*/}/seed_0"
     local best_checkpoint="$9"
-    local package_dir="nonsubmissions/sar-experiments/${experiment}-${SLURM_JOB_ID}"
+    local package_dir="${PACKAGE_ROOT}/${experiment}-${SLURM_JOB_ID}"
 
     mkdir -p "$result_root"
     python -u models/yolo/train_image_head.py \
@@ -282,6 +283,7 @@ train_evaluate_package E9 "YOLO11n-P2 E9" yolo pretrained/yolo11n.pt \
 
 python reports/training-comparison/build_comparison.py
 python - "$SLURM_JOB_ID" <<'PY'
+import os
 import csv
 import json
 import sys
@@ -290,7 +292,7 @@ from pathlib import Path
 job_id = sys.argv[1]
 rows = []
 for experiment in ("E5", "E6", "E7", "E9"):
-    package = Path("nonsubmissions/sar-experiments") / f"{experiment}-{job_id}"
+    package = Path(os.environ["PACKAGE_ROOT"]) / f"{experiment}-{job_id}"
     metrics_files = sorted(package.glob(f"{experiment}_*.metrics.json"))
     compute_files = sorted(package.glob(f"{experiment}_*.compute.json"))
     if not metrics_files:
@@ -312,7 +314,7 @@ for experiment in ("E5", "E6", "E7", "E9"):
                                                    compute.get("peak_vram_gib_observed_console")),
         "submission_zip": next((str(path) for path in package.glob("*.zip")), ""),
     })
-prior_package = Path("nonsubmissions/sar-experiments") / f"YOLO26s-prior-{job_id}"
+prior_package = Path(os.environ["PACKAGE_ROOT"]) / f"YOLO26s-prior-{job_id}"
 prior_metrics_path = prior_package / "YOLO26s_P2_328338.metrics.json"
 if prior_metrics_path.is_file():
     report = json.loads(prior_metrics_path.read_text())
@@ -337,7 +339,7 @@ if prior_metrics_path.is_file():
                                                    compute.get("peak_vram_gib_observed_console")),
         "submission_zip": next((str(path) for path in prior_package.glob("*.zip")), ""),
     })
-summary = Path("nonsubmissions/sar-experiments") / f"phase2_comparison_{job_id}.csv"
+summary = Path(os.environ["PACKAGE_ROOT"]) / f"phase2_comparison_{job_id}.csv"
 with summary.open("w", newline="") as stream:
     writer = csv.DictWriter(stream, fieldnames=rows[0].keys())
     writer.writeheader()

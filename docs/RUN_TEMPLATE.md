@@ -19,7 +19,7 @@ Validate every epoch (not every 4), and log validation loss as well as metrics. 
 can only show overfitting indirectly. Copy the per-epoch history out of `runs/`, which is not committed, into the
 results folder before the job ends.
 
-## Packaged ZIP: beside `<name>.zip` in `nonsubmissions/<name>/` (move to `submissions/` once uploaded)
+## Packaged ZIP: beside `<name>.zip` in `nonsubmissions/<DDMMYY>/<name>/` (packaging date; move to `submissions/<name>/` once uploaded)
 
 | # | File | What it holds |
 |---|---|---|
@@ -36,7 +36,7 @@ Example `run.json` for a new detector run, and for a package built on top of it:
 ```
 
 ```json
-{"zip": "yolo26m_p2_new_boxfix.zip", "parent": "nonsubmissions/yolo26m_p2_new/yolo26m_p2_new.run.json",
+{"zip": "yolo26m_p2_new_boxfix.zip", "parent": "nonsubmissions/181026/yolo26m_p2_new/yolo26m_p2_new.run.json",
  "histories": [], "note": "box-edge correction only; no extra training"}
 ```
 

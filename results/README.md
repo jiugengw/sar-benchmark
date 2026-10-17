@@ -48,7 +48,7 @@ The files here are visible to Git and are included in repository history after a
 
 [`vit_lora_sar_cnn_48ep_seed42/`](vit_lora_sar_cnn_48ep_seed42/) contains the
 inference provenance and local holdout comparisons for an external ViT + LoRA + SAR CNN run. Its packaged ZIP
-was never uploaded and now lives in `../nonsubmissions/vit_lora_sar_cnn_48ep_seed42/`. Its local Macro-F1 / mAP
+was never uploaded and now lives in `../nonsubmissions/161026/vit_lora_sar_cnn_48ep_seed42/`. Its local Macro-F1 / mAP
 are 94.83% / 29.15%. See [docs/HISTORY.md](../docs/HISTORY.md) for how this run compares.
 
 ## ViT + LoRA + SAR CNN, 96 epochs
