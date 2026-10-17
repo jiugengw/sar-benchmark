@@ -21,14 +21,20 @@ if ! git lfs version >/dev/null 2>&1; then
 fi
 git lfs pull --include="data/*.tar.gz,yolo_baseline/phase3_assets/checkpoints/*.pt"
 
-if [[ ! -x .phase3-venv/bin/python ]]; then
-    python -m venv .phase3-venv
+VENV_DIR=""
+if [[ -x .venv/bin/python ]] && .venv/bin/python -c 'import torch, torchvision, ultralytics' >/dev/null 2>&1; then
+    VENV_DIR=".venv"
+else
+    if [[ ! -x .phase3-venv/bin/python ]]; then
+        python -m venv .phase3-venv
+    fi
+    if ! .phase3-venv/bin/python -c 'import torch, torchvision, ultralytics' >/dev/null 2>&1; then
+        .phase3-venv/bin/python -m pip install --upgrade pip
+        .phase3-venv/bin/python -m pip install -r requirements-phase3.txt
+    fi
+    VENV_DIR=".phase3-venv"
 fi
-if ! .phase3-venv/bin/python -c 'import torch, torchvision, ultralytics' >/dev/null 2>&1; then
-    .phase3-venv/bin/python -m pip install --upgrade pip
-    .phase3-venv/bin/python -m pip install -r requirements-phase3.txt
-fi
-source .phase3-venv/bin/activate
+source "${VENV_DIR}/bin/activate"
 
 export PYTHONDONTWRITEBYTECODE=1
 export PYTHONUNBUFFERED=1
