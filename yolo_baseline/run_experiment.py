@@ -27,6 +27,7 @@ from sarbench.backbones import build_backbone
 from sarbench.adapters import add_adapters
 from sarbench.data import MEAN, STD
 from sarbench.metrics import detection_metrics
+from sarbench.twins import clean_image_ids
 from sarbench.model import MultiTaskModel
 
 
@@ -554,6 +555,18 @@ def main() -> None:
     else:
         yolo_cls = yolo_derived_cls
 
+    # The same scores on the clean holdout subset: images with no near-duplicate twin among the training images.
+    clean_ids = clean_image_ids(gt["images"])
+    clean_det_metrics = detection_metrics(gt_path, yolo_predictions, clean_ids)
+    if classifier_head is not None:
+        clean_cls = classification_metrics(
+            [int(rows_by_id[image_id]["label"]) for image_id in clean_ids],
+            [classifier_predictions[image_id] for image_id in clean_ids],
+            names,
+        )
+    else:
+        clean_cls = image_class_metrics(rows_by_id, yolo_predictions, clean_ids, names)
+
     detection_class_policies = {"native_detector_classes": yolo_det_metrics}
     if classifier_head is not None:
         policy_candidates = [
@@ -650,6 +663,15 @@ def main() -> None:
         "balanced_accuracy": yolo_cls["balanced_accuracy"],
         "image_classification": yolo_cls,
         "speed": yolo_speed,
+        "clean_holdout": {
+            "images": len(clean_ids),
+            **clean_det_metrics,
+            "accuracy": clean_cls["accuracy"],
+            "macro_f1": clean_cls["macro_f1"],
+            "combined_delta_m": combined_delta_m(clean_cls["macro_f1"], clean_det_metrics["mAP"]),
+            "balanced_accuracy": clean_cls["balanced_accuracy"],
+            "image_classification": clean_cls,
+        },
     }
     if classifier_head is not None:
         result_val["detection_derived_image_classification"] = yolo_derived_cls
@@ -746,6 +768,8 @@ def main() -> None:
         model_name: {"mAP": yolo_det_metrics["mAP"], "AP50": yolo_det_metrics["AP50"],
                     "image_accuracy": yolo_cls["accuracy"], "image_macro_f1": yolo_cls["macro_f1"],
                     "pipeline_ms_per_image": yolo_speed["pipeline_ms_per_image"]},
+        f"{model_name}_clean_holdout": {key: result_val["clean_holdout"][key]
+                                        for key in ("images", "mAP", "AP50", "macro_f1", "combined_delta_m")},
         "TerraMind_baseline": {"mAP": baseline_det_metrics["mAP"], "AP50": baseline_det_metrics["AP50"],
                                "accuracy": baseline_score.get("accuracy"),
                                "pipeline_ms_per_image": baseline_speed_result["pipeline_ms_per_image"]},

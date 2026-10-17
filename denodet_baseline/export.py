@@ -11,6 +11,7 @@ from mmdet.structures import DetDataSample
 
 from make_submission import write_submission
 from sarbench.metrics import classification_metrics, detection_metrics
+from sarbench.twins import clean_image_ids
 
 
 class PredictionImages(Dataset):
@@ -72,6 +73,14 @@ def export_run(model, args, metadata, dataset, checkpoint, settings):
                    checkpoint=str(checkpoint), settings=settings)
     metrics["delta_m"] = 50 * (metrics["classification"]["macro_f1"] / 0.9331 - 1 +
                                metrics["detection"]["mAP"] / 0.2613 - 1)
+    # The same scores on the clean holdout subset: images with no near-duplicate twin among the training images.
+    clean = clean_image_ids(coco["images"])
+    metrics["clean_holdout"] = dict(
+        images=len(clean),
+        classification=classification_metrics([labels[i] for i in clean], [predictions[i][0] for i in clean]),
+        detection=detection_metrics(str(dataset / "instances_val_holdout.json"), dets, clean))
+    metrics["clean_holdout"]["delta_m"] = 50 * (metrics["clean_holdout"]["classification"]["macro_f1"] / 0.9331 - 1 +
+                                                metrics["clean_holdout"]["detection"]["mAP"] / 0.2613 - 1)
     result = Path("results") / args.output.name / "seed_0"
     result.mkdir(parents=True, exist_ok=True)
     for destination in [args.output, result]:
@@ -80,6 +89,9 @@ def export_run(model, args, metadata, dataset, checkpoint, settings):
         (destination / "instances_val_holdout.json").write_text(json.dumps(coco) + "\n")
         (destination / "split.json").write_text(json.dumps(split, indent=2) + "\n")
     print(f"Holdout: F1={metrics['classification']['macro_f1']:.4f}, mAP={metrics['detection']['mAP']:.4f}, delta_m={metrics['delta_m']:.2f}", flush=True)
+    clean_scores = metrics["clean_holdout"]
+    print(f"Clean holdout ({clean_scores['images']} images): F1={clean_scores['classification']['macro_f1']:.4f}, "
+          f"mAP={clean_scores['detection']['mAP']:.4f}, delta_m={clean_scores['delta_m']:.2f}", flush=True)
     images = json.loads((args.data / "val/images.json").read_text())["images"]
     public = predict(model, [(int(im["id"]), args.data / "val" / im["file_name"]) for im in images], args.batch, args.workers)
     package = Path("submissions/sar-experiments") / args.output.name

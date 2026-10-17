@@ -14,6 +14,7 @@ from sarbench.data import SARMultiTask
 from sarbench.model import MultiTaskModel
 from train import evaluate, make_loader, validation_delta_m
 from sarbench.reporting import ComputeTracker, provenance
+from sarbench.twins import clean_image_ids
 
 
 def main():
@@ -48,12 +49,16 @@ def main():
         model.load_state_dict(torch.load(args.run / 'model.pt', map_location='cpu', weights_only=True))
         model.cuda().eval()
         results = []
+        clean_ids = clean_image_ids(gt['images'])
         for power in (0.0, 0.5, 1.0):
-            metrics, detections = evaluate(model, loader, gt_path, power)
+            metrics, detections = evaluate(model, loader, gt_path, power, clean_ids=clean_ids)
             metrics['delta_m'] = validation_delta_m(metrics)
+            metrics['clean']['delta_m'] = validation_delta_m(metrics['clean'])
             results.append({'class_score_power': power, **metrics})
             (args.run / f'predictions_calibration_{power}.json').write_text(json.dumps(detections))
-            print(f"power={power}: F1={metrics['macro_f1']:.4f}, mAP={metrics['mAP']:.4f}, Delta m={metrics['delta_m']:+.2f}", flush=True)
+            print(f"power={power}: F1={metrics['macro_f1']:.4f}, mAP={metrics['mAP']:.4f}, Delta m={metrics['delta_m']:+.2f}; "
+                  f"clean ({metrics['clean']['images']} images) F1={metrics['clean']['macro_f1']:.4f}, "
+                  f"mAP={metrics['clean']['mAP']:.4f}, Delta m={metrics['clean']['delta_m']:+.2f}", flush=True)
         selected = max(results, key=lambda m: m['delta_m'])
         (args.run / 'calibration.json').write_text(json.dumps({'trials': results, 'selected': selected}, indent=2))
         del model

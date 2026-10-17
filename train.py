@@ -20,6 +20,7 @@ from sarbench.optim import parameter_groups
 from sarbench.inference import calibrate_detections
 from sarbench.reporting import ComputeTracker, provenance
 from sarbench.loss_weighting import TaskUncertaintyWeighting
+from sarbench.twins import clean_image_ids
 
 # Validation reference: mean ViT + LoRA scores over seeds 0, 1 and 2.
 VAL_REFERENCE_F1 = 0.9331
@@ -160,8 +161,9 @@ def train_one_epoch(model, loader, optimizer, schedule, epoch, log_file, box_los
 
 
 @torch.no_grad()
-def evaluate(model, loader, gt_json, class_score_power=0.0):
-    """Classification and COCO detection metrics on one split, and the detections in COCO result format."""
+def evaluate(model, loader, gt_json, class_score_power=0.0, clean_ids=None):
+    """Classification and COCO detection metrics on one split, and the detections in COCO result format.
+    With `clean_ids`, the same metrics restricted to those images are added under 'clean'."""
     model.eval()
     labels, predicted, detections, image_ids = [], [], [], []
     for images, y, targets in loader:
@@ -178,12 +180,23 @@ def evaluate(model, loader, gt_json, class_score_power=0.0):
                            for b, c, s in zip(boxes[valid].tolist(), out['labels'][valid].tolist(),
                                              out['scores'][valid].tolist())]
     metrics = {**classification_metrics(labels, predicted), **detection_metrics(gt_json, detections, image_ids)}
+    if clean_ids is not None:
+        keep = set(clean_ids)
+        clean = [(t, p) for t, p, i in zip(labels, predicted, image_ids) if i in keep]
+        metrics['clean'] = {'images': len(clean),
+                            **classification_metrics([t for t, _ in clean], [p for _, p in clean]),
+                            **detection_metrics(gt_json, detections, clean_ids)}
     return metrics, detections
 
 
 def headline(metrics):
     scores = ' '.join(f'{k} {metrics[k]:.4f}' for k in ('accuracy', 'macro_f1', 'balanced_accuracy', 'mAP', 'AP50'))
-    return f'{scores} Δm {metrics["delta_m"]:+.2f}'
+    line = f'{scores} Δm {metrics["delta_m"]:+.2f}'
+    if 'clean' in metrics:
+        clean = metrics['clean']
+        line += (f' | clean ({clean["images"]} images) macro_f1 {clean["macro_f1"]:.4f} mAP {clean["mAP"]:.4f} '
+                 f'Δm {clean["delta_m"]:+.2f}')
+    return line
 
 
 def validation_delta_m(metrics):
@@ -262,7 +275,9 @@ def train_run(args, run_dir, compute, report):
     }
     val_gt_path = run_dir / 'instances_val_holdout.json'
     val_gt_path.write_text(json.dumps(val_gt))
-    log(f'data: {len(train_indices)} train, {len(val_indices)} validation images', log_file)
+    clean_ids = clean_image_ids(val_gt['images'])
+    log(f'data: {len(train_indices)} train, {len(val_indices)} validation images, '
+        f'{len(clean_ids)} of them clean (no near-duplicate twin among the training images)', log_file)
 
     # Model: adapters are created on the CPU, so they are added before .cuda()
     backbone = build_backbone(args.backbone,
@@ -308,8 +323,9 @@ def train_run(args, run_dir, compute, report):
         (run_dir / 'training_history.json').write_text(json.dumps(training_history, indent=2))
         compute.update(last_completed_training_epoch=epoch, latest_training=stats)
         if epoch % args.eval_every == 0 or epoch == args.epochs:
-            val, val_detections = evaluate(model, val_loader, val_gt_path)
+            val, val_detections = evaluate(model, val_loader, val_gt_path, clean_ids=clean_ids)
             val['delta_m'] = validation_delta_m(val)
+            val['clean']['delta_m'] = validation_delta_m(val['clean'])
             val['task_weights'] = stats['task_weights']
             history.append({'epoch': epoch, **val})
             log(f'epoch {epoch} val: {headline(val)}', log_file)

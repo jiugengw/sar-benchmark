@@ -14,6 +14,9 @@ def stratified_folds(labels, folds=5, seed=0):
 
 def summarize(scores):
     keys = ('accuracy', 'macro_f1', 'balanced_accuracy', 'mAP', 'AP50', 'delta_m')
-    return {key: {'mean': statistics.mean(row[key] for row in scores),
-                  'std': statistics.stdev(row[key] for row in scores) if len(scores) > 1 else 0.0}
-            for key in keys}
+    summary = {key: {'mean': statistics.mean(row[key] for row in scores),
+                     'std': statistics.stdev(row[key] for row in scores) if len(scores) > 1 else 0.0}
+               for key in keys}
+    if all('clean' in row for row in scores):  # the same scores on each fold's clean holdout subset
+        summary['clean'] = summarize([row['clean'] for row in scores])
+    return summary

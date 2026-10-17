@@ -53,6 +53,11 @@ configuration directory name and rejects settings that exceed the parameter budg
 - Report accuracy, macro-F1, balanced accuracy, mAP, AP50, and Delta m on the labeled local holdout. Delta m uses
   fixed validation reference scores 0.9331 / 0.2613. Classification and AP values in JSON are fractions; Delta m
   is stored as a percentage value.
+- Report the same scores on the clean holdout subset under `clean`: holdout images with no near-duplicate twin
+  among the training images. A quarter of the labeled images have a twin (same scene and boxes, different
+  speckle), listed in `sarbench/train_twins.json`; with seed 0, 720 of the 939 holdout images are clean. Twins
+  inflate the full-holdout score, so compare runs on the clean scores. `python -m sarbench.twins score
+  results/<run>/seed_0` re-grades a saved run.
 - Save the final-epoch model. There is no best-checkpoint selection, and the weights do not contain optimizer or
   scheduler state for exact training resumption.
 - The trainer does not score the separate course validation or test splits. Use `make_submission.py` to predict

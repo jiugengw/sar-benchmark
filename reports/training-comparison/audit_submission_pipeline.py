@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from sarbench.metrics import detection_metrics
+from sarbench.twins import clean_image_ids
 from yolo_baseline.image_head import classification_metrics
 
 
@@ -114,6 +115,20 @@ def main() -> None:
         "image_classification": classifier,
         "combined_delta_m": 50 * (classifier["macro_f1"] / 0.9331 + detection["mAP"] / 0.2613 - 2),
     }
+    # The same scores on the clean holdout subset: images with no near-duplicate twin among the training images.
+    clean_ids = clean_image_ids(ground_truth["images"])
+    clean_classifier = classification_metrics(
+        [labels[image_id] for image_id in clean_ids],
+        [classification[image_id] for image_id in clean_ids], names,
+    )
+    clean_detection = detection_metrics(str(args.ground_truth), predictions, clean_ids)
+    scores["clean_holdout"] = {
+        "images": len(clean_ids),
+        **clean_detection,
+        **{key: clean_classifier[key] for key in ("accuracy", "macro_f1", "balanced_accuracy")},
+        "image_classification": clean_classifier,
+        "combined_delta_m": 50 * (clean_classifier["macro_f1"] / 0.9331 + clean_detection["mAP"] / 0.2613 - 2),
+    }
     official = json.loads(args.official_scores.read_text())
     metadata = {
         "evaluation": "Exact make_submission.py pipeline scored on labeled holdout; COCOeval detection",
@@ -134,6 +149,9 @@ def main() -> None:
         "local_minus_official_percentage_points": {
             key: scores[key] * 100 - official[key] for key in ("macro_f1", "mAP", "accuracy", "AP50")
         },
+        "clean_minus_official_percentage_points": {
+            key: scores["clean_holdout"][key] * 100 - official[key] for key in ("macro_f1", "mAP", "accuracy", "AP50")
+        },
     }
     result["same_predictions_ultralytics_metrics"] = score_same_predictions_ultralytics(ground_truth, predictions)
     result["same_predictions_evaluator_delta_pp"] = {
@@ -147,7 +165,10 @@ def main() -> None:
     (args.output / "image_classification_predictions.json").write_text(json.dumps(classification) + "\n")
     (args.output / "metrics.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({"val": {key: value for key, value in scores.items() if isinstance(value, (float, int))},
-                      "audit": metadata, "gap": result["local_minus_official_percentage_points"]}, indent=2))
+                      "clean_holdout": {key: value for key, value in scores["clean_holdout"].items()
+                                        if isinstance(value, (float, int))},
+                      "audit": metadata, "gap": result["local_minus_official_percentage_points"],
+                      "clean_gap": result["clean_minus_official_percentage_points"]}, indent=2))
 
 
 if __name__ == "__main__":

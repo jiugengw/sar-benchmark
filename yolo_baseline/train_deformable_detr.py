@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from deformable_detr_support import make_p2_model
 from sarbench.metrics import detection_metrics
+from sarbench.twins import clean_image_ids
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -245,6 +246,7 @@ def main() -> None:
     weights_dir = output / "train/weights/best"
     gt_images = json.loads(ground_truth.read_text())["images"]
     val_ids_from_gt = [int(item["id"]) for item in gt_images]
+    clean_val_ids = clean_image_ids(gt_images)  # holdout images with no near-duplicate twin among training images
     if set(val_ids_from_gt) != set(val_ids):
         raise ValueError("Detection ground truth and saved Deformable DETR validation split differ")
     start_time = time.perf_counter()
@@ -273,7 +275,9 @@ def main() -> None:
         map_metrics = detection_metrics(gt_path, epoch_predictions, val_ids)
         map_score = float(map_metrics["mAP"])
         row = {"epoch": epoch, "train_loss": sum(losses) / max(1, len(losses)),
-               "validation_map": map_score, "validation_per_class_ap": map_metrics["per_class_AP"]}
+               "validation_map": map_score, "validation_per_class_ap": map_metrics["per_class_AP"],
+               "validation_map_clean": detection_metrics(gt_path, epoch_predictions, clean_val_ids)["mAP"],
+               "validation_clean_images": len(clean_val_ids)}
         history.append(row)
         print(f"Deformable DETR-P2 epoch {epoch}/{args.epochs}: loss={row['train_loss']:.5f} mAP={map_score:.5f}", flush=True)
         if map_score > best_map:

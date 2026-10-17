@@ -27,3 +27,13 @@ def test_summary_uses_sample_standard_deviation():
     summary = summarize([dict.fromkeys(keys, 1.0), dict.fromkeys(keys, 3.0)])
     assert summary['mAP']['mean'] == 2.0
     assert summary['mAP']['std'] == pytest.approx(2 ** 0.5)
+    assert 'clean' not in summary
+
+
+def test_summary_also_summarizes_clean_holdout_scores():
+    keys = ('accuracy', 'macro_f1', 'balanced_accuracy', 'mAP', 'AP50', 'delta_m')
+    scores = [{**dict.fromkeys(keys, 1.0), 'clean': dict.fromkeys(keys, 0.5)},
+              {**dict.fromkeys(keys, 3.0), 'clean': dict.fromkeys(keys, 1.5)}]
+    summary = summarize(scores)
+    assert summary['mAP']['mean'] == 2.0
+    assert summary['clean']['delta_m']['mean'] == 1.0
