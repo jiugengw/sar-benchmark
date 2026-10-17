@@ -1,0 +1,10 @@
+{
+  "gpu_name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition MIG 1g.24gb",
+  "gpu_hours": 3.7635093882269897,
+  "wall_seconds": 13548.633797617164,
+  "peak_vram_allocated_gib": 10.539610385894775,
+  "peak_vram_reserved_gib": 14.09765625,
+  "total_parameters": 25742248,
+  "trainable_parameters": 0,
+  "best_weights": "runs/yolo26l-100-p2-329019/train/weights/best.pt"
+}

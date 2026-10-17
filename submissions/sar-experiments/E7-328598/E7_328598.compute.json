@@ -1,0 +1,10 @@
+{
+  "gpu_name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition MIG 1g.24gb",
+  "gpu_hours": 8.551315559762815,
+  "wall_seconds": 30784.736015146133,
+  "peak_vram_allocated_gib": 7.988815784454346,
+  "peak_vram_reserved_gib": 8.75,
+  "total_parameters": 35304251,
+  "trainable_parameters": 0,
+  "best_weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/E7-rtdetr-l-p2-328598/train/weights/best.pt"
+}

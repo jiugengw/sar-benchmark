@@ -1,0 +1,52 @@
+{
+  "experiment": "E7",
+  "architecture": "RT-DETR-L-P2",
+  "pretrained_checkpoint": "/common/scratch/users/j/jgwong.2023/sar-benchmark/pretrained/rtdetr-l.pt",
+  "pretrained_checkpoint_sha256": "6de60b10d4bc566f00cda0f5b4d64afe4b66d48dc9695d2171effb7859d8e73f",
+  "p2_yaml": "/common/scratch/users/j/jgwong.2023/sar-benchmark/yolo_baseline/rtdetr_l_p2.yaml",
+  "dataset_yaml": "/common/scratch/users/j/jgwong.2023/sar-benchmark/data/yolo11s-sar-512/dataset.yaml",
+  "classes": [
+    "aircraft",
+    "airport",
+    "bridge",
+    "car",
+    "harbor",
+    "oil_tank",
+    "playground",
+    "ship",
+    "wind_turbine"
+  ],
+  "epochs": 100,
+  "image_size": 512,
+  "batch_size": 8,
+  "optimizer": "AdamW, lr0=0.0001, lrf=0.1, cosine schedule",
+  "augmentation": "Ultralytics RT-DETR defaults; mosaic/mixup/copy-paste disabled",
+  "seed": 0,
+  "deterministic": false,
+  "transfer": {
+    "backbone_neck_tensors": 726,
+    "decoder_tensors": 158,
+    "level_projection_tensors": 18,
+    "new_p2_parameters": 2265600,
+    "skipped_target_keys": 89
+  },
+  "decoder_feature_shapes_at_256": [
+    [
+      64,
+      64
+    ],
+    [
+      32,
+      32
+    ],
+    [
+      16,
+      16
+    ],
+    [
+      8,
+      8
+    ]
+  ],
+  "ultralytics_version": "8.4.178"
+}

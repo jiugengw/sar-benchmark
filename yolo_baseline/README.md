@@ -72,26 +72,26 @@ Joint training must align each detector batch with image-level labels, omit clas
 
 ### Phase 2 — architecture comparison
 
-The requested grouping is one architecture-comparison Slurm job bundle. The user selected uninterrupted execution, in the listed priority order. E5 (YOLO26m-P2) is already running as array task `328337_1`; wait for that result and reuse its completed artifacts and ZIP rather than launching a duplicate.
+The requested grouping is one architecture-comparison Slurm job bundle. E5 (YOLO26m-P2) completed as array task `328337_1`; its local holdout metrics, compute record, and course-format ZIP are archived under `submissions/sar-experiments/E5-328598/`.
 
 | ID | Architecture | Priority | Plan |
 |---|---|---|---|
-| E5 | YOLO26m + P2 | High | Use the matching pretrained checkpoint; confirm stride-4 features feed detection. Reuse the current run if it completes successfully. |
+| E5 | YOLO26m + P2 | High | Completed as array task `328337_1`; result artifacts are archived under `submissions/sar-experiments/E5-328598/`. |
 | E6 | YOLO26n + P2 | Medium | Use the matching pretrained checkpoint and confirm P2 use. |
-| E7 | RT-DETR + P2 | Medium | First validate the standard pretrained detector, then add P2 and verify stride-4 detection use. Adapt feature extraction and classifier dimensions to RT-DETR. |
+| E7 | RT-DETR + P2 | Medium | Completed as job `328598`; result artifacts are archived under `submissions/sar-experiments/E7-328598/`. |
 | E8 | Deformable DETR + P2 | Medium | First validate the standard pretrained detector, then add P2 and verify stride-4 detection use. Adapt feature extraction and classifier dimensions to Deformable DETR. |
 | E9 | YOLO11n + P2 | Optional | Use the matching pretrained checkpoint and the same sequential evaluation method. |
 
 Each architecture starts with sequential detector training, frozen detector features, and a separately trained classifier. Do not assume YOLO hooks or feature dimensions transfer to either DETR implementation. The RT-DETR and Deformable DETR stages must save their standard-pretrained validation results before training their P2 variants.
 
-An additional completed comparison run, YOLO26s-P2 array task `328337_0`, scored **90.10% macro-F1**, **37.47% mAP**, and **+19.97% local Δm** on the saved 939-image holdout. That is above the E1 YOLO11s-P2 result (**89.30%**, **36.31%**, **+17.34%**) by 0.81 F1 points, 1.15 mAP points, and 2.64 Δm points. The metrics are at `results/yolo26s-100-p2-328338/seed_0/metrics.json`; the saved `best_weights` points to that run's trained detector. YOLO26s is an additional result, not E5: E5 is YOLO26m-P2 array task `328337_1`, which remains the run to reuse. Array element `_2` (YOLO26l) was cancelled before starting and is not part of the E5-E9 bundle.
+An additional completed comparison run, YOLO26s-P2 array task `328337_0`, scored **90.10% macro-F1** and **37.47% mAP** on the saved 939-image holdout. The metrics are at `results/yolo26s-100-p2-328338/seed_0/metrics.json`; YOLO26s is an additional result, not E5. The completed E5 YOLO26m-P2 run scored **91.08% macro-F1**, **40.67% mAP**, and **+26.63% local Δm**. Its detector and classifier checkpoints are in `runs/yolo26m-100-p2-328339/`; metrics and ZIP are under `submissions/sar-experiments/E5-328598/`. E7 RT-DETR-L-P2 scored **91.34% macro-F1**, **40.80% mAP**, and **+27.02% local Δm**; its metrics, compute record, and ZIP are under `submissions/sar-experiments/E7-328598/`. A separate YOLO26l-P2 run, job `329019`, completed outside the E5-E9 array with **91.14% macro-F1**, **40.24% mAP**, and **+25.83% local Δm**; its artifacts are under `submissions/sar-experiments/yolo26l-100-p2-329019/`. Array element `_2` was cancelled before starting, so YOLO26l remains outside the E5-E9 bundle despite the later supplementary run.
 
-### Phase 3 — optimize the leading architecture
+### Phase 3 — joint fine-tuning of YOLO26m-P2 and RT-DETR-L-P2
 
-Choose the best one or two architectures by validation `Δm`. For each, compare sequential training, joint training from pretrained initialization, and joint fine-tuning after sequential training. Keep both task metrics in the comparison to identify gains or negative transfer.
+The current leading completed candidates are E7 RT-DETR-L-P2 (**91.34% macro-F1**, **40.80% mAP**, **+27.02% local Δm**) and E5 YOLO26m-P2 (**91.08%**, **40.67%**, **+26.63%**). Fine-tune each from its own completed detector and image-classifier checkpoints. This phase is joint fine-tuning, not training from initialization. The run plan, checkpoint paths, settings, and GPU handoff steps are in [`PHASE3_JOINT_FINETUNING.md`](PHASE3_JOINT_FINETUNING.md). No Phase 3 job has been submitted.
 
 ### Execution gates and outputs
 
 Before expensive training, add configurable shared pipeline support for sequential and joint strategies, then validate a small batch: label alignment, actual P2 feature capture, both-loss gradient flow for joint training, checkpoint save/reload, metric calculation, and ZIP contents. The two requested Slurm bundles run their listed experiments uninterrupted after this smoke check. E4 remains conditional on the stated trend gate. Every completed experiment writes its own metrics, logs, best checkpoint, and course-format submission ZIP before the bundle advances.
 
-The Phase 1 bundle is `sbatch/sar_phase1_yolo26s_p2.sbatch`. The Phase 2 bundle is `sbatch/sar_phase2_architectures.sbatch`: it packages the completed E5 artifacts, then trains E6 YOLO26n-P2, E7 RT-DETR-L-P2, E8 Deformable DETR-R50-P2, and E9 YOLO11n-P2 in that order. Both request the same Blackwell GPU and the student partition's 24-hour maximum. Phase 2 waits for E5 only and does not depend on Phase 1 results.
+The Phase 1 bundle is `sbatch/sar_phase1_yolo26s_p2.sbatch`. The Phase 2 bundle was `sbatch/sar_phase2_architectures.sbatch`: it packages E5, then runs E6 YOLO26n-P2, E7 RT-DETR-L-P2, E8 Deformable DETR-R50-P2, and E9 YOLO11n-P2 in that order. Both bundles request the Blackwell GPU and the student partition's 24-hour maximum. Phase 2 depends on E5, not on Phase 1 results.
