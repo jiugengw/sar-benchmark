@@ -1,0 +1,4 @@
+{
+  "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/yolo26l-matched-best-330632-speckle/train/weights/best.pt",
+  "settings_match_medium": true
+}

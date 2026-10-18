@@ -1,0 +1,53 @@
+{
+  "zip": "yolo26l-matched-best-330632.zip",
+  "histories": [
+    {
+      "type": "ultralytics",
+      "path": "results/training-curves/yolo26l-matched-best-330632-plain/training.csv",
+      "label": "YOLO26l-P2 plain, 40 epochs"
+    },
+    {
+      "type": "ultralytics",
+      "path": "results/training-curves/yolo26l-matched-best-330632-speckle/training.csv",
+      "label": "YOLO26l-P2 speckle, 40 epochs"
+    },
+    {
+      "type": "classifier_csv",
+      "path": "results/training-curves/yolo26l-matched-best-330632/classifier_training.csv",
+      "label": "Refitted 1024-unit image classifier"
+    }
+  ],
+  "note": "1024-neuron classifier refit; box nudge applied",
+  "comparison_plan": {
+    "tag": "yolo26l-matched-best-330632",
+    "source": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/yolo26l-100-p2-329019/train/weights/best.pt",
+    "classifier_for_intermediate_stages": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/yolo26l-100-p2-329019/image_classifier.pt",
+    "baseline_source_sha256": "48dc50bf6f51bc86da4dd4cb7385264f379b96f87cda30d2133db394625fcc7b",
+    "baseline_argument_check": "identical except model/project/save_dir/name",
+    "split_check": "identical 8453 train / 939 holdout",
+    "medium_reference": "speckle-cand",
+    "architecture_change": "YOLO26m-P2 to YOLO26l-P2",
+    "seed": 0,
+    "baseline_epochs": 100,
+    "total_detector_epochs": 180,
+    "stages": [
+      {
+        "name": "plain",
+        "epochs": 40,
+        "lr0": 0.002,
+        "speckle_prob": 0.0
+      },
+      {
+        "name": "speckle",
+        "epochs": 40,
+        "lr0": 0.001,
+        "speckle_prob": 0.5,
+        "speckle_looks": 4.0
+      }
+    ],
+    "postprocessing": "package_candidate.py: 1024-unit classifier, 240 epochs, then twin-grouped box cross-fit",
+    "primary_comparison": "one2many exported detection mAP, full and clean, before calibration",
+    "secondary_comparison": "refitted classifier F1 and delta_m; calibrated scores include fit images",
+    "scope": "Single seed; original baselines effectively random-initialized; see docs/YOLO26_PRETRAINING_AUDIT.md."
+  }
+}

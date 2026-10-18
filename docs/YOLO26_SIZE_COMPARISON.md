@@ -8,7 +8,10 @@ classifier; its F1 is not a comparison of refitted classifier performance.
 
 The replacement run mirrors the best local medium candidate (`speckle-cand`):
 
-Active job: **330632**, `sar-y26l-matched`, submitted 18 October 2026.
+Completed job: **330632**, `sar-y26l-matched`, 18 October 2026, exit code 0,
+elapsed **3:07:30**. [Candidate and results](../nonsubmissions/181026/yolo26l-matched-best-330632/),
+[completed graphs](../reports/yolo26-matched-size/comparison.png),
+[final score graph](../reports/yolo26-matched-size/final-results.png).
 The initial submission 330628 was cancelled during its first epoch to correct
 the output-name comparison check; its partial checkpoint is not reused.
 
@@ -45,6 +48,26 @@ before calibration. Also report refitted classifier F1, Delta m, and per-class A
 Calibrated scores include fit images; inspect the cross-fit evidence separately.
 The job saves `results/<tag>/architecture_comparison.json` and a validation ZIP
 under `nonsubmissions/<date>/<tag>/`. No official upload is performed.
+
+## Completed results
+
+| Local score | Medium | Large |
+|---|---:|---:|
+| Uncalibrated full mAP (%) | 45.6923 | 45.1587 |
+| Uncalibrated clean mAP (%) | 42.1203 | 42.2190 |
+| Refitted full macro-F1 (%) | 95.4847 | 95.1337 |
+| Refitted clean macro-F1 (%) | 94.4712 | 93.8595 |
+| Calibrated full mAP (%) | 46.3636 | 46.0427 |
+| Calibrated clean mAP (%) | 43.2264 | 43.4033 |
+| Calibrated full Delta m | +39.8825 | +39.0804 |
+| Calibrated clean Delta m | +33.3364 | +33.3471 |
+
+Medium leads on the full holdout; clean detection and calibrated Delta m are close.
+This single matched run does not show a clear large-model improvement. Calibrated
+scores use fit images; both detectors passed the same disjoint box cross-fit checks.
+The large detector checkpoint is preserved through Git LFS at
+`checkpoints/yolo26l-matched-best-330632/model.pt`; the classifier and validation ZIP
+are in its candidate directory. Large has no official score.
 
 Dome-DETR job 330602 failed before training because the inherited 10-cell attention
 windows do not divide the 64-cell feature map at 512 input. Its failed run files

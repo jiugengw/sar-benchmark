@@ -1,0 +1,12 @@
+{
+  "job_id": 330632,
+  "state": "COMPLETED",
+  "exit_code": "0:0",
+  "elapsed": "03:07:30",
+  "plain": {
+    "wall_seconds": 5305.792677116115
+  },
+  "speckle": {
+    "wall_seconds": 5312.031844043173
+  }
+}

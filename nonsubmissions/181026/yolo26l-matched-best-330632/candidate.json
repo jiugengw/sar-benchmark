@@ -1,0 +1,13 @@
+{
+  "detector": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/yolo26l-matched-best-330632-speckle/train/weights/best.pt",
+  "classifier": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/yolo26l-matched-best-330632-package/image_classifier.pt",
+  "branch": "one2many",
+  "box_nudge": true,
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512,
+  "official_score": null,
+  "preserved_detector": "checkpoints/yolo26l-matched-best-330632/model.pt",
+  "detector_sha256": "aed5f815c9a62cb5e27bb0827c83050fbd599da04540bcd47d3897b342b3fe49",
+  "initialization_note": "Baseline initialization was effectively random; trained SAR checkpoint retained in both continuation stages."
+}

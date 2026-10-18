@@ -1,0 +1,49 @@
+{
+  "checked_at": "2026-10-18T14:32:59.005679+08:00",
+  "sources": {
+    "plain": {
+      "Medium": "results/training-curves/yolo26m_p2_finetune_329644/continue_1/results.csv",
+      "Large": "results/training-curves/yolo26l-matched-best-330632-plain/training.csv"
+    },
+    "speckle": {
+      "Medium": "results/training-curves/ft40-speckle-330447/training.csv",
+      "Large": "results/training-curves/yolo26l-matched-best-330632-speckle/training.csv"
+    }
+  },
+  "stages": {
+    "plain": {
+      "large_completed_epochs": 40,
+      "Medium": {
+        "latest_epoch": 40,
+        "latest_mAP_percent": 44.877,
+        "best_mAP_percent": 44.877,
+        "same_epoch_mAP_percent": 44.877,
+        "best_through_large_epoch_percent": 44.877
+      },
+      "Large": {
+        "latest_epoch": 40,
+        "latest_mAP_percent": 44.558,
+        "best_mAP_percent": 44.639,
+        "same_epoch_mAP_percent": 44.558,
+        "best_through_large_epoch_percent": 44.639
+      }
+    },
+    "speckle": {
+      "large_completed_epochs": 40,
+      "Medium": {
+        "latest_epoch": 40,
+        "latest_mAP_percent": 46.936,
+        "best_mAP_percent": 46.936,
+        "same_epoch_mAP_percent": 46.936,
+        "best_through_large_epoch_percent": 46.936
+      },
+      "Large": {
+        "latest_epoch": 40,
+        "latest_mAP_percent": 46.674,
+        "best_mAP_percent": 46.893,
+        "same_epoch_mAP_percent": 46.674,
+        "best_through_large_epoch_percent": 46.893
+      }
+    }
+  }
+}

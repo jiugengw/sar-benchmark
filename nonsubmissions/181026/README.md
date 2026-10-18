@@ -19,3 +19,12 @@ Raw holdout predictions and annotations remain in `results/<experiment>/`; per-e
 classifier and applies box calibration to the speckle detector. Local calibrated
 Delta m is **+39.88 full / +33.34 clean** (includes calibration images).
 The course-validation ZIP is saved; it has no official score.
+
+[Matched YOLO26l candidate](yolo26l-matched-best-330632/), job 330632, completed
+the same 100 + 40 plain + 40 speckle schedule and classifier refit as medium.
+Calibrated Delta m is **+39.08 full / +33.35 clean**, versus medium's
+**+39.88 / +33.34**; these scores include calibration images. Its ZIP, classifier,
+raw/calibrated scores, detector checkpoint (Git LFS), and
+[comparison graphs](../../reports/yolo26-matched-size/comparison.png) are preserved.
+It remains unsubmitted. The original baseline initializations were effectively
+random; see the [initialization audit](../../docs/YOLO26_PRETRAINING_AUDIT.md).
