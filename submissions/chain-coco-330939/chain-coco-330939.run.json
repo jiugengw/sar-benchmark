@@ -1,0 +1,22 @@
+{
+  "zip": "chain-coco-330939.zip",
+  "histories": [
+    {
+      "type": "ultralytics",
+      "path": "results/training-curves/yolo26m-p2-coco-verified-330705/training.csv",
+      "label": "YOLO26m-P2 from COCO weights, 100 epochs"
+    },
+    {
+      "type": "ultralytics",
+      "path": "results/training-curves/chain-coco-330939-plain/training.csv",
+      "label": "chain-coco-330939 plain, 40 epochs"
+    },
+    {
+      "type": "ultralytics",
+      "path": "results/training-curves/chain-coco-330939-speckle/training.csv",
+      "label": "chain-coco-330939 speckle, 40 epochs"
+    }
+  ],
+  "note": "COCO-pretrained start (yolo26m.pt), 100 epochs + 40 plain + 40 speckle; 1024-neuron classifier refit; box nudge applied",
+  "official_score": 40.45
+}

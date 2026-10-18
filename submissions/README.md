@@ -4,6 +4,7 @@ Every ZIP uploaded to the [Codabench competition](https://www.codabench.org/comp
 
 | Codabench ID | Uploaded | ZIP | Status | Official Δm | Scoring result |
 |---:|---|---|---|---:|---|
+| — | 2026-10-18 | [chain-coco-330939.zip](chain-coco-330939/chain-coco-330939.zip) | Finished | +40.45 | [scores.json](chain-coco-330939/scoring_result/scores.json) |
 | — | 2026-10-18 | [chain-dota-330938.zip](chain-dota-330938/chain-dota-330938.zip) | Finished | +40.73 | [scores.json](chain-dota-330938/scoring_result/scores.json) |
 | — | 2026-10-18 | [speckle-cand.zip](speckle-cand/speckle-cand.zip) | Finished | +37.38 | [scores.json](speckle-cand/scoring_result/scores.json) |
 | 995999 | 2026-10-17 23:49 | [yolo26m_p2_candidate_330230.zip](yolo26m_p2_candidate_330230/yolo26m_p2_candidate_330230.zip) | Finished | +36.80 | [scores.json](yolo26m_p2_candidate_330230/scoring_result/scores.json) |
