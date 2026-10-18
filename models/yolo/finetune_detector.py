@@ -113,6 +113,10 @@ def main() -> None:
     parser.add_argument('--nwd-constant', type=float, default=16.0, help='typical object size in pixels')
     parser.add_argument('--speckle-prob', type=float, default=0.0)
     parser.add_argument('--speckle-looks', type=float, default=4.0)
+    parser.add_argument('--seed', type=int, default=0, help='0 matches the control; change it to measure run-to-run noise')
+    parser.add_argument('--all-data', action='store_true',
+                        help='also train on the 939 holdout images (final-model recipe); the last epoch is used, and holdout '
+                             'scores become optimistic because those images were trained on')
     args = parser.parse_args()
 
     import torch
@@ -132,23 +136,30 @@ def main() -> None:
     run_root.mkdir(parents=True, exist_ok=True)
     settings = {'source': str(args.source), 'classifier_for_scoring': str(args.classifier), 'epochs': args.epochs,
                 'lr0': args.lr0, 'nwd_weight': args.nwd_weight, 'nwd_constant': args.nwd_constant,
-                'speckle_prob': args.speckle_prob, 'speckle_looks': args.speckle_looks,
+                'speckle_prob': args.speckle_prob, 'speckle_looks': args.speckle_looks, 'seed': args.seed,
+                'all_data': args.all_data,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
 
+    data_yaml = ROOT / 'data/yolo11s-sar-512/dataset.yaml'
+    if args.all_data:  # train on the training split and the holdout together; validation still runs on the holdout
+        base = (ROOT / 'data/yolo11s-sar-512').resolve()
+        names = data_yaml.read_text().split('names:', 1)[1]
+        data_yaml = run_root / 'dataset_all.yaml'
+        data_yaml.write_text(f'path: {base}\ntrain:\n  - images/train\n  - images/val\nval: images/val\nnc: 9\nnames:{names}')
     started = time.monotonic()
     detector = YOLO(str(args.source))
     detector.train(  # the continue_2 recipe, unchanged
-        data=str(ROOT / 'data/yolo11s-sar-512/dataset.yaml'),
+        data=str(data_yaml),
         epochs=args.epochs, imgsz=512, batch=16, workers=4, device=0,
         pretrained=True, optimizer='MuSGD', lr0=args.lr0, lrf=0.1, momentum=0.9, weight_decay=0.0005,
-        warmup_epochs=1, warmup_bias_lr=0.0, cos_lr=True, seed=0, deterministic=True,
+        warmup_epochs=1, warmup_bias_lr=0.0, cos_lr=True, seed=args.seed, deterministic=True,
         mosaic=0.0, mixup=0.0, copy_paste=0.0, close_mosaic=0,
         translate=0.05, scale=0.2, fliplr=0.5, flipud=0.5, hsv_h=0.0, hsv_s=0.0, hsv_v=0.2,
         multi_scale=0.0, amp=True, patience=args.epochs + 1,
         project=str(run_root), name='train', plots=True, save_period=10,
     )
-    weights = run_root / 'train/weights/best.pt'
+    weights = run_root / ('train/weights/last.pt' if args.all_data else 'train/weights/best.pt')
     write_json(run_root / 'compute.json', {'wall_seconds': time.monotonic() - started})
 
     curves = ROOT / 'results/training-curves' / args.tag  # runs/ is not committed; keep the history
