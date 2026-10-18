@@ -1,0 +1,11 @@
+{
+  "zip": "speckle-cand.zip",
+  "histories": [
+    {
+      "type": "ultralytics",
+      "path": "results/training-curves/ft40-speckle-330447/training.csv",
+      "label": "speckle-cand detector"
+    }
+  ],
+  "note": "1024-neuron classifier refit; box nudge applied"
+}

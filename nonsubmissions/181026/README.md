@@ -14,3 +14,8 @@ The 200-epoch run starts from COCO weights. The other three extend `continue_1` 
 Raw holdout predictions and annotations remain in `results/<experiment>/`; per-epoch histories remain in `results/training-curves/<experiment>/`. Each experiment directory here contains the full and clean scores, Slurm completion summary, available run metadata, and links to those artifacts.
 
 [Completed DenoDet experiment](denodet-v2-329477/) is also archived for this date.
+
+[Speckle candidate](speckle-cand/), packaged by job 330591, refits the image
+classifier and applies box calibration to the speckle detector. Local calibrated
+Delta m is **+39.88 full / +33.34 clean** (includes calibration images).
+The course-validation ZIP is saved; it has no official score.
