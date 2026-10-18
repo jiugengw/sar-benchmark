@@ -1,0 +1,16 @@
+{
+  "source": "runs/yolo26m-p2-dota-verified-330705/train/weights/best.pt",
+  "classifier_for_scoring": "runs/yolo26m-p2-dota-verified-330705/image_classifier.pt",
+  "epochs": 40,
+  "lr0": 0.002,
+  "nwd_weight": 0.0,
+  "nwd_constant": 16.0,
+  "speckle_prob": 0.0,
+  "speckle_looks": 4.0,
+  "seed": 0,
+  "repeat_classes": "",
+  "repeat_factor": 2,
+  "all_data": false,
+  "skip_evaluation": true,
+  "control": "continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)"
+}

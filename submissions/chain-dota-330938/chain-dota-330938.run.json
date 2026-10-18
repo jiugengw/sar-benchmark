@@ -1,0 +1,22 @@
+{
+  "zip": "chain-dota-330938.zip",
+  "histories": [
+    {
+      "type": "ultralytics",
+      "path": "results/training-curves/yolo26m-p2-dota-verified-330705/training.csv",
+      "label": "YOLO26m-P2 from DOTA weights, 100 epochs"
+    },
+    {
+      "type": "ultralytics",
+      "path": "results/training-curves/chain-dota-330938-plain/training.csv",
+      "label": "chain-dota-330938 plain, 40 epochs"
+    },
+    {
+      "type": "ultralytics",
+      "path": "results/training-curves/chain-dota-330938-speckle/training.csv",
+      "label": "chain-dota-330938 speckle, 40 epochs"
+    }
+  ],
+  "note": "DOTA-pretrained start (yolo26m-obb.pt), 100 epochs + 40 plain + 40 speckle; 1024-neuron classifier refit; box nudge applied",
+  "official_score": 40.73
+}
