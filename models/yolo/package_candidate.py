@@ -32,6 +32,9 @@ def main() -> None:
     parser.add_argument('--tag', required=True, help='name of the candidate (results/<tag>, nonsubmissions/<date>/<tag>)')
     parser.add_argument('--detector', type=Path, required=True, help='trained detector weights (best.pt or last.pt)')
     parser.add_argument('--curves', type=Path, help='per-epoch training.csv of the detector, for run.json')
+    parser.add_argument('--box-audit', type=Path,
+                        help='reuse this box_bias_crossfit.json instead of fitting the nudge on the holdout; '
+                             'needed when the detector was trained on the holdout (all-data runs)')
     args = parser.parse_args()
     from models.yolo.deadline_recovery import evaluate_export, write_json
 
@@ -51,7 +54,11 @@ def main() -> None:
     holdout = ROOT / 'results' / args.tag / 'one2many'
     evaluate_export(detector, classifier, 'one2many', holdout)
     audit = ROOT / 'results' / args.tag / 'box_bias_crossfit.json'
-    run([sys.executable, '-u', ROOT / 'models/yolo/quick_box_bias.py', '--results', holdout, '--out', audit])
+    if args.box_audit:  # offsets fitted on a model that never saw the holdout
+        audit.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(args.box_audit, audit)
+    else:
+        run([sys.executable, '-u', ROOT / 'models/yolo/quick_box_bias.py', '--results', holdout, '--out', audit])
     nudge = json.loads(audit.read_text()).get('accepted', False)
 
     base_zip = work / f'{args.tag}_base.zip'
