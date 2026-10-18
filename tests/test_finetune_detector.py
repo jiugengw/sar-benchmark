@@ -22,3 +22,11 @@ def test_speckle_keeps_brightness_and_is_identical_across_channels():
     assert abs(out.mean() - 100) < 5 and 40 < out.std() < 60
     assert (out[..., 0] == out[..., 2]).all()
     assert (SpeckleNoise(p=0.0)({'img': image.copy()})['img'] == image).all()
+
+
+def test_repeat_labels_duplicates_only_images_with_chosen_classes():
+    from models.yolo.finetune_detector import repeat_labels
+    labels = [{'im_file': 'a', 'cls': np.array([[2.0]])}, {'im_file': 'b', 'cls': np.array([[0.0], [0.0]])},
+              {'im_file': 'c', 'cls': np.zeros((0, 1))}]
+    out = repeat_labels(labels, {2, 6}, 3)
+    assert [label['im_file'] for label in out] == ['a', 'a', 'a', 'b', 'c']

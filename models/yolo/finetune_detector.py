@@ -101,6 +101,38 @@ def enable_speckle(p: float, looks: float) -> None:
     ul_dataset.YOLODataset.build_transforms = build_transforms
 
 
+CLASSES = ('aircraft', 'airport', 'bridge', 'car', 'harbor', 'oil_tank', 'playground', 'ship', 'wind_turbine')
+
+
+def repeat_labels(labels: list[dict], class_ids: set[int], factor: int) -> list[dict]:
+    """Repeat-factor sampling: list every image containing one of class_ids `factor` times instead of once."""
+    out = []
+    for label in labels:
+        out.append(label)
+        classes = {int(c) for c in label['cls'].ravel()} if len(label['cls']) else set()
+        if classes & class_ids:
+            out.extend(dict(label) for _ in range(factor - 1))
+    return out
+
+
+def enable_class_repeat(class_ids: set[int], factor: int) -> None:
+    """Apply repeat_labels to every training dataset (validation keeps each image once)."""
+    from ultralytics.data import dataset as ul_dataset
+
+    original = ul_dataset.YOLODataset.get_labels
+
+    def get_labels(self):
+        labels = original(self)
+        if not self.augment:
+            return labels
+        labels = repeat_labels(labels, class_ids, factor)
+        self.im_files = [label['im_file'] for label in labels]
+        print(f'class repeat: {len(labels)} training entries after repeating {sorted(class_ids)} x{factor}', flush=True)
+        return labels
+
+    ul_dataset.YOLODataset.get_labels = get_labels
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--tag', required=True, help='name for runs/<tag>, results/<tag> and the curves folder')
@@ -113,6 +145,10 @@ def main() -> None:
     parser.add_argument('--nwd-constant', type=float, default=16.0, help='typical object size in pixels')
     parser.add_argument('--speckle-prob', type=float, default=0.0)
     parser.add_argument('--speckle-looks', type=float, default=4.0)
+    parser.add_argument('--repeat-classes', default='',
+                        help='comma-separated classes whose training images are shown --repeat-factor times, '
+                             'e.g. bridge,playground,wind_turbine')
+    parser.add_argument('--repeat-factor', type=int, default=2)
     parser.add_argument('--seed', type=int, default=0, help='0 matches the control; change it to measure run-to-run noise')
     parser.add_argument('--all-data', action='store_true',
                         help='also train on the 939 holdout images (final-model recipe); the last epoch is used, and holdout '
@@ -132,11 +168,18 @@ def main() -> None:
         enable_nwd(args.nwd_weight, args.nwd_constant)
     if args.speckle_prob:
         enable_speckle(args.speckle_prob, args.speckle_looks)
+    repeat = [name.strip() for name in args.repeat_classes.split(',') if name.strip()]
+    if repeat:
+        unknown = set(repeat) - set(CLASSES)
+        if unknown:
+            raise ValueError(f'unknown classes {unknown}; choose from {CLASSES}')
+        enable_class_repeat({CLASSES.index(name) for name in repeat}, args.repeat_factor)
     run_root = ROOT / 'runs' / args.tag
     run_root.mkdir(parents=True, exist_ok=True)
     settings = {'source': str(args.source), 'classifier_for_scoring': str(args.classifier), 'epochs': args.epochs,
                 'lr0': args.lr0, 'nwd_weight': args.nwd_weight, 'nwd_constant': args.nwd_constant,
                 'speckle_prob': args.speckle_prob, 'speckle_looks': args.speckle_looks, 'seed': args.seed,
+                'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
                 'all_data': args.all_data,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
