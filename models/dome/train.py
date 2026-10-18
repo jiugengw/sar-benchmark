@@ -4,9 +4,8 @@ Dome-DETR (ACM MM 2025) is a D-FINE detector for tiny objects: a density map pic
 images get more of them (300 to 1500). 24.4M parameters, under the 40M trainable limit. Pretraining: HGNetV2-B2 on
 ImageNet, then the whole detector on AI-TOD v2 (optical aerial photos). No SAR-pretrained weights.
 
-Changes from the authors' AI-TOD recipe: a 512 px canvas instead of 800, filled without upscaling (the competition
-forbids upscaling, so 256 px images keep their size and are padded, see transforms.py), 9 of our classes in
-the AI-TOD class slots, vertical flips added (SAR scenes have no up), colour jitter dropped (grayscale images),
+Changes from the authors' AI-TOD recipe: 512 x 512 input instead of 800 (every image stretched to 512, as in our YOLO
+runs; the TA confirmed anything up to 512 is allowed), 9 of our classes in the AI-TOD class slots, vertical flips added (SAR scenes have no up), colour jitter dropped (grayscale images),
 fewer epochs because we start from a trained detector. The last `--clean-epochs` run without zoom/crop augmentation,
 as Dome and D-FINE do. The best epoch by holdout mAP is kept, as for YOLO's best.pt.
 
@@ -53,7 +52,7 @@ def write_config(path: Path, data: Path, output: Path, epochs: int, clean_epochs
                         {'type': 'SanitizeBoundingBoxes', 'min_size': 1},
                         {'type': 'RandomHorizontalFlip'},
                         {'type': 'RandomVerticalFlip'},
-                        {'type': 'FitPad', 'size': size},  # no upscaling: small images keep native size
+                        {'type': 'Resize', 'size': [size, size]},
                         {'type': 'SanitizeBoundingBoxes', 'min_size': 1},
                         {'type': 'ConvertPILImage', 'dtype': 'float32', 'scale': True},
                         {'type': 'ConvertBoxes', 'fmt': 'cxcywh', 'normalize': True},
@@ -69,7 +68,7 @@ def write_config(path: Path, data: Path, output: Path, epochs: int, clean_epochs
         'val_dataloader': {
             'dataset': {
                 'img_folder': str(DATA / 'train'), 'ann_file': str(data / 'holdout.json'),
-                'transforms': {'ops': [{'type': 'FitPad', 'size': size},
+                'transforms': {'ops': [{'type': 'Resize', 'size': [size, size]},
                                        {'type': 'ConvertPILImage', 'dtype': 'float32', 'scale': True}]},
             },
             'total_batch_size': 16,
@@ -105,8 +104,9 @@ def main() -> None:
                                                     indent=2) + '\n')
 
     use_dome()
-    from models.dome.transforms import register_transforms
-    register_transforms()  # FitPad, and the vertical flip Dome does not register
+    import torchvision.transforms.v2 as T
+    from src.core import register
+    register()(T.RandomVerticalFlip)  # Dome registers only the horizontal flip
 
     started = time.monotonic()
     sys.argv = ['train.py', '-c', str(config), '-t', str(args.checkpoint), '--seed', str(args.seed), '--use-amp',

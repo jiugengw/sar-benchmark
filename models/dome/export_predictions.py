@@ -1,8 +1,8 @@
 """Predict the 939 holdout images with a fine-tuned Dome-DETR and score them on the full and clean holdout.
 
-Each image is placed once on a 512 x 512 canvas without upscaling (shrunk only if larger, otherwise padded) and passed
-once through the model (no test-time augmentation), the way a submission would run it. Boxes are mapped back to original pixels and to our category ids, then written in the same
-layout as the YOLO runs (results/<tag>/predictions_val.json, instances_val_holdout.json) for sarbench.twins.score.
+Each image is resized once to 512 x 512 (PIL bilinear, as in training and in our YOLO submissions) and passed once
+through the model (no test-time augmentation), the way a submission would run it. Boxes are mapped back to original
+pixels and to our category ids, then written in the same layout as the YOLO runs (results/<tag>/predictions_val.json, instances_val_holdout.json) for sarbench.twins.score.
 
 Dome-DETR has no image classifier. For a rough F1, each image is given the class of its highest-scoring box; judge
 Dome on detection mAP, and pair a winner with an image classifier afterwards.
@@ -19,7 +19,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from models.dome.common import DATA, ROOT, SLOT_TO_CATEGORY, use_dome  # noqa: E402
-from models.dome.transforms import fit_image  # noqa: E402
 
 KEEP = 300  # boxes kept per image, highest scores first
 
@@ -76,11 +75,11 @@ def main() -> None:
             with Image.open(DATA / 'train' / image['file_name']) as pil:
                 pil = pil.convert('RGB')
                 width, height = pil.size
-                canvas, scale = fit_image(pil, args.size)
-                pixels = F.pil_to_tensor(canvas).float().div(255)
+                resized = pil.resize((args.size, args.size), Image.Resampling.BILINEAR)
+                pixels = F.pil_to_tensor(resized).float().div(255)
             outputs = model(pixels.unsqueeze(0).to(device))  # no targets: nothing from the labels reaches the model
-            extent = args.size / scale  # the canvas in original pixels; Dome scales normalised boxes by this
-            sizes = torch.tensor([[extent, extent]], dtype=torch.float32, device=device)
+            # Dome predicts boxes normalised to the image; scaling by the original size undoes the stretch
+            sizes = torch.tensor([[width, height]], dtype=torch.float32, device=device)
             result = postprocessor(outputs, sizes)[0]
             scores, order = result['scores'].sort(descending=True)
             order = order[:KEEP]

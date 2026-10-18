@@ -10,8 +10,7 @@ photos). We fine-tune the authors' AI-TOD checkpoint on our training split.
 |---|---|
 | `scripts/setup_dome.sh` | Login node, once: clone the pinned commit into `third_party/`, make `.dome-venv`, download and verify the checkpoint |
 | `prepare_data.py` | COCO files for our 8453 / 939 split; our classes go into the matching AI-TOD class slots (`common.py`) |
-| `transforms.py` | 512 × 512 canvas **without upscaling**: larger images shrink, 256 px images keep their size and are padded |
-| `train.py` | Writes the config on top of the authors' Dome-M AI-TOD config and runs their `train.py` in fine-tune mode |
+| `train.py` | Writes the config on top of the authors' Dome-M AI-TOD config (every image stretched to 512 × 512, as in our YOLO runs) and runs their `train.py` in fine-tune mode |
 | `export_predictions.py` | One pass per holdout image, boxes back to original pixels, full / clean scores |
 | `sbatch/dome_detr.sbatch` | Train (48 epochs, batch 8 by default), then export and score |
 
