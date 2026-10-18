@@ -153,6 +153,8 @@ def main() -> None:
     parser.add_argument('--all-data', action='store_true',
                         help='also train on the 939 holdout images (final-model recipe); the last epoch is used, and holdout '
                              'scores become optimistic because those images were trained on')
+    parser.add_argument('--skip-evaluation', action='store_true',
+                        help='save detector and curves only; use when a later stage refits the image classifier')
     args = parser.parse_args()
 
     import torch
@@ -181,6 +183,7 @@ def main() -> None:
                 'speckle_prob': args.speckle_prob, 'speckle_looks': args.speckle_looks, 'seed': args.seed,
                 'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
                 'all_data': args.all_data,
+                'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
 
@@ -210,6 +213,10 @@ def main() -> None:
     shutil.copy2(run_root / 'train/results.csv', curves / 'training.csv')
     shutil.copy2(run_root / 'train/args.yaml', curves / 'args.yaml')
     write_json(curves / 'experiment.json', settings)
+
+    if args.skip_evaluation:
+        print(f'DETECTOR_READY {weights}; image-classifier refit and evaluation deferred', flush=True)
+        return
 
     for branch in ('one2many', 'one2one'):
         evaluate_export(weights, args.classifier, branch, ROOT / 'results' / args.tag / branch)

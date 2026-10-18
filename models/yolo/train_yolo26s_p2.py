@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import random
 import shutil
@@ -21,6 +22,41 @@ def set_seed(seed: int) -> None:
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+
+def parameter_fingerprint(model) -> str:
+    """Fingerprint parameter values before any optimizer step, independent of device."""
+    digest = hashlib.sha256()
+    for name, parameter in model.named_parameters():
+        digest.update(name.encode())
+        digest.update(parameter.detach().float().cpu().contiguous().numpy().tobytes())
+    return digest.hexdigest()
+
+
+def preserve_initialization(model, audit_path: Path) -> dict:
+    """Register transferred weights with the wrapper and verify the trainer receives them.
+
+    Layer state_dict loads alone leave a YAML wrapper without a checkpoint marker.
+    The public load() API marks our prepared model as the initialization. Training
+    must also use pretrained=True, or the wrapper explicitly discards those values.
+    """
+    expected = parameter_fingerprint(model.model)
+    model.load(model.model)
+    if not model.ckpt or parameter_fingerprint(model.model) != expected:
+        raise RuntimeError('Could not register the transferred P2 model as training initialization')
+    audit = {'prepared_parameters_sha256': expected, 'training_handoff_verified': False}
+    audit_path.write_text(json.dumps(audit, indent=2) + '\n')
+
+    def verify(trainer):
+        actual = parameter_fingerprint(trainer.model)
+        audit.update(trainer_parameters_sha256=actual, training_handoff_verified=actual == expected)
+        audit_path.write_text(json.dumps(audit, indent=2) + '\n')
+        if actual != expected:
+            raise RuntimeError('Trainer discarded or changed initialization before the first optimizer step')
+        print(f'INITIALIZATION_HANDOFF_VERIFIED {actual}', flush=True)
+
+    model.add_callback('on_pretrain_routine_end', verify)
+    return audit
 
 
 def transfer_standard_weights_to_p2(standard_model, p2_model) -> None:
@@ -152,6 +188,11 @@ def main() -> None:
     else:
         raise FileNotFoundError(args.weights)
     model = build_p2_model(source, args.scale, args.p2_yaml, args.detect_yaml, class_names, args.train_output)
+    source_first = source.model.model[0].state_dict()
+    target_first = model.model.model[0].state_dict()
+    if any(not torch.equal(value, target_first[key]) for key, value in source_first.items()):
+        raise RuntimeError('Source backbone weights did not reach the P2 model')
+    initialization = preserve_initialization(model, args.train_output / 'initialization_audit.json')
     source_task = source.task
     del source
 
@@ -162,6 +203,8 @@ def main() -> None:
         "scale": args.scale,
         "pretrained_weights": str(args.weights),
         "pretrained_task": source_task,
+        "pretrained_weights_sha256": hashlib.sha256(args.weights.read_bytes()).hexdigest(),
+        "initialization_handoff": initialization,
         "p2_architecture_yaml": str(args.p2_yaml),
         "classes": class_names,
         "epochs": args.epochs,
@@ -190,7 +233,7 @@ def main() -> None:
         batch=args.batch,
         workers=args.workers,
         device=0,
-        pretrained=False,
+        pretrained=True,
         optimizer="auto",
         patience=args.epochs + 1,
         seed=0,

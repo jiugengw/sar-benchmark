@@ -1,5 +1,11 @@
 # Experiment history: what we tried, why, and what we learned
 
+**Initialization correction, 18 October:** YOLO26-P2 baselines produced by
+`train_yolo26s_p2.py` discarded their transferred pretrained weights at training
+setup. Historical COCO-initialization descriptions for these runs are incorrect;
+their measured scores remain valid. DOTA job 330601 repeated the seeded baseline
+and was cancelled. [Audit and corrected paired reruns](YOLO26_PRETRAINING_AUDIT.md).
+
 CS701 SAR benchmark: 9-class image classification plus COCO object detection on 512 px SAR images, ranked by
 `Δm = 50 × [(F1 / 0.9331 − 1) + (mAP / 0.2613 − 1)]` against the TA's ViT + LoRA validation reference
 (macro-F1 93.31%, mAP 26.13%). Rules: one model, ≤ 130M total and ≤ 40M trainable parameters, each image in

@@ -247,6 +247,10 @@ def main() -> None:
     torch.save(payload, args.output)
     metrics_path = args.output.with_suffix(".metrics.json")
     metrics_path.write_text(json.dumps({"holdout": val_metrics, "checkpoint": str(args.output), **payload["training"]}, indent=2) + "\n")
+    with args.output.with_suffix('.training.csv').open('w', newline='') as stream:
+        writer = csv.DictWriter(stream, fieldnames=['epoch', 'train_loss', 'macro_f1'], lineterminator='\n')
+        writer.writeheader()
+        writer.writerows(validation_history)
     print(json.dumps({"epochs": args.epochs, "holdout_macro_f1": val_metrics["macro_f1"], "checkpoint": str(args.output)}, indent=2), flush=True)
 
 

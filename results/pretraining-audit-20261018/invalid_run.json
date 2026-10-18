@@ -1,0 +1,9 @@
+{
+  "invalid_job": 330601,
+  "baseline": 328339,
+  "completed_epochs": 73,
+  "epochs_matching_baseline_losses_and_mAP": 73,
+  "reason": "Transferred pretrained weights discarded at trainer initialization",
+  "state": "cancelled; logs and checkpoints preserved",
+  "replacement_array": 330705
+}

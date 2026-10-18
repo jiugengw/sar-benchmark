@@ -96,12 +96,11 @@ def main():
     (package_dir / 'scoring_result').mkdir()
     (package_dir / 'scoring_result/.gitkeep').touch()
     gains = ', '.join(f"{100*t['mAP_gain']:.3f}" for t in audit['trials'])
-    (package_dir / 'README.md').write_text(f'''# YOLO26m-P2 with conservative box-edge correction
+    (package_dir / 'README.md').write_text(f'''# {args.tag}: conservative box-edge correction
 
 Submission: [{package.name}]({package.name}). Official score pending.
 
-Uses the frozen detector from the first continuation (that original model scored
-official Delta m 34.5697), with classification predictions copied from
+Uses the detector predictions in `{args.results}`, with classification predictions copied from
 `{args.base_zip}`. One deterministic box-edge correction follows detection.
 No ensemble, extra image pass, test-time augmentation, or official labels are used.
 

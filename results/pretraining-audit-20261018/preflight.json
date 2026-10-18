@@ -1,0 +1,16 @@
+{
+  "dota": {
+    "source": "pretrained/yolo26m-obb.pt",
+    "first_conv_sha256": "8602b7fc48cd5774d5a92b39767ba0f7ba5b05d1d146ca71bac29cbb13b75589",
+    "prepared_sha256": "4b689c84e655b6fa30bac60714b8c2d447765f8082e18c3fa302ca9e14529a75",
+    "source_first_layer_matches": true,
+    "trainer_rebuild_preserves_parameters": true
+  },
+  "coco": {
+    "source": "pretrained/yolo26m.pt",
+    "first_conv_sha256": "20f86480103050e571ed4a05dbc8e55d88e791d770f7e8c04e734abb119d99e2",
+    "prepared_sha256": "10fa3be7528838c2c8ee57a88c75ac4e21168cd2e35ec43906d16f62d4c19aed",
+    "source_first_layer_matches": true,
+    "trainer_rebuild_preserves_parameters": true
+  }
+}
