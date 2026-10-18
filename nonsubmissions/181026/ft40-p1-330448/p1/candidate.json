@@ -1,0 +1,15 @@
+{
+  "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/ft40-p1-330448/train/weights/best.pt",
+  "classifier": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/ft40-p1-330448/p1/image_classifier.pt",
+  "branch": "one2many",
+  "holdout": {
+    "macro_f1": 0.9442015698591398,
+    "mAP": 0.4442047957276853,
+    "combined_delta_m": 35.593879833271515
+  },
+  "official_score": null,
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512,
+  "training_split": "8453 images; fixed 939-image holdout excluded"
+}

@@ -1,0 +1,17 @@
+{
+  "source": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/deadline-yolo26m-329644/continue_1/weights/best.pt",
+  "source_sha256": "a8af4262f5986f066bd1bb33ad8c450ed5686a1f582214d6891906e3edb13bfe",
+  "copied_backbone_neck_layers": 29,
+  "copied_detection_levels": "source P2-P5 copied exactly; new P1 towers initialized from the source P2 towers",
+  "new_neck": "stride-2 upsample plus first backbone feature; C3k2 initialized randomly",
+  "strides": [
+    2.0,
+    4.0,
+    8.0,
+    16.0,
+    32.0
+  ],
+  "detector_parameters": 21333442,
+  "inherited_feature_equivalence_on_real_training_image": true,
+  "pretraining": "course-trained source detector; original generic COCO pretraining, no external SAR weights"
+}

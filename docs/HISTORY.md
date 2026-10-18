@@ -403,6 +403,31 @@ P1 level, IoU-aware ranking, bridge/playground oversampling and class-conditione
 
 ---
 
+## Completed detector experiments — 18 October 2026
+
+Jobs 330445–330448 all completed successfully. The unsubmitted artifacts, full/clean scores for both prediction
+heads, and Slurm completion summaries are indexed in [nonsubmissions/181026/](../nonsubmissions/181026/README.md).
+These are local scores; none of these four experiments has an official Codabench score.
+
+| Experiment | Full mAP (%) | Full macro-F1 (%) | Full Δm | Clean mAP (%) | Clean Δm |
+|---|---:|---:|---:|---:|---:|
+| YOLO26m-P2, 200 epochs from COCO weights (330445) | 42.2757 | 96.0526 | +32.3646 | 40.1712 | +27.9911 |
+| Continue for 40 epochs with NWD box loss (330446) | 44.7466 | 93.8246 | +35.8988 | 41.5063 | +28.9021 |
+| Continue for 40 epochs with gamma speckle augmentation (330447) | 45.6923 | 92.7424 | +37.1285 | 42.1203 | +29.2964 |
+| Add stride-2 detection level, train 40 epochs (330448) | 44.4205 | 94.4202 | +35.5939 | 41.7882 | +29.9037 |
+
+The table uses the one2many head and the fixed 939-image full / 720-image clean holdout. NWD, speckle and
+stride-2 start from `continue_1` of job 329644. NWD and speckle reuse its image classifier; stride-2 and the
+200-epoch run train their own classifier. The classifier differences affect Δm, so detection mAP is the direct
+comparison of detector quality. Against the continue_2 control (44.98% full / 41.89% clean mAP), speckle's small
+full-holdout gain shrinks on the clean subset; these single runs do not establish a reliable improvement.
+The 200-epoch recipe did not beat the shorter continuation detector.
+
+The 200-epoch and stride-2 jobs exported ZIPs for all 1,426 course validation images into `nonsubmissions/181026/`.
+The NWD and speckle jobs exported holdout predictions only; their archive explicitly records that no
+course-validation ZIP was generated. Per-epoch histories and classifier metrics are preserved under
+`results/training-curves/`; raw holdout predictions and annotations are under `results/<experiment>/`.
+
 ## Cross-cutting lessons
 
 - **Detection is the score.** 1 mAP point ≈ 1.91 Δm vs 0.54 for F1. Changes that trade mAP for F1 (Phase 3)

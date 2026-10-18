@@ -1,0 +1,23 @@
+{
+  "format": "project classification.csv + COCO detection.json",
+  "split": "course validation; unlabeled leaderboard split",
+  "images": 1426,
+  "detections": 100100,
+  "image_size": 512,
+  "input_channels": "grayscale; Ultralytics expands one channel to three identical channels",
+  "resize": "PIL bilinear stretch to 512 x 512; boxes mapped back to original image coordinates",
+  "classification_rule": "supervised image-classification head top-1 class",
+  "box_class_policy": "native_detector_classes",
+  "detection_branch": "one2many",
+  "effective_detection_branch": "one2many",
+  "nms_iou": 0.7,
+  "classifier_feature_pooling": "spatial",
+  "classifier_checkpoint": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/ft40-p1-330448/p1/image_classifier.pt",
+  "classification_fallback_class": 4,
+  "batch_size": 16,
+  "inference_seconds_including_resize_and_zip": 51.933070006314665,
+  "weights": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/ft40-p1-330448/train/weights/best.pt",
+  "weights_sha256": "43ada49e4146f9f39ebe84cd0c016c22a8f88e16d6a73a07192f529b3479144b",
+  "zip": "/common/scratch/users/j/jgwong.2023/sar-benchmark/nonsubmissions/181026/ft40-p1-330448/p1/ft40-p1-330448_p1.zip",
+  "zip_sha256": "916be1a4050d673e4d5854153b5d07ef278dafe700195df2a36894b963045e34"
+}

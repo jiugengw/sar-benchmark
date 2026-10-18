@@ -41,6 +41,9 @@ How to read them:
 | `nonsubmissions/171026/yolo26m_p2_finetune_329644/continue_2/deadline-yolo26m-329644_continue_2.zip` | **missing** | second continuation block: results.csv is only in the cluster run folder runs/deadline-yolo26m-329644/continue_2/ |
 | `nonsubmissions/171026/yolo26m_p2_finetune_329644/e5_spatial_head/E5_yolo26m_p2_spatial_head_329644.zip` | [curves](../nonsubmissions/171026/yolo26m_p2_finetune_329644/e5_spatial_head/E5_yolo26m_p2_spatial_head_329644.curves.png) |  |
 | `nonsubmissions/171026/yolo26m_p2_quick_head_330230/yolo26m_p2_quick_head_330230.zip` | [curves](../nonsubmissions/171026/yolo26m_p2_quick_head_330230/yolo26m_p2_quick_head_330230.curves.png) |  |
+| `nonsubmissions/181026/denodet-v2-329477/denodet-v2-329477.zip` | [curves](../nonsubmissions/181026/denodet-v2-329477/denodet-v2-329477.curves.png) | Best detection-mAP checkpoint: epoch 48. Curves use 512px annotations; exported scores use original pixels. Validation loss was not recorded. |
+| `nonsubmissions/181026/ft40-p1-330448/p1/ft40-p1-330448_p1.zip` | [curves](../nonsubmissions/181026/ft40-p1-330448/p1/ft40-p1-330448_p1.curves.png) | 40 additional epochs with a stride-2 detection level; local holdout only, not uploaded |
+| `nonsubmissions/181026/yolo26m-200-p2-330445/yolo26m_200_p2_330445.zip` | [curves](../nonsubmissions/181026/yolo26m-200-p2-330445/yolo26m_200_p2_330445.curves.png) | 200 epochs from COCO initialization; local holdout only, not uploaded |
 | `submissions/E5_yolo26m_p2_328339/E5_yolo26m_p2_328339.zip` | [curves](../submissions/E5_yolo26m_p2_328339/E5_yolo26m_p2_328339.curves.png) |  |
 | `submissions/E7_328598/E7_328598.zip` | [curves](../submissions/E7_328598/E7_328598.curves.png) |  |
 | `submissions/longer_baseline_calibrated/longer_baseline_calibrated.zip` | [curves](../submissions/longer_baseline_calibrated/longer_baseline_calibrated.curves.png) |  |
@@ -66,4 +69,3 @@ How to read them:
 | `submissions/yolo11s_100_p2_328058/yolo11s_100_p2_328058.zip` | [curves](../submissions/yolo11s_100_p2_328058/yolo11s_100_p2_328058.curves.png) |  |
 | `submissions/yolo26m_p2_candidate_330230/yolo26m_p2_candidate_330230.zip` | [curves](../submissions/yolo26m_p2_candidate_330230/yolo26m_p2_candidate_330230.curves.png) | box-edge correction on the quick-head ZIP; no extra training |
 | `submissions/yolo26m_p2_finetune_40ep_329644/yolo26m_p2_finetune_40ep_329644.zip` | [curves](../submissions/yolo26m_p2_finetune_40ep_329644/yolo26m_p2_finetune_40ep_329644.curves.png) |  |
-| `nonsubmissions/181026/denodet-v2-329477/denodet-v2-329477.zip` | [curves](../nonsubmissions/181026/denodet-v2-329477/denodet-v2-329477.curves.png) | DenoDet V2, all 48 epochs; logged training loss, validation mAP/F1/Δm. Validation loss not recorded. |

@@ -1,0 +1,6 @@
+{
+  "wall_seconds": 10110.207510907203,
+  "epochs": 40,
+  "detector_parameters": 21333442,
+  "gpu": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition MIG 1g.24gb"
+}

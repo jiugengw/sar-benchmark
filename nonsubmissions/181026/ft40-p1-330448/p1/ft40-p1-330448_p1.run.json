@@ -1,0 +1,16 @@
+{
+  "zip": "ft40-p1-330448_p1.zip",
+  "histories": [
+    {
+      "type": "ultralytics",
+      "path": "results/training-curves/ft40-p1-330448/training.csv",
+      "label": "40 additional epochs with a stride-2 detection level"
+    },
+    {
+      "type": "classifier_csv",
+      "path": "results/training-curves/ft40-p1-330448/classifier_training.csv",
+      "label": "Image classifier on frozen detector"
+    }
+  ],
+  "note": "40 additional epochs with a stride-2 detection level; local holdout only, not uploaded"
+}

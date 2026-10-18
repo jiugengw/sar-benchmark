@@ -1,0 +1,11 @@
+Job ID: 330445
+Cluster: crimson
+User/Group: jgwong.2023/jgwong.2023
+State: COMPLETED (exit code 0)
+Nodes: 1
+Cores per node: 4
+CPU Utilized: 09:03:41
+CPU Efficiency: 35.10% of 1-01:48:52 core-walltime
+Job Wall-clock time: 06:27:13
+Memory Utilized: 42.33 GB
+Memory Efficiency: 132.28% of 32.00 GB (32.00 GB/node)

@@ -1,0 +1,11 @@
+{
+  "histories": [
+    {
+      "type": "ultralytics",
+      "path": "results/training-curves/ft40-nwd-330446/training.csv",
+      "label": "40 additional epochs with NWD box loss"
+    }
+  ],
+  "note": "40 additional epochs with NWD box loss",
+  "package_status": "Holdout evaluation only; this job did not export predictions for the unlabeled course validation set."
+}
