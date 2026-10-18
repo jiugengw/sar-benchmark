@@ -69,6 +69,38 @@ def transfer_standard_weights_to_p2(standard_model, p2_model) -> None:
         target_detect.dfl.load_state_dict(source_detect.dfl.state_dict(), strict=False)
 
 
+def build_p2_model(source, scale, p2_yaml, detect_yaml, class_names, output):
+    """YOLO26-P2 for our classes, initialised from a pretrained YOLO26 of any task.
+
+    A detection checkpoint (COCO) is first loaded into the standard detection model. Another task's checkpoint, such
+    as yolo26m-obb.pt (rotated boxes on DOTA aerial photos), goes into the standard detection architecture instead:
+    every layer with the same name and shape transfers (backbone, neck, box branches); its class and angle outputs do
+    not. The P2 model then takes the shared layers and the P3-P5 heads, as before."""
+    from ultralytics import YOLO
+
+    if source.task == "detect":
+        standard_config = copy.deepcopy(source.model.yaml)
+    else:
+        standard_config = yaml.safe_load(detect_yaml.read_text())
+        standard_config["scale"] = scale
+    standard_config["nc"] = len(class_names)
+    standard_config_path = output / f"yolo26{scale}_9class.yaml"
+    standard_config_path.write_text(yaml.safe_dump(standard_config, sort_keys=False))
+    standard_model = YOLO(str(standard_config_path), task="detect")
+    standard_model.model.names = dict(enumerate(class_names))
+    standard_model.model.load(source.model, verbose=True)
+
+    p2_config = yaml.safe_load(p2_yaml.read_text())
+    p2_config["nc"] = len(class_names)
+    p2_config["scale"] = scale
+    p2_config_path = output / f"yolo26{scale}_p2.yaml"
+    p2_config_path.write_text(yaml.safe_dump(p2_config, sort_keys=False))
+    model = YOLO(str(p2_config_path), task="detect")
+    model.model.names = dict(enumerate(class_names))
+    transfer_standard_weights_to_p2(standard_model, model)
+    return model
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scale", choices=("n", "s", "m", "l"), default="s")
@@ -77,6 +109,12 @@ def main() -> None:
         "--p2-yaml",
         type=Path,
         default=Path(".venv/lib/python3.12/site-packages/ultralytics/cfg/models/26/yolo26-p2.yaml"),
+    )
+    parser.add_argument(
+        "--detect-yaml",
+        type=Path,
+        default=Path(".venv/lib/python3.12/site-packages/ultralytics/cfg/models/26/yolo26.yaml"),
+        help="detection architecture used when --weights is another task, e.g. yolo26m-obb.pt (DOTA aerial photos)",
     )
     parser.add_argument("--classes", type=Path, default=Path("data/yolo11s-sar-512/conversion_manifest.json"))
     parser.add_argument("--train-output", type=Path, required=True)
@@ -113,23 +151,9 @@ def main() -> None:
         shutil.copy2(downloaded_weights, args.weights)
     else:
         raise FileNotFoundError(args.weights)
-    standard_config = copy.deepcopy(source.model.yaml)
-    standard_config["nc"] = len(class_names)
-    standard_config_path = args.train_output / f"yolo26{args.scale}_9class.yaml"
-    standard_config_path.write_text(yaml.safe_dump(standard_config, sort_keys=False))
-    standard_model = YOLO(str(standard_config_path), task="detect")
-    standard_model.model.names = dict(enumerate(class_names))
-    standard_model.model.load(source.model, verbose=True)
-
-    p2_config = yaml.safe_load(args.p2_yaml.read_text())
-    p2_config["nc"] = len(class_names)
-    p2_config["scale"] = args.scale
-    p2_config_path = args.train_output / f"yolo26{args.scale}_p2.yaml"
-    p2_config_path.write_text(yaml.safe_dump(p2_config, sort_keys=False))
-    model = YOLO(str(p2_config_path), task="detect")
-    model.model.names = dict(enumerate(class_names))
-    transfer_standard_weights_to_p2(standard_model, model)
-    del source, standard_model
+    model = build_p2_model(source, args.scale, args.p2_yaml, args.detect_yaml, class_names, args.train_output)
+    source_task = source.task
+    del source
 
     parameter_count = sum(parameter.numel() for parameter in model.model.parameters())
     training_settings = {
@@ -137,6 +161,7 @@ def main() -> None:
         "architecture": f"YOLO26{args.scale}-P2 (stride 4/8/16/32)",
         "scale": args.scale,
         "pretrained_weights": str(args.weights),
+        "pretrained_task": source_task,
         "p2_architecture_yaml": str(args.p2_yaml),
         "classes": class_names,
         "epochs": args.epochs,
@@ -150,7 +175,8 @@ def main() -> None:
         "augmentation": "Ultralytics YOLO26 defaults",
         "trainable_parameters": parameter_count,
         "split": "runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json",
-        "initialization": f"pretrained YOLO26{args.scale} shared layers and P3-P5 heads; new P2 branch initialized randomly",
+        "initialization": f"pretrained YOLO26{args.scale} ({source_task}) shared layers and P3-P5 heads; "
+                          "new P2 branch initialized randomly",
     }
     (args.train_output / "benchmark_settings.json").write_text(json.dumps(training_settings, indent=2) + "\n")
     print(json.dumps(training_settings, indent=2), flush=True)

@@ -73,15 +73,16 @@ Models we have already trained:
 | **ResNet34** | Backbone on **ImageNet-1K** (torchvision) | `sarbench/backbones.py` |
 | **DenoDet V2** (ResNet-50) | Backbone on **ImageNet-1K** only; no SAR checkpoint | `models/denodet/` |
 
-TerraMind came with the TA's reference code, but it has seen radar images; check with the TA before relying on it
-again under the no-SAR-pretraining rule.
+TerraMind has seen radar images, but the course rules name it as an allowed generic pretrained model. The TA also
+confirmed that public detector checkpoints pretrained on optical aerial photos (AI-TOD, DOTA) count as generic.
 
 Candidates to run next (details in the [Δm +45 plan](docs/DELTA45_PLAN.md)), all within 40M trainable parameters
 and one pass at 512 px:
 
 | Model | What it is | Why it might help us | Pretrained on |
 |---|---|---|---|
-| **Dome-DETR** (ACM MM 2025) | A DETR (transformer detector) built for tiny objects: it first finds where objects cluster, then spends its attention and box queries there | Designed for objects about our size (AI-TOD averages ≈ 13 px; our median is ≈ 16 px); reports +3.3 AP on AI-TOD-V2 over earlier methods | Backbone (HGNetV2) on **ImageNet**. Released detector weights trained on **AI-TOD-V2 and VisDrone**: aerial and drone photos, optical, so allowed; academic use only. No COCO version mentioned in the paper |
+| **YOLO26m-P2 from DOTA** (`sbatch/yolo26m_p2_dota.sbatch`) | Our current architecture, started from Ultralytics' `yolo26m-obb.pt` instead of COCO; all other settings match the 100-epoch COCO run 328339 | DOTA has bridges, harbors, sports fields (ground track field, courts), storage tanks, ships, planes and vehicles seen from above; bridge and playground are our weakest classes (≈ 6 and 4 AP) | Whole detector on **DOTA v1** (optical aerial photos, rotated boxes), official Ultralytics weights |
+| **Dome-DETR** (ACM MM 2025, `sbatch/dome_detr.sbatch`) | A DETR (transformer detector) built for tiny objects: it first finds where objects cluster, then spends its attention and box queries there | Designed for objects about our size (AI-TOD averages ≈ 13 px; our median is ≈ 16 px); reports +3.3 AP on AI-TOD-V2 over earlier methods | Backbone (HGNetV2) on **ImageNet**. Released detector weights trained on **AI-TOD-V2 and VisDrone**: aerial and drone photos, optical, so allowed; academic use only. No COCO version mentioned in the paper |
 | **DEIM / D-FINE** (M size, ≈ 19M parameters) | DETRs that predict each box edge as a refined probability distribution instead of one number; DEIM is a training recipe that converges faster | Our biggest loss is boxes that are a pixel or two off on tiny objects, and finer edge prediction targets exactly that | Backbone (HGNetV2) on **ImageNet**. Whole detector on **COCO**, or on **Objects365 then COCO**, which the authors recommend as the starting point for fine-tuning |
 | **ConvNeXt-T + GFL** | A modern CNN backbone (≈ 28.6M) with the GFL detection head, which scores boxes by their predicted quality | A strong, different architecture family; ConvNeXt-T beat ResNet-50 on the large SAR benchmark SARDet-100K | Backbone on **ImageNet-1K** only. The GFL head starts untrained (no COCO checkpoint for this pairing was found) |
 
