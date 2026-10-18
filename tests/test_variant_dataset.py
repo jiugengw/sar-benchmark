@@ -85,7 +85,10 @@ def test_build_context_and_filter_variants(tmp_path, monkeypatch):
     builder.main()
     lines = (tmp_path / 'ctx/labels/train/0.txt').read_text().splitlines()
     assert lines[1] == '0 0.3 0.3 0.2 0.2' and float(lines[0].split()[3]) == pytest.approx(0.3)
-    assert os.path.islink(tmp_path / 'ctx/images/train')  # images linked, not copied
+    images = tmp_path / 'ctx/images/train'
+    assert images.is_dir() and not images.is_symlink()  # a real folder: Ultralytics resolves folder symlinks
+    assert (images / '0.png').stat().st_ino == (src / 'images/train/0.png').stat().st_ino  # hard link, no copy
+    assert str(images.resolve()).startswith(str((tmp_path / 'ctx').resolve()))  # resolving stays in the variant
     assert 'path: ' + str((tmp_path / 'ctx').resolve()) in (tmp_path / 'ctx/dataset.yaml').read_text()
 
     monkeypatch.setattr(sys, 'argv', ['x', '--out', str(tmp_path / 'wet'), '--source', str(src), '--filter', 'water'])

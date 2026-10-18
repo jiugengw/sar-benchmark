@@ -1,6 +1,6 @@
 """Build a variant of the 512 px YOLO dataset (data/yolo11s-sar-512) for one experiment.
 
-Context boxes (labels change, images are linked, not copied):
+Context boxes (labels change, images are hard-linked, not copied):
     python models/yolo/build_variant_dataset.py --out data/yolo-sar-512-ctx3 --context-classes bridge --context-factor 3
 Every box of the chosen classes is enlarged around its centre by the factor (less if that would cross the image
 border, so the centre never moves), so the detector learns the surroundings: river and road around a bridge. At
@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -87,7 +88,15 @@ def main() -> None:
                     print(f'{split}: filtered {index}/{len(paths)} images', flush=True)
             print(f'{split}: {len(paths)} images through the {args.filter!r} filter', flush=True)
         else:
-            (out / 'images' / split).symlink_to(source_images.resolve(), target_is_directory=True)
+            # A real folder of hard links, not a folder symlink: Ultralytics resolves the dataset's image folder, and
+            # through a folder symlink it would find the ORIGINAL labels next to the original images.
+            target = out / 'images' / split
+            target.mkdir()
+            for path in sorted(source_images.iterdir()):
+                try:
+                    os.link(path, target / path.name)
+                except OSError:  # another filesystem: fall back to a per-file link, which is not resolved
+                    (target / path.name).symlink_to(path.resolve())
 
     for name in ('conversion_manifest.json', 'image_map.json'):
         shutil.copy2(args.source / name, out / name)
