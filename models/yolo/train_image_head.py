@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader, Dataset, TensorDataset
 
 from image_head import ImageClassifierHead, classification_metrics, pool_detection_features
 from detector_support import detection_head, feature_maps_from_hook, load_detector
+from input_filters import active_filter, apply as apply_input_filter
 
 
 class ImageLabels(Dataset):
@@ -29,6 +30,7 @@ class ImageLabels(Dataset):
             if relative is None:
                 raise ValueError(f"Image ID {image_id} is missing from the converted image map")
             self.records.append((root / relative, labels[image_id]))
+        self.input_filter = active_filter()
 
     def __len__(self):
         return len(self.records)
@@ -36,7 +38,10 @@ class ImageLabels(Dataset):
     def __getitem__(self, index):
         path, label = self.records[index]
         with Image.open(path) as image:
-            pixels = np.asarray(image.convert("RGB"), dtype=np.uint8).copy()
+            if self.input_filter == "none":
+                pixels = np.asarray(image.convert("RGB"), dtype=np.uint8).copy()
+            else:  # the same fixed filter the detector was trained and predicts with
+                pixels = apply_input_filter(self.input_filter, np.asarray(image.convert("L"), dtype=np.uint8)).copy()
         tensor = torch.from_numpy(pixels).permute(2, 0, 1).float().div_(255.0)
         return tensor, int(label)
 

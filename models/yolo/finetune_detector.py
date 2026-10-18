@@ -137,6 +137,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--tag', required=True, help='name for runs/<tag>, results/<tag> and the curves folder')
     parser.add_argument('--source', type=Path, default=CONTINUE_1 / 'weights/best.pt', help='detector to start from')
+    parser.add_argument('--data', type=Path, default=ROOT / 'data/yolo11s-sar-512/dataset.yaml',
+                        help='dataset YAML; a variant from build_variant_dataset.py for the context-box or filter experiments')
     parser.add_argument('--classifier', type=Path, default=CONTINUE_1 / 'image_classifier.pt',
                         help="image classifier used only for scoring (the source detector's)")
     parser.add_argument('--epochs', type=int, default=40)
@@ -182,14 +184,14 @@ def main() -> None:
                 'lr0': args.lr0, 'nwd_weight': args.nwd_weight, 'nwd_constant': args.nwd_constant,
                 'speckle_prob': args.speckle_prob, 'speckle_looks': args.speckle_looks, 'seed': args.seed,
                 'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
-                'all_data': args.all_data,
+                'all_data': args.all_data, 'data': str(args.data),
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
 
-    data_yaml = ROOT / 'data/yolo11s-sar-512/dataset.yaml'
+    data_yaml = args.data.resolve()
     if args.all_data:  # train on the training split and the holdout together; validation still runs on the holdout
-        base = (ROOT / 'data/yolo11s-sar-512').resolve()
+        base = data_yaml.parent
         names = data_yaml.read_text().split('names:', 1)[1]
         data_yaml = run_root / 'dataset_all.yaml'
         data_yaml.write_text(f'path: {base}\ntrain:\n  - images/train\n  - images/val\nval: images/val\nnc: 9\nnames:{names}')

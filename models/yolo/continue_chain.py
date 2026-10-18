@@ -48,6 +48,7 @@ def main() -> None:
                         help='comma-separated continuation stages, in order; "plain" alone skips the speckle stage')
     parser.add_argument('--all-data', action='store_true', help='also train on the holdout images (see above)')
     parser.add_argument('--box-audit', type=Path, help='box nudge to reuse (required with --all-data)')
+    parser.add_argument('--data', type=Path, help='dataset YAML for both stages (default: the standard 512 px dataset)')
     args = parser.parse_args()
     if args.all_data and not (args.box_audit and args.box_audit.is_file()):
         raise ValueError('--all-data needs --box-audit: the box_bias_crossfit.json of the matching held-out chain')
@@ -70,9 +71,10 @@ def main() -> None:
         stage, tag = STAGES[name], f'{args.tag}-{name}'
         run([sys.executable, '-u', ROOT / 'models/yolo/finetune_detector.py', '--tag', tag, '--source', source,
              '--classifier', args.classifier, '--epochs', stage['epochs'], '--lr0', stage['lr0'], '--seed', 0,
-             '--speckle-prob', stage['speckle_prob'], '--skip-evaluation', *(['--all-data'] if args.all_data else [])])
+             '--speckle-prob', stage['speckle_prob'], '--skip-evaluation', *(['--all-data'] if args.all_data else []),
+             *(['--data', args.data] if args.data else [])])
         curves = ROOT / 'results/training-curves' / tag
-        if args.all_data:  # identical settings apart from the training images
+        if args.all_data or args.data:  # identical settings apart from the training images
             same_settings(MEDIUM_STAGES[name], curves / 'args.yaml', ignore={'data'})
         else:
             compare_arguments(MEDIUM_STAGES[name], curves / 'args.yaml')  # same settings as speckle-cand's stage

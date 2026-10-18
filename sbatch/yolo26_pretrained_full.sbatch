@@ -4,6 +4,8 @@
 # Both stages leave their own scores and ZIP, so the 100-epoch result is not lost if the chain is ignored.
 #   sbatch sbatch/yolo26_pretrained_full.sbatch dota l      (DOTA weights: pretrained/yolo26<scale>-obb.pt)
 #   sbatch sbatch/yolo26_pretrained_full.sbatch coco l      (COCO weights: pretrained/yolo26<scale>.pt)
+# Input-filter variant (experiment B): FILTER=water sbatch sbatch/yolo26_pretrained_full.sbatch dota m
+#   builds data/yolo-sar-512-<filter> once, trains and predicts on [SAR, despeckled, water map] (see input_filters.py)
 # The 100-epoch stage repeats sbatch/yolo26m_pretraining_compare.sbatch with the scale as a parameter.
 #SBATCH --job-name=sar-full
 #SBATCH --partition=student
@@ -36,7 +38,21 @@ case "$INITIALIZATION:$SCALE" in
     *) echo "Unsupported: $INITIALIZATION $SCALE" >&2; exit 2 ;;
 esac
 [[ -z "$SHA" ]] || echo "$SHA  $WEIGHTS" | sha256sum --check
-TAG="yolo26${SCALE}-p2-${INITIALIZATION}-verified-${SLURM_JOB_ID}"
+FILTER="${FILTER:-none}"
+DATA_ARGS=()
+CHAIN_DATA_ARGS=()
+SUFFIX=""
+if [[ "$FILTER" != none ]]; then
+    export SAR_INPUT_FILTER="$FILTER"  # read by make_submission.py and train_image_head.py at prediction time
+    DATA="data/yolo-sar-512-${FILTER}"
+    if [[ ! -f "$DATA/dataset.yaml" ]]; then
+        python -u models/yolo/build_variant_dataset.py --out "$DATA" --filter "$FILTER"
+    fi
+    DATA_ARGS=(--data "$DATA/dataset.yaml" --no-colour-jitter)
+    CHAIN_DATA_ARGS=(--data "$DATA/dataset.yaml")
+    SUFFIX="-${FILTER}"
+fi
+TAG="yolo26${SCALE}-p2-${INITIALIZATION}${SUFFIX}-verified-${SLURM_JOB_ID}"
 RUN_ROOT="runs/$TAG"
 RESULTS="results/$TAG"
 CURVES="results/training-curves/$TAG"
@@ -45,7 +61,7 @@ mkdir -p "$RUN_ROOT" "$RESULTS" "$CURVES"
 # ---- Stage 1: 100 epochs, identical to the verified m pretraining runs except for the scale ----
 python -u models/yolo/train_yolo26s_p2.py \
     --scale "$SCALE" --weights "$WEIGHTS" --train-output "$RUN_ROOT" \
-    --epochs 100 --batch 16 --workers 4 --flipud 0.0 --close-mosaic 10
+    --epochs 100 --batch 16 --workers 4 --flipud 0.0 --close-mosaic 10 "${DATA_ARGS[@]}"
 cp "$RUN_ROOT/train/results.csv" "$CURVES/training.csv"
 cp "$RUN_ROOT/train/args.yaml" "$CURVES/args.yaml"
 cp "$RUN_ROOT/benchmark_settings.json" "$CURVES/benchmark_settings.json"
@@ -88,6 +104,6 @@ printf '{"zip": "%s.zip", "histories": [{"type": "ultralytics", "path": "%s/trai
 echo "STAGE1_COMPLETE $PACKAGE_DIR/$TAG.zip"
 
 # ---- Stage 2: the speckle-cand chain on top ----
-python -u models/yolo/continue_chain.py --tag "chain-${INITIALIZATION}-${SCALE}-${SLURM_JOB_ID}" \
-    --source "$RUN_ROOT/train/weights/best.pt" --classifier "$RUN_ROOT/image_classifier.pt"
+python -u models/yolo/continue_chain.py --tag "chain-${INITIALIZATION}-${SCALE}${SUFFIX}-${SLURM_JOB_ID}" \
+    --source "$RUN_ROOT/train/weights/best.pt" --classifier "$RUN_ROOT/image_classifier.pt" "${CHAIN_DATA_ARGS[@]}"
 echo "FULL_PIPELINE_COMPLETE $TAG"

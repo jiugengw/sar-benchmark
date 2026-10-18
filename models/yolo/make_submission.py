@@ -13,7 +13,10 @@ import zipfile
 from collections import Counter
 from pathlib import Path
 
+import numpy as np
 from PIL import Image
+
+from input_filters import active_filter, apply as apply_input_filter
 
 
 IMAGE_SIZE = 512
@@ -142,6 +145,8 @@ def main() -> None:
     active_classifier_probabilities: list[list[float]] = []
     active_classifier_index = 0
     start = time.perf_counter()
+    input_filter = active_filter()
+    print(f"Input filter: {input_filter}", flush=True)
     with tempfile.TemporaryDirectory(prefix="yolo-course-val-512-") as temp_dir:
         temp_root = Path(temp_dir)
         for image in images:
@@ -155,6 +160,8 @@ def main() -> None:
                 resized = original.convert("L").resize(
                     (IMAGE_SIZE, IMAGE_SIZE), Image.Resampling.BILINEAR
                 )
+                if input_filter != "none":  # the same fixed filter the detector was trained with
+                    resized = Image.fromarray(apply_input_filter(input_filter, np.asarray(resized)), "RGB")
                 resized.save(temp_root / f"{stem}.png", format="PNG")
 
         if classifier_head is not None:
@@ -281,6 +288,7 @@ def main() -> None:
         "image_size": IMAGE_SIZE,
         "input_channels": "grayscale; Ultralytics expands one channel to three identical channels",
         "resize": "PIL bilinear stretch to 512 x 512; boxes mapped back to original image coordinates",
+        "input_filter": input_filter,
         "classification_rule": (
             "supervised image-classification head top-1 class"
             if classifier_head is not None else

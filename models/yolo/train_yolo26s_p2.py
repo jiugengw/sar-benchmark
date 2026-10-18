@@ -160,6 +160,10 @@ def main() -> None:
     parser.add_argument("--flipud", type=float, default=0.0,
                         help="vertical-flip probability; overhead images have no up, so 0.5 is a free augmentation")
     parser.add_argument("--close-mosaic", type=int, default=10, help="turn mosaic off for the last N epochs")
+    parser.add_argument("--data", type=Path, default=Path("data/yolo11s-sar-512/dataset.yaml"),
+                        help="dataset YAML; a variant from build_variant_dataset.py for the context-box or filter experiments")
+    parser.add_argument("--no-colour-jitter", action="store_true",
+                        help="hue and saturation jitter off (needed when the 3 channels carry different filters)")
     args = parser.parse_args()
     if args.weights is None:
         args.weights = Path(f"pretrained/yolo26{args.scale}.pt")
@@ -227,7 +231,8 @@ def main() -> None:
     torch.cuda.reset_peak_memory_stats()
     started = time.perf_counter()
     model.train(
-        data="data/yolo11s-sar-512/dataset.yaml",
+        data=str(args.data),
+        **({"hsv_h": 0.0, "hsv_s": 0.0} if args.no_colour_jitter else {}),
         epochs=args.epochs,
         imgsz=512,
         batch=args.batch,
