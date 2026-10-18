@@ -1,6 +1,7 @@
 # YOLO26m-P2 with conservative box-edge correction
 
-Submission: [speckle-cand.zip](speckle-cand.zip). Official score pending.
+Submission: [speckle-cand.zip](speckle-cand.zip). Official **Δm +37.38** (mAP 45.57%, macro-F1 93.65%): mAP +0.59 over
+the previous best (+36.80), but F1 −1.04 from the refitted classifier.
 
 Uses the detector from the 40-epoch speckle continuation (job 330447), with a
 refitted 1024-neuron image classifier and classification predictions copied from
@@ -21,4 +22,4 @@ Classifications in this ZIP are byte-for-byte unchanged from its base ZIP.
 
 Local calibrated scores: full holdout mAP **46.36%**, macro-F1 **95.48%**, Delta m
 **+39.88**; clean holdout mAP **43.23%**, macro-F1 **94.47%**, Delta m **+33.34**.
-Metrics and predictions are in [`results/speckle-cand/seed_0/`](../../../results/speckle-cand/seed_0/).
+Metrics and predictions are in [`results/speckle-cand/seed_0/`](../../results/speckle-cand/seed_0/).

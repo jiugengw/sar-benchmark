@@ -15,10 +15,8 @@ Raw holdout predictions and annotations remain in `results/<experiment>/`; per-e
 
 [Completed DenoDet experiment](denodet-v2-329477/) is also archived for this date.
 
-[Speckle candidate](speckle-cand/), packaged by job 330591, refits the image
-classifier and applies box calibration to the speckle detector. Local calibrated
-Delta m is **+39.88 full / +33.34 clean** (includes calibration images).
-The course-validation ZIP is saved; it has no official score.
+The speckle candidate packaged by job 330591 was uploaded and moved to
+[`submissions/speckle-cand/`](../../submissions/speckle-cand/) (official Δm **+37.38**).
 
 [Matched YOLO26l candidate](yolo26l-matched-best-330632/), job 330632, completed
 the same 100 + 40 plain + 40 speckle schedule and classifier refit as medium.
