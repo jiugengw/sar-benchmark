@@ -86,6 +86,27 @@ class SpeckleNoise:
         return labels
 
 
+def enable_augment_annealing(detector, epochs: int, tail: int) -> None:
+    """Shrink every augmentation linearly to zero over the run, holding the last `tail` epochs at zero (memorise).
+
+    Jitter teaches finding objects, exact geometry teaches tight edges; instead of switching jitter off in one step,
+    the scale/shift/flip/brightness strengths fall from their full value at epoch 0 to zero at epoch epochs - tail.
+    The data loader is rebuilt each epoch so its worker processes see the new strengths."""
+    from copy import copy
+
+    def anneal(trainer):
+        factor = max(0.0, 1.0 - trainer.epoch / max(1, epochs - tail))
+        hyp = copy(trainer.args)
+        for key in ('translate', 'scale', 'fliplr', 'flipud', 'hsv_v'):
+            setattr(hyp, key, getattr(trainer.args, key) * factor)
+        dataset = trainer.train_loader.dataset
+        dataset.transforms = dataset.build_transforms(hyp)
+        trainer.train_loader.reset()
+        print(f'AUGMENT_ANNEALING epoch {trainer.epoch}: strength x{factor:.3f}', flush=True)
+
+    detector.add_callback('on_train_epoch_start', anneal)
+
+
 def enable_speckle(p: float, looks: float) -> None:
     """Insert SpeckleNoise into every training dataset's transforms, just before the final Format step."""
     from ultralytics.data import dataset as ul_dataset
@@ -240,6 +261,12 @@ def main() -> None:
     parser.add_argument('--aug-scale', type=float, default=0.2, help='scale jitter (+-) when augmenting')
     parser.add_argument('--aug-translate', type=float, default=0.05, help='shift jitter (share of the image)')
     parser.add_argument('--mosaic', type=float, default=0.0, help='probability of 4-image mosaics when augmenting')
+    parser.add_argument('--photometric', action='store_true',
+                        help='with --no-augment: keep brightness jitter and allow --speckle-prob; they change how the '
+                             'image looks, not where objects are, so boxes stay pixel-exact')
+    parser.add_argument('--anneal-augment', type=int, metavar='TAIL',
+                        help='shrink augmentation linearly to zero, the last TAIL epochs without any (see '
+                             'enable_augment_annealing)')
     parser.add_argument('--skip-evaluation', action='store_true',
                         help='save detector and curves only; use when a later stage refits the image classifier')
     args = parser.parse_args()
@@ -276,7 +303,7 @@ def main() -> None:
                 'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
                 'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes, 'box_gain': args.box_gain,
                 'constant_lr': args.constant_lr, 'aug_scale': args.aug_scale, 'aug_translate': args.aug_translate,
-                'mosaic': args.mosaic,
+                'mosaic': args.mosaic, 'photometric': args.photometric, 'anneal_augment': args.anneal_augment,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
@@ -292,15 +319,21 @@ def main() -> None:
     augmentation = dict(translate=args.aug_translate, scale=args.aug_scale, fliplr=0.5, flipud=0.5, hsv_v=0.2,
                         mosaic=args.mosaic)
     if args.no_augment:
-        if args.speckle_prob:
-            raise ValueError('--no-augment and --speckle-prob contradict each other')
+        if args.speckle_prob and not args.photometric:
+            raise ValueError('--no-augment and --speckle-prob contradict each other (unless --photometric)')
         augmentation = {key: 0.0 for key in augmentation}
+        if args.photometric:
+            augmentation.update(hsv_v=0.2)
         if args.keep_flips:  # a mirrored box is still pixel-exact
             augmentation.update(fliplr=0.5, flipud=0.5)
-    elif args.keep_flips:
-        raise ValueError('--keep-flips only applies with --no-augment')
+    elif args.keep_flips or args.photometric:
+        raise ValueError('--keep-flips and --photometric only apply with --no-augment')
     started = time.monotonic()
     detector = YOLO(str(args.source))
+    if args.anneal_augment is not None:
+        if args.no_augment:
+            raise ValueError('--anneal-augment needs augmentation to anneal; drop --no-augment')
+        enable_augment_annealing(detector, args.epochs, args.anneal_augment)
     detector.train(  # the continue_2 recipe, unchanged
         data=str(data_yaml),
         epochs=args.epochs, imgsz=512, batch=16, workers=4, device=0,
