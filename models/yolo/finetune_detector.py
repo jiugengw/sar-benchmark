@@ -226,6 +226,8 @@ def main() -> None:
                         help='comma-separated classes with many missing labels (e.g. bridge,playground): confident '
                              'predictions away from every label are not punished (Background Recalibration Loss idea)')
     parser.add_argument('--missing-label-threshold', type=float, default=0.5)
+    parser.add_argument('--box-gain', type=float, default=7.5,
+                        help='weight of the box loss (Ultralytics default 7.5); higher favours exact box edges')
     parser.add_argument('--keep-flips', action='store_true',
                         help='with --no-augment: keep the flips, which leave box geometry exact, and switch off only '
                              'the shifts, scaling and brightness changes that blur it')
@@ -266,7 +268,7 @@ def main() -> None:
                 'lr0': args.lr0, 'nwd_weight': args.nwd_weight, 'nwd_constant': args.nwd_constant,
                 'speckle_prob': args.speckle_prob, 'speckle_looks': args.speckle_looks, 'seed': args.seed,
                 'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
-                'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes,
+                'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes, 'box_gain': args.box_gain,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
@@ -296,7 +298,7 @@ def main() -> None:
         pretrained=True, optimizer='MuSGD', lr0=args.lr0, lrf=0.1, momentum=0.9, weight_decay=0.0005,
         warmup_epochs=1, warmup_bias_lr=0.0, cos_lr=True, seed=args.seed, deterministic=True,
         mosaic=0.0, mixup=0.0, copy_paste=0.0, close_mosaic=0,
-        **augmentation, hsv_h=0.0, hsv_s=0.0,
+        **augmentation, hsv_h=0.0, hsv_s=0.0, box=args.box_gain,
         multi_scale=0.0, amp=True, patience=args.epochs + 1,
         project=str(run_root), name='train', plots=True, save_period=10,
     )
