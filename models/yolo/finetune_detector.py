@@ -267,6 +267,11 @@ def main() -> None:
     parser.add_argument('--anneal-augment', type=int, metavar='TAIL',
                         help='shrink augmentation linearly to zero, the last TAIL epochs without any (see '
                              'enable_augment_annealing)')
+    parser.add_argument('--stem-stride', type=int, choices=(1, 2), default=2,
+                        help='1: the first convolution keeps full resolution, so every level works at twice the detail '
+                             '(strides 2/4/8/16 instead of 4/8/16/32) on the same 512 input; about 4x the activation '
+                             'memory, so lower --batch')
+    parser.add_argument('--batch', type=int, default=16)
     parser.add_argument('--skip-evaluation', action='store_true',
                         help='save detector and curves only; use when a later stage refits the image classifier')
     args = parser.parse_args()
@@ -303,7 +308,8 @@ def main() -> None:
                 'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
                 'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes, 'box_gain': args.box_gain,
                 'constant_lr': args.constant_lr, 'aug_scale': args.aug_scale, 'aug_translate': args.aug_translate,
-                'mosaic': args.mosaic, 'photometric': args.photometric, 'anneal_augment': args.anneal_augment,
+                'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride,
+                'batch': args.batch, 'anneal_augment': args.anneal_augment,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
@@ -330,13 +336,20 @@ def main() -> None:
         raise ValueError('--keep-flips and --photometric only apply with --no-augment')
     started = time.monotonic()
     detector = YOLO(str(args.source))
+    if args.stem_stride != 2:
+        # The trainer rebuilds the model from its YAML and loads the weights into it, so change the YAML: the first
+        # Conv's stride. No weight changes shape; the model's strides are recomputed when it is rebuilt.
+        stem = detector.model.yaml['backbone'][0]
+        if stem[2] != 'Conv' or stem[3][2] != 2:
+            raise RuntimeError(f'Unexpected first layer {stem}')
+        stem[3][2] = args.stem_stride
     if args.anneal_augment is not None:
         if args.no_augment:
             raise ValueError('--anneal-augment needs augmentation to anneal; drop --no-augment')
         enable_augment_annealing(detector, args.epochs, args.anneal_augment)
     detector.train(  # the continue_2 recipe, unchanged
         data=str(data_yaml),
-        epochs=args.epochs, imgsz=512, batch=16, workers=4, device=0,
+        epochs=args.epochs, imgsz=512, batch=args.batch, workers=4, device=0,
         pretrained=True, optimizer='MuSGD', lr0=args.lr0, lrf=1.0 if args.constant_lr else 0.1, momentum=0.9,
         weight_decay=0.0005,
         warmup_epochs=0 if args.constant_lr else 1, warmup_bias_lr=0.0, cos_lr=not args.constant_lr,
