@@ -11,13 +11,15 @@
 #   REG_MAX=16 sbatch sbatch/yolo26_pretrained_full.sbatch dota m
 # Attention block at P4 (whole-scene context for the fine levels):
 #   P4_ATTENTION=1 sbatch sbatch/yolo26_pretrained_full.sbatch dota m
+# THEN_MEMORISE=1 also runs the third stage (+40, as job 331789) and memorise at lr 0.002 (as 332326) in the same job,
+# the path of our best model, so a whole experiment takes one queue slot (the cluster allows 4 submitted jobs).
 # The 100-epoch stage repeats sbatch/yolo26m_pretraining_compare.sbatch with the scale as a parameter.
 #SBATCH --job-name=sar-full
 #SBATCH --partition=student
 #SBATCH --gres=gpu:rtx_pro_6000_blackwell_max:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
-#SBATCH --time=11:00:00
+#SBATCH --time=14:00:00
 #SBATCH --output=runs/%x-%j.out
 
 set -euo pipefail
@@ -116,3 +118,14 @@ echo "STAGE1_COMPLETE $PACKAGE_DIR/$TAG.zip"
 python -u models/yolo/continue_chain.py --tag "chain-${INITIALIZATION}-${SCALE}${SUFFIX}-${SLURM_JOB_ID}" \
     --source "$RUN_ROOT/train/weights/best.pt" --classifier "$RUN_ROOT/image_classifier.pt" "${CHAIN_DATA_ARGS[@]}"
 echo "FULL_PIPELINE_COMPLETE $TAG"
+
+if [[ -n "${THEN_MEMORISE:-}" ]]; then
+    CHAIN="runs/chain-${INITIALIZATION}-${SCALE}${SUFFIX}-${SLURM_JOB_ID}"
+    THIRD="ft40-third${SUFFIX}-${SLURM_JOB_ID}"
+    python -u models/yolo/finetune_detector.py --tag "$THIRD" \
+        --source "$CHAIN-speckle/train/weights/best.pt" --classifier "$CHAIN-package/image_classifier.pt"
+    python -u models/yolo/finetune_detector.py --tag "ft40-memorise-lr2${SUFFIX}-${SLURM_JOB_ID}" \
+        --source "runs/$THIRD/train/weights/best.pt" --classifier "$CHAIN-package/image_classifier.pt" \
+        --no-augment --lr0 0.002
+    echo "MEMORISE_COMPLETE $TAG"
+fi
