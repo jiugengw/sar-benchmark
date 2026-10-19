@@ -195,6 +195,8 @@ def main() -> None:
         names = data_yaml.read_text().split('names:', 1)[1]
         data_yaml = run_root / 'dataset_all.yaml'
         data_yaml.write_text(f'path: {base}\ntrain:\n  - images/train\n  - images/val\nval: images/val\nnc: 9\nnames:{names}')
+    from models.yolo.input_filters import install_training_filter
+    install_training_filter()  # SAR_INPUT_FILTER, if set
     started = time.monotonic()
     detector = YOLO(str(args.source))
     detector.train(  # the continue_2 recipe, unchanged

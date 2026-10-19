@@ -191,6 +191,8 @@ def main() -> None:
         shutil.copy2(downloaded_weights, args.weights)
     else:
         raise FileNotFoundError(args.weights)
+    from input_filters import install_training_filter
+    install_training_filter()  # SAR_INPUT_FILTER, if set
     model = build_p2_model(source, args.scale, args.p2_yaml, args.detect_yaml, class_names, args.train_output)
     source_first = source.model.model[0].state_dict()
     target_first = model.model.model[0].state_dict()

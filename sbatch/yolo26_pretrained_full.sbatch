@@ -5,7 +5,8 @@
 #   sbatch sbatch/yolo26_pretrained_full.sbatch dota l      (DOTA weights: pretrained/yolo26<scale>-obb.pt)
 #   sbatch sbatch/yolo26_pretrained_full.sbatch coco l      (COCO weights: pretrained/yolo26<scale>.pt)
 # Input-filter variant (experiment B): FILTER=water sbatch sbatch/yolo26_pretrained_full.sbatch dota m
-#   builds data/yolo-sar-512-<filter> once, trains and predicts on [SAR, despeckled, water map] (see input_filters.py)
+#   trains and predicts on [SAR, despeckled, water map] (see input_filters.py); images are filtered as they are read,
+#   so no filtered copy of the dataset is written (the cluster allows only 100,000 files)
 # The 100-epoch stage repeats sbatch/yolo26m_pretraining_compare.sbatch with the scale as a parameter.
 #SBATCH --job-name=sar-full
 #SBATCH --partition=student
@@ -43,13 +44,8 @@ DATA_ARGS=()
 CHAIN_DATA_ARGS=()
 SUFFIX=""
 if [[ "$FILTER" != none ]]; then
-    export SAR_INPUT_FILTER="$FILTER"  # read by make_submission.py and train_image_head.py at prediction time
-    DATA="data/yolo-sar-512-${FILTER}"
-    if [[ ! -f "$DATA/dataset.yaml" ]]; then
-        python -u models/yolo/build_variant_dataset.py --out "$DATA" --filter "$FILTER"
-    fi
-    DATA_ARGS=(--data "$DATA/dataset.yaml" --no-colour-jitter)
-    CHAIN_DATA_ARGS=(--data "$DATA/dataset.yaml")
+    export SAR_INPUT_FILTER="$FILTER"  # every training, classifier and prediction step applies the same filter
+    DATA_ARGS=(--no-colour-jitter)
     SUFFIX="-${FILTER}"
 fi
 TAG="yolo26${SCALE}-p2-${INITIALIZATION}${SUFFIX}-verified-${SLURM_JOB_ID}"

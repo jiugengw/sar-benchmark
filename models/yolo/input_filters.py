@@ -8,9 +8,10 @@ image into them instead, still one image and one forward pass:
 The water map is computed from the image alone, with no labels: SAR water reflects the radar away, so it is dark and
 smooth after despeckling. Bridges sit where roads cross it.
 
-The same function is used to build the training images (build_variant_dataset.py), by the submission code
-(make_submission.py) and by the image classifier (train_image_head.py). Select it with the environment variable
-SAR_INPUT_FILTER, so a run's training and prediction cannot use different inputs.
+The same function filters training images as Ultralytics reads them (install_training_filter, no extra files: the
+cluster allows 100,000 files), the submission code's images (make_submission.py) and the image classifier's images
+(train_image_head.py). Select it with the environment variable SAR_INPUT_FILTER, so a run's training and prediction
+cannot use different inputs.
 """
 from __future__ import annotations
 
@@ -49,3 +50,31 @@ def apply(name: str, gray: np.ndarray) -> np.ndarray:
     if name == 'water':
         return water(gray)
     raise ValueError(f'unknown filter {name!r}; choose from {FILTERS}')
+
+
+def install_training_filter() -> None:
+    """Filter every image Ultralytics' training and validation datasets read, as it is read.
+
+    Wraps the image reader of ultralytics.data.base, which BaseDataset.load_image uses. Our dataset images are
+    grayscale PNGs that OpenCV reads as 3 identical channels; the wrapper turns each into the filtered image, in BGR
+    order like OpenCV, so Ultralytics' usual BGR-to-RGB step gives the network [SAR, despeckled, water map], the
+    same order the submission code writes. Does nothing when SAR_INPUT_FILTER is unset or 'none'."""
+    name = active_filter()
+    if name == 'none':
+        return
+    import ultralytics.data.base as base
+
+    original = base.imread
+    if getattr(original, 'sar_input_filter', None):
+        return  # already installed
+
+    def imread(filename, *args, **kwargs):
+        image = original(filename, *args, **kwargs)
+        if image is None:
+            return image
+        gray = image[..., 0] if image.ndim == 3 else image
+        return np.ascontiguousarray(apply(name, np.ascontiguousarray(gray))[..., ::-1])
+
+    imread.sar_input_filter = name
+    base.imread = imread
+    print(f'Input filter {name!r} applied to every training and validation image as it is read', flush=True)
