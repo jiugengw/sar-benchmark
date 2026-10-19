@@ -3,6 +3,8 @@
 # Submit from the project directory: name, detector weights, and (optional) its training.csv, e.g.:
 #   sbatch sbatch/package_candidate.sbatch speckle-cand runs/ft40-speckle-330447/train/weights/best.pt \
 #       results/training-curves/ft40-speckle-330447/training.csv
+# For a detector trained on the holdout too (all-data runs), reuse a nudge fitted on a held-out model:
+#   BOX_AUDIT=results/third-stage-331789/box_bias_crossfit.json sbatch sbatch/package_candidate.sbatch ...
 #SBATCH --job-name=sar-package
 #SBATCH --partition=student
 #SBATCH --gres=gpu:rtx_pro_6000_blackwell_max:1
@@ -24,4 +26,5 @@ export PYTHONPATH="${SLURM_SUBMIT_DIR}:${SLURM_SUBMIT_DIR}/models/yolo${PYTHONPA
 
 TAG="${1:?Give a candidate name}"
 DETECTOR="${2:?Give the detector weights}"
-python -u models/yolo/package_candidate.py --tag "$TAG" --detector "$DETECTOR" ${3:+--curves "$3"}
+python -u models/yolo/package_candidate.py --tag "$TAG" --detector "$DETECTOR" ${3:+--curves "$3"} \
+    ${BOX_AUDIT:+--box-audit "$BOX_AUDIT"}
