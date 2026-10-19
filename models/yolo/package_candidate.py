@@ -35,6 +35,9 @@ def main() -> None:
     parser.add_argument('--box-audit', type=Path,
                         help='reuse this box_bias_crossfit.json instead of fitting the nudge on the holdout; '
                              'needed when the detector was trained on the holdout (all-data runs)')
+    parser.add_argument('--classifier-all-data', action='store_true',
+                        help='train the image classifier on all 9,392 labelled images and keep its last epoch '
+                             '(for a detector trained on all data)')
     args = parser.parse_args()
     from models.yolo.deadline_recovery import evaluate_export, write_json
 
@@ -49,7 +52,8 @@ def main() -> None:
          '--split', ROOT / 'results/yolo26m-100-p2-328339/seed_0/split.json',
          '--epochs', 240, '--batch', 32, '--head-batch', 256, '--workers', 4,
          '--feature-pooling', 'spatial', '--hidden-dim', 1024, '--dropout', 0.35,
-         '--learning-rate', 0.0005, '--weight-decay', 0.001, '--train-flips'])
+         '--learning-rate', 0.0005, '--weight-decay', 0.001, '--train-flips',
+         *(['--all-data'] if args.classifier_all_data else [])])
 
     holdout = ROOT / 'results' / args.tag / 'one2many'
     evaluate_export(detector, classifier, 'one2many', holdout)

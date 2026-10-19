@@ -2,7 +2,8 @@
 # The best recipe so far (memorise lr 0.002, official Δm +49.21) retrained on ALL labelled images: the 8,453 training
 # images plus the 939 holdout images. Same stages and settings as the control:
 #   100 epochs from DOTA weights -> +40 plain (lr 0.002) -> +40 speckle (lr 0.001) -> +40 third stage (lr 0.001)
-#   -> memorise: 40 epochs without augmentation (lr 0.002) -> 1024-unit image classifier -> official-validation ZIP.
+#   -> memorise: 40 epochs without augmentation (lr 0.002) -> 1024-unit image classifier, also on all images
+#   (240 epochs, last kept) -> official-validation ZIP.
 # Every stage keeps its LAST epoch (the holdout is in the training data, so it cannot pick epochs), and the box nudge
 # is the control's decision (rejected). Holdout scores printed by this job are optimistic: judge it by Codabench.
 #   sbatch sbatch/all_data_pipeline.sbatch
@@ -65,5 +66,5 @@ echo "DETECTOR_READY $SOURCE"
 # ---- classifier, (optimistic) holdout scores and the official-validation ZIP ----
 python -u models/yolo/package_candidate.py --tag "$TAG" --detector "$SOURCE" \
     --curves "runs/ft40-memorise-lr2-${TAG}/train/results.csv" \
-    --box-audit results/memorise-lr2-332326/box_bias_crossfit.json
+    --box-audit results/memorise-lr2-332326/box_bias_crossfit.json --classifier-all-data
 echo "ALLDATA_COMPLETE $TAG"

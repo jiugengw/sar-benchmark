@@ -96,6 +96,9 @@ def main() -> None:
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--train-flips", action="store_true", help="training views only; validation uses one original image")
+    parser.add_argument("--all-data", action="store_true",
+                        help="also train on the 939 holdout images and keep the LAST epoch (for a detector trained on all "
+                             "data; the holdout can then no longer pick the epoch, and its F1 printed here is optimistic)")
     args = parser.parse_args()
 
     if not torch.cuda.is_available():
@@ -116,6 +119,8 @@ def main() -> None:
     val_ids = list(map(int, split["val_image_ids"]))
     if len(train_ids) != 8453 or len(val_ids) != 939:
         raise ValueError(f"Unexpected saved split sizes: train={len(train_ids)}, holdout={len(val_ids)}")
+    if args.all_data:
+        train_ids = train_ids + val_ids
 
     train_loader = DataLoader(
         ImageLabels(train_ids, label_rows, image_map, args.dataset_root),
@@ -190,7 +195,7 @@ def main() -> None:
             "train_loss": sum(epoch_losses) / max(1, len(epoch_losses)),
             "macro_f1": epoch_metrics["macro_f1"],
         })
-        if best_metrics is None or epoch_metrics["macro_f1"] > best_metrics["macro_f1"]:
+        if args.all_data or best_metrics is None or epoch_metrics["macro_f1"] > best_metrics["macro_f1"]:
             best_metrics = epoch_metrics
             best_state = {key: value.detach().cpu().clone() for key, value in head.state_dict().items()}
             best_epoch = epoch
@@ -220,11 +225,13 @@ def main() -> None:
         "feature_pooling": args.feature_pooling,
         "state_dict": head.state_dict(),
         "feature_source": f"{args.feature_pooling} pooling of every feature map passed to the {args.architecture} terminal detection module",
-        "supervision": "data/course-data/train/labels.csv image labels on the saved 8453/939 TerraMind split",
+        "supervision": ("data/course-data/train/labels.csv image labels on all 9392 labelled images" if args.all_data
+                        else "data/course-data/train/labels.csv image labels on the saved 8453/939 TerraMind split"),
         "architecture": f"LayerNorm + Dropout + {'Linear/GELU/Dropout + ' if args.hidden_dim else ''}Linear",
         "training": {
             "epochs": args.epochs,
-            "checkpoint_selection": "best validation macro-F1; with a fixed detector this maximizes the combined delta_m",
+            "checkpoint_selection": ("last epoch (all data; the holdout was trained on)" if args.all_data else
+                                     "best validation macro-F1; with a fixed detector this maximizes the combined delta_m"),
             "best_epoch": best_epoch,
             "optimizer": "AdamW",
             "learning_rate": args.learning_rate,
