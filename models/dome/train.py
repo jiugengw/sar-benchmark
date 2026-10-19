@@ -39,6 +39,9 @@ def write_config(path: Path, data: Path, output: Path, epochs: int, clean_epochs
         'eval_spatial_size': [size, size],
         'evaluator': {'type': 'CocoEvaluator', 'iou_types': ['bbox']},
         'HGNetv2': {'pretrained': False},  # every weight comes from the AI-TOD checkpoint
+        # MWAS attends in windows over the stride-8 map (64 x 64 at 512 px); the authors' 10 only divides their 800 px
+        # maps. 8 divides 64; the window's position encoding is computed from coordinates, so no weights change.
+        'HybridEncoder': {'mwas_window_size': 8},
         'epoches': epochs,
         'checkpoint_freq': 1000,
         'lr_scheduler': {'type': 'MultiStepLR', 'milestones': [max(1, stop - 8)], 'gamma': 0.5},
@@ -61,7 +64,9 @@ def write_config(path: Path, data: Path, output: Path, epochs: int, clean_epochs
                 },
             },
             # base_size sets the multi-scale training sizes (about 0.75x to 1.25x); prediction is always at `size`
-            'collate_fn': {'base_size': size, 'stop_epoch': stop, 'ema_restart_decay': 0.9999},
+            # multi-scale sizes are multiples of 4 x mwas_window_size here: 16 gives multiples of 64 (384 ... 640), whose
+            # stride-8 maps all divide by the window of 8
+            'collate_fn': {'base_size': size, 'stop_epoch': stop, 'ema_restart_decay': 0.9999, 'mwas_window_size': 16},
             'total_batch_size': batch,
             'num_workers': 4,
         },
