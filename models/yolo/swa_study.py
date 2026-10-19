@@ -56,6 +56,8 @@ def main() -> None:
     parser.add_argument('--run', type=Path, required=True, help='Ultralytics fine-tune folder (has train/weights)')
     parser.add_argument('--classifier', type=Path, required=True, help='image classifier used for scoring only')
     parser.add_argument('--tag', required=True)
+    parser.add_argument('--combinations', help='comma-separated checkpoint sets, names joined by +, e.g. '
+                                               '"best,last+epoch10"; "epochs:A-B" averages epochA..epochB plus last')
     args = parser.parse_args()
 
     from models.yolo.deadline_recovery import evaluate_export
@@ -65,23 +67,32 @@ def main() -> None:
     out = ROOT / 'results' / args.tag
     out.mkdir(parents=True, exist_ok=True)
     rows = []
-    for combination in COMBINATIONS:
+    combinations = COMBINATIONS
+    if args.combinations:
+        combinations = []
+        for item in args.combinations.split(','):
+            if item.startswith('epochs:'):
+                first, last = map(int, item[len('epochs:'):].split('-'))
+                item = '+'.join(['last'] + [f'epoch{e}' for e in range(first, last + 1)])
+            combinations.append(item)
+    for combination in combinations:
         paths = [weights / f'{name}.pt' for name in combination.split('+')]
         if not all(p.is_file() for p in paths):
             print(f'skip {combination}: missing checkpoint', flush=True)
             continue
+        name = combination if len(combination) < 60 else f'average-of-{len(paths)}'
         model = paths[0] if len(paths) == 1 else average(paths, out / f'{combination}.pt')
-        evaluate_export(model, args.classifier, 'one2many', out / combination)
+        evaluate_export(model, args.classifier, 'one2many', out / name)
         print(f'== {combination}', flush=True)
-        report = score(out / combination, ROOT / 'data/course-data')
+        report = score(out / name, ROOT / 'data/course-data')
         rows.append({'checkpoints': combination, 'full_mAP': report['full']['mAP'], 'clean_mAP': report['clean']['mAP'],
                      'clean_AP75': report['clean']['AP75'], 'clean_per_class_AP': report['clean']['per_class_AP']})
         if len(paths) > 1:
-            (out / f'{combination}.pt').unlink()  # 40 MB each; rebuild from the run's checkpoints if a winner is kept
+            (out / f'{combination}.pt').rename(out / f'average-{len(rows)}.pt')  # kept: a winner gets packaged  # 40 MB each; rebuild from the run's checkpoints if a winner is kept
         (out / 'swa_study.json').write_text(json.dumps(rows, indent=2) + '\n')
     print(f"\n{'checkpoints':30s} {'full mAP':>8s} {'clean mAP':>9s} {'clean AP75':>10s}")
     for r in rows:
-        print(f"{r['checkpoints']:30s} {100 * r['full_mAP']:8.2f} {100 * r['clean_mAP']:9.2f} {100 * r['clean_AP75']:10.2f}")
+        print(f"{r['checkpoints'][:30]:30s} {100 * r['full_mAP']:8.2f} {100 * r['clean_mAP']:9.2f} {100 * r['clean_AP75']:10.2f}")
 
 
 if __name__ == '__main__':

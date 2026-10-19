@@ -234,6 +234,12 @@ def main() -> None:
     parser.add_argument('--all-data', action='store_true',
                         help='also train on the 939 holdout images (final-model recipe); the last epoch is used, and holdout '
                              'scores become optimistic because those images were trained on')
+    parser.add_argument('--constant-lr', action='store_true',
+                        help='hold the learning rate at --lr0 (no cosine decay); for weight averaging (SWA) checkpoints')
+    parser.add_argument('--save-period', type=int, default=10, help='save a checkpoint every N epochs')
+    parser.add_argument('--aug-scale', type=float, default=0.2, help='scale jitter (+-) when augmenting')
+    parser.add_argument('--aug-translate', type=float, default=0.05, help='shift jitter (share of the image)')
+    parser.add_argument('--mosaic', type=float, default=0.0, help='probability of 4-image mosaics when augmenting')
     parser.add_argument('--skip-evaluation', action='store_true',
                         help='save detector and curves only; use when a later stage refits the image classifier')
     args = parser.parse_args()
@@ -269,6 +275,8 @@ def main() -> None:
                 'speckle_prob': args.speckle_prob, 'speckle_looks': args.speckle_looks, 'seed': args.seed,
                 'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
                 'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes, 'box_gain': args.box_gain,
+                'constant_lr': args.constant_lr, 'aug_scale': args.aug_scale, 'aug_translate': args.aug_translate,
+                'mosaic': args.mosaic,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
@@ -281,7 +289,8 @@ def main() -> None:
         data_yaml.write_text(f'path: {base}\ntrain:\n  - images/train\n  - images/val\nval: images/val\nnc: 9\nnames:{names}')
     from models.yolo.input_filters import install_training_filter
     install_training_filter()  # SAR_INPUT_FILTER, if set
-    augmentation = dict(translate=0.05, scale=0.2, fliplr=0.5, flipud=0.5, hsv_v=0.2)
+    augmentation = dict(translate=args.aug_translate, scale=args.aug_scale, fliplr=0.5, flipud=0.5, hsv_v=0.2,
+                        mosaic=args.mosaic)
     if args.no_augment:
         if args.speckle_prob:
             raise ValueError('--no-augment and --speckle-prob contradict each other')
@@ -295,12 +304,13 @@ def main() -> None:
     detector.train(  # the continue_2 recipe, unchanged
         data=str(data_yaml),
         epochs=args.epochs, imgsz=512, batch=16, workers=4, device=0,
-        pretrained=True, optimizer='MuSGD', lr0=args.lr0, lrf=0.1, momentum=0.9, weight_decay=0.0005,
-        warmup_epochs=1, warmup_bias_lr=0.0, cos_lr=True, seed=args.seed, deterministic=True,
-        mosaic=0.0, mixup=0.0, copy_paste=0.0, close_mosaic=0,
+        pretrained=True, optimizer='MuSGD', lr0=args.lr0, lrf=1.0 if args.constant_lr else 0.1, momentum=0.9,
+        weight_decay=0.0005,
+        warmup_epochs=0 if args.constant_lr else 1, warmup_bias_lr=0.0, cos_lr=not args.constant_lr,
+        seed=args.seed, deterministic=True, mixup=0.0, copy_paste=0.0, close_mosaic=0,
         **augmentation, hsv_h=0.0, hsv_s=0.0, box=args.box_gain,
         multi_scale=0.0, amp=True, patience=args.epochs + 1,
-        project=str(run_root), name='train', plots=True, save_period=10,
+        project=str(run_root), name='train', plots=True, save_period=args.save_period,
     )
     weights = run_root / ('train/weights/last.pt' if args.all_data else 'train/weights/best.pt')
     write_json(run_root / 'compute.json', {'wall_seconds': time.monotonic() - started})
