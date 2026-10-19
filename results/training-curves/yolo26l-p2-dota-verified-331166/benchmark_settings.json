@@ -1,0 +1,36 @@
+{
+  "variant": "p2",
+  "architecture": "YOLO26l-P2 (stride 4/8/16/32)",
+  "scale": "l",
+  "pretrained_weights": "pretrained/yolo26l-obb.pt",
+  "pretrained_task": "obb",
+  "pretrained_weights_sha256": "8674b0c24bf68aab5eb45009e0ac3808ce432237edf8cb5c50ae2191cb263a2b",
+  "initialization_handoff": {
+    "prepared_parameters_sha256": "eb8ff56d2650aed64ac3b23cba43a59a1fd6a70f406538ef11a7e3c272a78717",
+    "training_handoff_verified": false
+  },
+  "p2_architecture_yaml": ".venv/lib/python3.12/site-packages/ultralytics/cfg/models/26/yolo26-p2.yaml",
+  "classes": [
+    "aircraft",
+    "airport",
+    "bridge",
+    "car",
+    "harbor",
+    "oil_tank",
+    "playground",
+    "ship",
+    "wind_turbine"
+  ],
+  "epochs": 100,
+  "image_size": 512,
+  "batch_size": 16,
+  "workers": 4,
+  "seed": 0,
+  "flipud": 0.0,
+  "close_mosaic": 10,
+  "optimizer": "auto (Ultralytics default)",
+  "augmentation": "Ultralytics YOLO26 defaults",
+  "trainable_parameters": 25742248,
+  "split": "runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json",
+  "initialization": "pretrained YOLO26l (obb) shared layers and P3-P5 heads; new P2 branch initialized randomly"
+}
