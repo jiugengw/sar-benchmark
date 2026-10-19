@@ -9,12 +9,17 @@ prediction time context_boxes.py shrinks those classes' boxes back by the same f
 Filtered inputs (images change, labels are linked):
     python models/yolo/build_variant_dataset.py --out data/yolo-sar-512-water --filter water
 Every image goes through input_filters.apply, the same function the submission code uses.
+
+A random share of the training images (learning curve; labels and holdout unchanged):
+    python models/yolo/build_variant_dataset.py --out data/yolo-sar-512-half --train-fraction 0.5
+The share is drawn within each image class (seeded, the same images every time), so every class keeps its proportion.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import random
 import shutil
 import sys
 from pathlib import Path
@@ -44,18 +49,29 @@ def main() -> None:
     parser.add_argument('--context-classes', default='', help='comma-separated class names to enlarge, e.g. bridge')
     parser.add_argument('--context-factor', type=float, default=3.0)
     parser.add_argument('--filter', choices=FILTERS, default='none')
+    parser.add_argument('--train-fraction', type=float, default=1.0,
+                        help='keep this share of the training images, drawn per image class')
     args = parser.parse_args()
     manifest = json.loads((args.source / 'conversion_manifest.json').read_text())
     names = manifest['classes']
     context = [n.strip() for n in args.context_classes.split(',') if n.strip()]
     if set(context) - set(names):
         raise ValueError(f'unknown classes {set(context) - set(names)}')
-    if not context and args.filter == 'none':
-        raise ValueError('nothing to change: give --context-classes and/or --filter')
+    if not context and args.filter == 'none' and args.train_fraction >= 1:
+        raise ValueError('nothing to change: give --context-classes, --filter and/or --train-fraction')
     if args.out.exists():
         raise FileExistsError(f'{args.out} exists; delete it first or choose another --out')
     out = args.out.resolve()
     class_ids = {names.index(n) for n in context}
+    image_map = json.loads((args.source / 'image_map.json').read_text())
+    by_class: dict[int, list[str]] = {}
+    for path, info in sorted(image_map.items()):
+        if path.startswith('images/train/'):
+            by_class.setdefault(info['csv_image_label'], []).append(Path(path).name)
+    kept = set()
+    for label, files in sorted(by_class.items()):
+        random.Random(label).shuffle(files)
+        kept.update(files[:round(len(files) * args.train_fraction)])
 
     for split in ('train', 'val'):
         source_images, source_labels = args.source / 'images' / split, args.source / 'labels' / split
@@ -79,7 +95,7 @@ def main() -> None:
 
             target = out / 'images' / split
             target.mkdir()
-            paths = sorted(source_images.glob('*.png'))
+            paths = [p for p in sorted(source_images.glob('*.png')) if split != 'train' or p.name in kept]
             for index, path in enumerate(paths, 1):
                 with Image.open(path) as image:
                     gray = np.asarray(image.convert('L'), dtype=np.uint8)
@@ -93,6 +109,8 @@ def main() -> None:
             target = out / 'images' / split
             target.mkdir()
             for path in sorted(source_images.iterdir()):
+                if split == 'train' and path.name not in kept:
+                    continue
                 try:
                     os.link(path, target / path.name)
                 except OSError:  # another filesystem: fall back to a per-file link, which is not resolved
@@ -104,7 +122,7 @@ def main() -> None:
     (out / 'dataset.yaml').write_text(f'path: {out}\ntrain: images/train\nval: images/val\nnc: {len(names)}\nnames:{names_yaml}\n')
     (out / 'variant.json').write_text(json.dumps({
         'source': str(args.source.resolve()), 'context_classes': context, 'context_factor': args.context_factor,
-        'filter': args.filter}, indent=2) + '\n')
+        'filter': args.filter, 'train_fraction': args.train_fraction, 'train_images': len(kept)}, indent=2) + '\n')
     print(f'VARIANT_READY {out / "dataset.yaml"}', flush=True)
 
 
