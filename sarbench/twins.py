@@ -112,7 +112,9 @@ def score(results, data):
     with (data / 'train' / 'labels.csv').open(newline='') as stream:
         truth = {int(row['image_id']): int(row['label']) for row in csv.DictReader(stream)}
     report = {}
-    for name, ids in (('full', [image['id'] for image in images]), ('clean', clean_image_ids(images))):
+    clean = clean_image_ids(images)
+    twin = [image['id'] for image in images if image['id'] not in set(clean)]  # holdout images with a training twin
+    for name, ids in (('full', [image['id'] for image in images]), ('clean', clean), ('twins', twin)):
         scores = {'images': len(ids), **detection_metrics(gt_path, predictions, ids)}
         if classified:
             scores.update(classification_metrics([truth[i] for i in ids], [classified[i] for i in ids]))

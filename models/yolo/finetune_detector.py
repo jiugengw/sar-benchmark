@@ -152,6 +152,9 @@ def main() -> None:
                              'e.g. bridge,playground,wind_turbine')
     parser.add_argument('--repeat-factor', type=int, default=2)
     parser.add_argument('--seed', type=int, default=0, help='0 matches the control; change it to measure run-to-run noise')
+    parser.add_argument('--no-augment', action='store_true',
+                        help='memorise stage: no flips, shifts, scaling or brightness changes, so the detector learns to '
+                             'reproduce the exact training boxes of every labelled scene (official near-copies benefit)')
     parser.add_argument('--all-data', action='store_true',
                         help='also train on the 939 holdout images (final-model recipe); the last epoch is used, and holdout '
                              'scores become optimistic because those images were trained on')
@@ -184,7 +187,7 @@ def main() -> None:
                 'lr0': args.lr0, 'nwd_weight': args.nwd_weight, 'nwd_constant': args.nwd_constant,
                 'speckle_prob': args.speckle_prob, 'speckle_looks': args.speckle_looks, 'seed': args.seed,
                 'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
-                'all_data': args.all_data, 'data': str(args.data),
+                'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
@@ -197,6 +200,11 @@ def main() -> None:
         data_yaml.write_text(f'path: {base}\ntrain:\n  - images/train\n  - images/val\nval: images/val\nnc: 9\nnames:{names}')
     from models.yolo.input_filters import install_training_filter
     install_training_filter()  # SAR_INPUT_FILTER, if set
+    augmentation = dict(translate=0.05, scale=0.2, fliplr=0.5, flipud=0.5, hsv_v=0.2)
+    if args.no_augment:
+        if args.speckle_prob:
+            raise ValueError('--no-augment and --speckle-prob contradict each other')
+        augmentation = {key: 0.0 for key in augmentation}
     started = time.monotonic()
     detector = YOLO(str(args.source))
     detector.train(  # the continue_2 recipe, unchanged
@@ -205,7 +213,7 @@ def main() -> None:
         pretrained=True, optimizer='MuSGD', lr0=args.lr0, lrf=0.1, momentum=0.9, weight_decay=0.0005,
         warmup_epochs=1, warmup_bias_lr=0.0, cos_lr=True, seed=args.seed, deterministic=True,
         mosaic=0.0, mixup=0.0, copy_paste=0.0, close_mosaic=0,
-        translate=0.05, scale=0.2, fliplr=0.5, flipud=0.5, hsv_h=0.0, hsv_s=0.0, hsv_v=0.2,
+        **augmentation, hsv_h=0.0, hsv_s=0.0,
         multi_scale=0.0, amp=True, patience=args.epochs + 1,
         project=str(run_root), name='train', plots=True, save_period=10,
     )
