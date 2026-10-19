@@ -133,6 +133,73 @@ def enable_class_repeat(class_ids: set[int], factor: int) -> None:
     ul_dataset.YOLODataset.get_labels = get_labels
 
 
+def near_labels(anchor_points, gt_bboxes, mask_gt, factor: float = 2.0):
+    """(batch, anchors) True where an anchor centre lies inside some label box enlarged `factor` times about its centre.
+
+    anchor_points (anchors, 2) and gt_bboxes (batch, max_boxes, 4, xyxy) are in pixels; mask_gt (batch, max_boxes, 1)
+    marks real boxes among the padding."""
+    import torch
+
+    centre = (gt_bboxes[..., :2] + gt_bboxes[..., 2:]) / 2
+    half = (gt_bboxes[..., 2:] - gt_bboxes[..., :2]) * factor / 2
+    lo, hi = (centre - half)[:, :, None], (centre + half)[:, :, None]  # (b, boxes, 1, 2)
+    points = anchor_points[None, None]  # (1, 1, anchors, 2)
+    inside = ((points >= lo) & (points <= hi)).all(-1) & mask_gt.bool()  # (b, boxes, anchors)
+    return inside.any(1) if inside.shape[1] else torch.zeros(inside.shape[0], anchor_points.shape[0], dtype=torch.bool,
+                                                             device=anchor_points.device)
+
+
+class RecalibratedBCE:
+    """BCE classification loss that does not punish a probable missing label (Background Recalibration Loss idea).
+
+    For the chosen classes, a spot keeps zero loss when it is background in the targets (no label assigned), the
+    model already scores it above `threshold`, and it lies outside the zone around every label (so the one-to-one
+    head still learns to suppress duplicates next to labelled objects). Everything else is the usual BCE."""
+
+    def __init__(self, class_ids, threshold: float, owner):
+        self.class_ids, self.threshold, self.owner = sorted(class_ids), threshold, owner
+
+    def __call__(self, pred, target):
+        import torch
+        import torch.nn.functional as F
+
+        loss = F.binary_cross_entropy_with_logits(pred, target, reduction='none')
+        near = getattr(self.owner, '_near_labels', None)
+        if near is None or near.shape != pred.shape[:2]:
+            return loss
+        with torch.no_grad():
+            skip = torch.zeros_like(loss, dtype=torch.bool)
+            cols = list(self.class_ids)
+            skip[..., cols] = (target[..., cols] == 0) & (pred[..., cols].sigmoid() > self.threshold) & ~near[..., None]
+            self.owner._skipped = int(skip.sum())
+        return loss.masked_fill(skip, 0.0)
+
+
+def enable_missing_label_loss(class_ids: set[int], threshold: float = 0.5, factor: float = 2.0) -> None:
+    """Install RecalibratedBCE in every detection loss Ultralytics builds (both YOLO26 heads use v8DetectionLoss)."""
+    from ultralytics.utils import loss as ul_loss
+
+    original_init = ul_loss.v8DetectionLoss.__init__
+    if getattr(original_init, 'missing_label_loss', False):
+        return
+
+    def __init__(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        assign = self.assigner
+
+        def assigner(pd_scores, pd_bboxes, anc_points, gt_labels, gt_bboxes, mask_gt):
+            self._near_labels = near_labels(anc_points, gt_bboxes, mask_gt, factor)  # anchors and boxes in pixels
+            return assign(pd_scores, pd_bboxes, anc_points, gt_labels, gt_bboxes, mask_gt)
+
+        self.assigner = assigner
+        self.bce = RecalibratedBCE(class_ids, threshold, self)
+
+    __init__.missing_label_loss = True
+    ul_loss.v8DetectionLoss.__init__ = __init__
+    print(f'Missing-label loss: no penalty for confident unlabelled {sorted(CLASSES[c] for c in class_ids)} '
+          f'(score > {threshold}, outside {factor}x every label)', flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--tag', required=True, help='name for runs/<tag>, results/<tag> and the curves folder')
@@ -155,6 +222,10 @@ def main() -> None:
     parser.add_argument('--no-augment', action='store_true',
                         help='memorise stage: no flips, shifts, scaling or brightness changes, so the detector learns to '
                              'reproduce the exact training boxes of every labelled scene (official near-copies benefit)')
+    parser.add_argument('--missing-label-classes', default='',
+                        help='comma-separated classes with many missing labels (e.g. bridge,playground): confident '
+                             'predictions away from every label are not punished (Background Recalibration Loss idea)')
+    parser.add_argument('--missing-label-threshold', type=float, default=0.5)
     parser.add_argument('--keep-flips', action='store_true',
                         help='with --no-augment: keep the flips, which leave box geometry exact, and switch off only '
                              'the shifts, scaling and brightness changes that blur it')
@@ -178,6 +249,11 @@ def main() -> None:
         enable_nwd(args.nwd_weight, args.nwd_constant)
     if args.speckle_prob:
         enable_speckle(args.speckle_prob, args.speckle_looks)
+    missing = [name.strip() for name in args.missing_label_classes.split(',') if name.strip()]
+    if missing:
+        if set(missing) - set(CLASSES):
+            raise ValueError(f'unknown classes {set(missing) - set(CLASSES)}; choose from {CLASSES}')
+        enable_missing_label_loss({CLASSES.index(name) for name in missing}, args.missing_label_threshold)
     repeat = [name.strip() for name in args.repeat_classes.split(',') if name.strip()]
     if repeat:
         unknown = set(repeat) - set(CLASSES)
@@ -190,7 +266,7 @@ def main() -> None:
                 'lr0': args.lr0, 'nwd_weight': args.nwd_weight, 'nwd_constant': args.nwd_constant,
                 'speckle_prob': args.speckle_prob, 'speckle_looks': args.speckle_looks, 'seed': args.seed,
                 'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
-                'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips,
+                'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
