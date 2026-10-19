@@ -105,13 +105,16 @@ def transfer_standard_weights_to_p2(standard_model, p2_model) -> None:
         target_detect.dfl.load_state_dict(source_detect.dfl.state_dict(), strict=False)
 
 
-def build_p2_model(source, scale, p2_yaml, detect_yaml, class_names, output):
+def build_p2_model(source, scale, p2_yaml, detect_yaml, class_names, output, reg_max=None):
     """YOLO26-P2 for our classes, initialised from a pretrained YOLO26 of any task.
 
     A detection checkpoint (COCO) is first loaded into the standard detection model. Another task's checkpoint, such
     as yolo26m-obb.pt (rotated boxes on DOTA aerial photos), goes into the standard detection architecture instead:
     every layer with the same name and shape transfers (backbone, neck, box branches); its class and angle outputs do
-    not. The P2 model then takes the shared layers and the P3-P5 heads, as before."""
+    not. The P2 model then takes the shared layers and the P3-P5 heads, as before.
+
+    reg_max 16 swaps YOLO26's one-number box edges for YOLO11's distribution over 16 positions per edge (DFL); the last
+    layer of each box branch then changes shape and starts from fresh weights, everything else transfers."""
     from ultralytics import YOLO
 
     if source.task == "detect":
@@ -129,6 +132,8 @@ def build_p2_model(source, scale, p2_yaml, detect_yaml, class_names, output):
     p2_config = yaml.safe_load(p2_yaml.read_text())
     p2_config["nc"] = len(class_names)
     p2_config["scale"] = scale
+    if reg_max is not None:
+        p2_config["reg_max"] = reg_max
     p2_config_path = output / f"yolo26{scale}_p2.yaml"
     p2_config_path.write_text(yaml.safe_dump(p2_config, sort_keys=False))
     model = YOLO(str(p2_config_path), task="detect")
@@ -161,6 +166,8 @@ def main() -> None:
                         help="vertical-flip probability; overhead images have no up, so 0.5 is a free augmentation")
     parser.add_argument("--fliplr", type=float, default=0.5,
                         help="left-right flip probability; 0 keeps the radar's fixed shadow side (Ultralytics default 0.5)")
+    parser.add_argument("--reg-max", type=int,
+                        help="box-edge bins: 1 is YOLO26's direct regression (the YAML default), 16 is YOLO11's DFL")
     parser.add_argument("--close-mosaic", type=int, default=10, help="turn mosaic off for the last N epochs")
     parser.add_argument("--data", type=Path, default=Path("data/yolo11s-sar-512/dataset.yaml"),
                         help="dataset YAML; a variant from build_variant_dataset.py for the context-box or filter experiments")
@@ -195,7 +202,7 @@ def main() -> None:
         raise FileNotFoundError(args.weights)
     from input_filters import install_training_filter
     install_training_filter()  # SAR_INPUT_FILTER, if set
-    model = build_p2_model(source, args.scale, args.p2_yaml, args.detect_yaml, class_names, args.train_output)
+    model = build_p2_model(source, args.scale, args.p2_yaml, args.detect_yaml, class_names, args.train_output, args.reg_max)
     source_first = source.model.model[0].state_dict()
     target_first = model.model.model[0].state_dict()
     if any(not torch.equal(value, target_first[key]) for key, value in source_first.items()):
@@ -222,6 +229,7 @@ def main() -> None:
         "seed": 0,
         "flipud": args.flipud,
         "fliplr": args.fliplr,
+        "reg_max": model.model.model[-1].reg_max,
         "close_mosaic": args.close_mosaic,
         "optimizer": "auto (Ultralytics default)",
         "augmentation": "Ultralytics YOLO26 defaults",

@@ -7,6 +7,8 @@
 # Input-filter variant (experiment B): FILTER=water sbatch sbatch/yolo26_pretrained_full.sbatch dota m
 #   trains and predicts on [SAR, despeckled, water map] (see input_filters.py); images are filtered as they are read,
 #   so no filtered copy of the dataset is written (the cluster allows only 100,000 files)
+# DFL box head (YOLO11's distribution over 16 positions per box edge instead of one number):
+#   REG_MAX=16 sbatch sbatch/yolo26_pretrained_full.sbatch dota m
 # The 100-epoch stage repeats sbatch/yolo26m_pretraining_compare.sbatch with the scale as a parameter.
 #SBATCH --job-name=sar-full
 #SBATCH --partition=student
@@ -47,6 +49,11 @@ if [[ "$FILTER" != none ]]; then
     export SAR_INPUT_FILTER="$FILTER"  # every training, classifier and prediction step applies the same filter
     DATA_ARGS=(--no-colour-jitter)
     SUFFIX="-${FILTER}"
+fi
+REG_MAX="${REG_MAX:-}"
+if [[ -n "$REG_MAX" ]]; then
+    DATA_ARGS+=(--reg-max "$REG_MAX")
+    SUFFIX="${SUFFIX}-dfl${REG_MAX}"
 fi
 TAG="yolo26${SCALE}-p2-${INITIALIZATION}${SUFFIX}-verified-${SLURM_JOB_ID}"
 RUN_ROOT="runs/$TAG"
