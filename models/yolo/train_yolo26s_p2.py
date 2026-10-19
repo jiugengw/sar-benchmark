@@ -59,15 +59,21 @@ def preserve_initialization(model, audit_path: Path) -> dict:
     return audit
 
 
-def transfer_standard_weights_to_p2(standard_model, p2_model) -> None:
+def transfer_standard_weights_to_p2(standard_model, p2_model, p4_attention=False) -> None:
     """Transfer semantically matching YOLO26 layers and P3-P5 detection heads."""
     source = standard_model.model
     target = p2_model.model
 
     # The new P2 branch occupies target layers 17-22, shifting the P4/P5
     # neck layers six positions later than in the standard YOLO26 model.
-    layer_pairs = [(index, index) for index in range(17)]
-    layer_pairs.extend((source_index, source_index + 6) for source_index in range(17, 23))
+    # With the P4 attention block at target layer 14, every layer from 14 on moves one further, and the new block
+    # starts as a copy of the backbone's attention block (layer 10) where the shapes match.
+    shift = 1 if p4_attention else 0
+    layer_pairs = [(index, index) for index in range(14)]
+    layer_pairs.extend((source_index, source_index + shift) for source_index in range(14, 17))
+    layer_pairs.extend((source_index, source_index + 6 + shift) for source_index in range(17, 23))
+    if p4_attention:
+        layer_pairs.append((10, P4_ATTENTION_INDEX))
     for source_index, target_index in layer_pairs:
         source_layer = source.model[source_index]
         target_layer = target.model[target_index]
@@ -105,7 +111,37 @@ def transfer_standard_weights_to_p2(standard_model, p2_model) -> None:
         target_detect.dfl.load_state_dict(source_detect.dfl.state_dict(), strict=False)
 
 
-def build_p2_model(source, scale, p2_yaml, detect_yaml, class_names, output, reg_max=None):
+P4_ATTENTION_INDEX = 14
+
+
+def add_p4_attention(config: dict) -> dict:
+    """Insert a C2PSA attention block after the top-down P4 layer (13), as YOLO26 has at P5 (layer 10).
+
+    P4 is a 32 x 32 grid on a 512 image, so every position attends to the whole scene (rivers, roads, fields) at a
+    resolution where those are shapes, and the result flows down into P3 and P2 and into the bottom-up P4 output.
+    Absolute layer references from 14 on move one place; the bottom-up concat with layer 13 takes the block instead."""
+    config = copy.deepcopy(config)
+    backbone_size = len(config["backbone"])
+    position = P4_ATTENTION_INDEX - backbone_size
+    head = config["head"]
+    if head[position - 1][2] != "C3k2" or head[position][2] != "nn.Upsample":
+        raise RuntimeError(f"Unexpected YOLO26-P2 head layout around layer {P4_ATTENTION_INDEX}: {head[position - 1:position + 1]}")
+    channels = head[position - 1][3][0]
+
+    def move(reference):
+        if isinstance(reference, list):
+            return [move(r) for r in reference]
+        if reference == P4_ATTENTION_INDEX - 1:
+            return P4_ATTENTION_INDEX
+        return reference + 1 if reference >= P4_ATTENTION_INDEX else reference
+
+    for layer in head[position:]:
+        layer[0] = move(layer[0])
+    head.insert(position, [-1, 2, "C2PSA", [channels]])
+    return config
+
+
+def build_p2_model(source, scale, p2_yaml, detect_yaml, class_names, output, reg_max=None, p4_attention=False):
     """YOLO26-P2 for our classes, initialised from a pretrained YOLO26 of any task.
 
     A detection checkpoint (COCO) is first loaded into the standard detection model. Another task's checkpoint, such
@@ -114,7 +150,9 @@ def build_p2_model(source, scale, p2_yaml, detect_yaml, class_names, output, reg
     not. The P2 model then takes the shared layers and the P3-P5 heads, as before.
 
     reg_max 16 swaps YOLO26's one-number box edges for YOLO11's distribution over 16 positions per edge (DFL); the last
-    layer of each box branch then changes shape and starts from fresh weights, everything else transfers."""
+    layer of each box branch then changes shape and starts from fresh weights, everything else transfers.
+
+    p4_attention adds a second attention block at P4 (see add_p4_attention)."""
     from ultralytics import YOLO
 
     if source.task == "detect":
@@ -134,11 +172,13 @@ def build_p2_model(source, scale, p2_yaml, detect_yaml, class_names, output, reg
     p2_config["scale"] = scale
     if reg_max is not None:
         p2_config["reg_max"] = reg_max
+    if p4_attention:
+        p2_config = add_p4_attention(p2_config)
     p2_config_path = output / f"yolo26{scale}_p2.yaml"
     p2_config_path.write_text(yaml.safe_dump(p2_config, sort_keys=False))
     model = YOLO(str(p2_config_path), task="detect")
     model.model.names = dict(enumerate(class_names))
-    transfer_standard_weights_to_p2(standard_model, model)
+    transfer_standard_weights_to_p2(standard_model, model, p4_attention)
     return model
 
 
@@ -168,6 +208,8 @@ def main() -> None:
                         help="left-right flip probability; 0 keeps the radar's fixed shadow side (Ultralytics default 0.5)")
     parser.add_argument("--reg-max", type=int,
                         help="box-edge bins: 1 is YOLO26's direct regression (the YAML default), 16 is YOLO11's DFL")
+    parser.add_argument("--p4-attention", action="store_true",
+                        help="add a whole-image attention block at P4, feeding P3 and P2 with scene context")
     parser.add_argument("--close-mosaic", type=int, default=10, help="turn mosaic off for the last N epochs")
     parser.add_argument("--data", type=Path, default=Path("data/yolo11s-sar-512/dataset.yaml"),
                         help="dataset YAML; a variant from build_variant_dataset.py for the context-box or filter experiments")
@@ -202,7 +244,8 @@ def main() -> None:
         raise FileNotFoundError(args.weights)
     from input_filters import install_training_filter
     install_training_filter()  # SAR_INPUT_FILTER, if set
-    model = build_p2_model(source, args.scale, args.p2_yaml, args.detect_yaml, class_names, args.train_output, args.reg_max)
+    model = build_p2_model(source, args.scale, args.p2_yaml, args.detect_yaml, class_names, args.train_output, args.reg_max,
+                           args.p4_attention)
     source_first = source.model.model[0].state_dict()
     target_first = model.model.model[0].state_dict()
     if any(not torch.equal(value, target_first[key]) for key, value in source_first.items()):
@@ -230,6 +273,7 @@ def main() -> None:
         "flipud": args.flipud,
         "fliplr": args.fliplr,
         "reg_max": model.model.model[-1].reg_max,
+        "p4_attention": args.p4_attention,
         "close_mosaic": args.close_mosaic,
         "optimizer": "auto (Ultralytics default)",
         "augmentation": "Ultralytics YOLO26 defaults",
