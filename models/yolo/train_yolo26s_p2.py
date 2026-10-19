@@ -159,6 +159,8 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--flipud", type=float, default=0.0,
                         help="vertical-flip probability; overhead images have no up, so 0.5 is a free augmentation")
+    parser.add_argument("--fliplr", type=float, default=0.5,
+                        help="left-right flip probability; 0 keeps the radar's fixed shadow side (Ultralytics default 0.5)")
     parser.add_argument("--close-mosaic", type=int, default=10, help="turn mosaic off for the last N epochs")
     parser.add_argument("--data", type=Path, default=Path("data/yolo11s-sar-512/dataset.yaml"),
                         help="dataset YAML; a variant from build_variant_dataset.py for the context-box or filter experiments")
@@ -219,6 +221,7 @@ def main() -> None:
         "workers": args.workers,
         "seed": 0,
         "flipud": args.flipud,
+        "fliplr": args.fliplr,
         "close_mosaic": args.close_mosaic,
         "optimizer": "auto (Ultralytics default)",
         "augmentation": "Ultralytics YOLO26 defaults",
@@ -252,6 +255,7 @@ def main() -> None:
         val=True,
         cache=False,
         flipud=args.flipud,
+        fliplr=args.fliplr,
         close_mosaic=args.close_mosaic,
     )
     torch.cuda.synchronize()
