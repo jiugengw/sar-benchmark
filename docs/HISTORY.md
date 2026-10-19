@@ -23,7 +23,9 @@ Ultralytics detectors with a stride-4 (P2) level gave an immediate jump (YOLO11s
 40 more epochs added about 5 official mAP points (+34.57), and a wider image head on the frozen features plus a
 cross-fitted per-class box-edge correction gave the best result, **Δm +36.80**. In parallel we found that about
 a quarter of the labelled images (and of the official validation set) are same-scene "twins" of training images,
-which is why official scores land between our full and twin-free ("clean") local scores.
+which is why official scores land between our full and twin-free ("clean") local scores. On 18–19 October a
+longer chain from DOTA weights reached +40.7, and 40 final epochs **without augmentation** ("memorise") added
+about 4 official mAP points, for **Δm +49.21**; see [18–19 October](#chain-memorise-and-headroom--1819-october-2026).
 
 | Date (2026) | Approach | Official F1 | Official mAP | Official Δm |
 |---|---|---:|---:|---:|
@@ -36,7 +38,14 @@ which is why official scores land between our full and twin-free ("clean") local
 | Oct 17 | E5 YOLO26m-P2, 100 epochs + image head | 89.75 | 39.24 | +23.18 |
 | Oct 17 | Phase 3 joint fine-tune of E5 | 92.56 | 38.78 | +23.80 |
 | Oct 17 | E5 + 40 detector-only epochs + spatial head | 93.33 | 44.19 | +34.57 |
-| Oct 17 | Same detector + 1024-neuron image classifier + box-edge correction | 94.69 | 44.98 | **+36.80** |
+| Oct 17 | Same detector + 1024-neuron image classifier + box-edge correction | 94.69 | 44.98 | +36.80 |
+| Oct 18 | Speckle candidate | 93.65 | 45.57 | +37.38 |
+| Oct 18 | YOLO26m-P2 from DOTA, 100 epochs + plain/speckle chain | 93.90 | 47.25 | +40.73 |
+| Oct 18 | Same from COCO weights | 94.12 | 47.04 | +40.45 |
+| Oct 19 | Same, YOLO26l from DOTA | 93.25 | 47.51 | +40.88 |
+| Oct 19 | DOTA m chain + third 40-epoch stage | 93.93 | 47.51 | +41.23 |
+| Oct 19 | Third stage + 40 epochs without augmentation (memorise) | 93.34 | 51.64 | +48.83 |
+| Oct 19 | Memorise at lr 0.002 | 93.83 | 51.70 | **+49.21** |
 
 All 25 uploads, with Codabench IDs, are in [submissions/README.md](../submissions/README.md). Unless stated,
 "local" scores below are on the fixed 939-image holdout of the labelled training set (8,453 train / 939 holdout,
@@ -434,6 +443,53 @@ The NWD and speckle jobs exported holdout predictions only; their archive explic
 course-validation ZIP was generated. Per-epoch histories and classifier metrics are preserved under
 `results/training-curves/`; raw holdout predictions and annotations are under `results/<experiment>/`.
 
+## Chain, memorise and headroom — 18–19 October 2026
+
+**Pipeline that reached +49.21:** YOLO26m-P2 from DOTA weights, 100 epochs → +40 plain (lr 0.002) → +40 speckle
+(lr 0.001) → +40 third stage (lr 0.001) → **memorise**: 40 epochs with all augmentation off (no scale, shift,
+flips, brightness), lr 0.002 → 1024-unit image classifier on frozen features.
+
+**Memorise, the big lever.** Augmentation jitter (scale ±20%, shifts, flips) blurs exact box geometry. Turning it
+off for the last 40 epochs raised clean AP75 by about 8 points and official mAP by 4.1 (third stage 47.51 →
+memorise 51.64). Box-tightness at strict thresholds, not finding objects, was what the jitter cost.
+
+Memorise variants, holdout mAP (full 939 / clean 720 / twins 219 images):
+
+| Run (job) | Full | Clean | Twins | Verdict |
+|---|---:|---:|---:|---|
+| Memorise, lr 0.001 (332085) | 55.81 | 50.04 | 77.53 | official +48.83 |
+| **Memorise, lr 0.002 (332326)** | 56.66 | **50.40** | 79.81 | **official +49.21, control** |
+| Memorise, lr 0.004 (332325) | 57.00 | 50.15 | 81.75 | gain only on twins |
+| YOLO26l memorise (332235) | 56.22 | 50.31 | 79.32 | no gain over m |
+| Memorise keeping flips (332161) | 52.06 | 47.30 | 71.56 | −3.1 clean: flips hurt exact geometry |
+| Missing-label loss for bridge/playground (332469) | 56.28 | 49.91 | 79.77 | no gain |
+| Box-loss gain ×2 (332470) | 56.57 | 50.22 | 81.58 | gain only on twins |
+| Water-map input channels + memorise (332236) | 55.55 | 49.26 | 79.31 | the water map's 100-epoch gain disappears after memorise |
+| Exact 80: 80 memorise epochs straight after 100 (332471) | — | — | — | cancelled at epoch 25, 4 points behind the control at the same epoch: the chain's jittered epochs are needed |
+
+**Studies on the control (no retraining):**
+- *Post-processing* (`models/yolo/postprocess_study.py`): NMS at 0.5–0.8 and weighted box fusion. Best +0.07 clean
+  mAP (fusion at 0.8). The final step is not the problem.
+- *Classifier* (`models/yolo/classifier_study.py`): picking the classifier epoch on the holdout flatters F1 (95.7);
+  picked on one half and scored on the other, clean F1 is 93.3–93.6, matching the official 93.8. Hidden width and
+  dropout make no difference; training without flips costs about 3 F1.
+- *Headroom* ([reports/headroom/](../reports/headroom/README.md)): of the 49.6 mAP points missing, 22.6 are missed
+  objects (14.9 from bridge and playground), 22.3 loose boxes and 4.7 false alarms. Where label noise can be
+  measured from twin images, most of our box error is the labels' own noise (about +1 mAP winnable). Ship and
+  wind-turbine loose boxes (7.9 points) could not be measured. Ship labels pad the hull inconsistently.
+
+**Label origin.** Six classes (bridge, harbor, oil tank, playground, airport, wind turbine) resemble M4-SAR: boxes
+drawn on Sentinel-2 optical images and transferred to the radar image. Many bridges are hard or impossible to see
+in the radar. The same YOLO26 reaches 48.8 / 75.8 AP50 on bridge / playground in M4-SAR with about 13× more images
+(we reach 16.2 / 26.7), so whether ours are data-limited is tested by a half-data learning curve
+(`sbatch/learning_curve.sbatch`).
+
+**Running on the evening of 19 October** (each compared at the same stage with the matching control):
+no left-right flips in the 100-epoch stage (`sbatch/noflip_exact.sbatch`, stage 1 only); a DFL box head,
+`reg_max 16` (`REG_MAX=16` in `sbatch/yolo26_pretrained_full.sbatch`); an extra attention block at P4
+(`P4_ATTENTION=1 THEN_MEMORISE=1`); weight averaging of the control's last checkpoints
+(`sbatch/swa_study.sbatch`); and the half-data learning curve.
+
 ## Cross-cutting lessons
 
 - **Detection is the score.** 1 mAP point ≈ 1.91 Δm vs 0.54 for F1. Changes that trade mAP for F1 (Phase 3)
@@ -451,8 +507,16 @@ course-validation ZIP was generated. Per-epoch histories and classifier metrics 
 - **Know your holdout.** A random split of this dataset leaks same-scene twins; group twins when splitting and
   always report a clean subset. The official set leaks too (about 25%).
 - **Calibrate post-hoc steps by cross-fitting**, keeping twin groups together, before spending an upload.
-- **Budget the infrastructure.** Uploads (5/day), Slurm concurrency (2 jobs), 24 h job limit, disk/file-count
-  quota and MIG slices decided what could run as much as the ideas did.
+- **Augmentation helps finding objects and hurts exact edges.** Train with jitter, then finish without it
+  (memorise). With strict IoU thresholds, how sharp the boxes are matters as much as what is found.
+- **Gains that appear only on twin images are memorisation.** Judge on the clean subset; box-loss ×2 and lr 0.004
+  improved the twins but not the clean images.
+- **Picking the best epoch on the holdout flatters it.** Score honestly by choosing on one half and testing on the
+  other (the classifier lost 2 F1 points that way, matching Codabench).
+- **Know the ceiling before tuning.** Label noise limits strict-threshold AP for small objects; measure it (twins)
+  before spending GPU time on box precision.
+- **Budget the infrastructure.** Uploads (5/day), Slurm concurrency (2 running GPUs, 4 submitted jobs), 24 h job limit,
+  the 100,000-file and 500 GB quota, and MIG slices decided what could run as much as the ideas did.
 
 ## Where artifacts live
 

@@ -4,6 +4,10 @@ Every ZIP uploaded to the [Codabench competition](https://www.codabench.org/comp
 
 | Codabench ID | Uploaded | ZIP | Status | Official Δm | Scoring result |
 |---:|---|---|---|---:|---|
+| 1002421 | 2026-10-19 15:54 | [memorise-lr2-332326.zip](memorise-lr2-332326/memorise-lr2-332326.zip) | Finished | +49.21 | [scores.json](memorise-lr2-332326/scoring_result/scores.json) |
+| 1001865 | 2026-10-19 10:06 | [memorise-332085.zip](memorise-332085/memorise-332085.zip) | Finished | +48.83 | [scores.json](memorise-332085/scoring_result/scores.json) |
+| 1001721 | 2026-10-19 07:53 | [third-stage-331789.zip](third-stage-331789/third-stage-331789.zip) | Finished | +41.23 | [scores.json](third-stage-331789/scoring_result/scores.json) |
+| 1001271 | 2026-10-19 01:03 | [chain-dota-l-331166.zip](chain-dota-l-331166/chain-dota-l-331166.zip) | Finished | +40.88 | [scores.json](chain-dota-l-331166/scoring_result/scores.json) |
 | — | 2026-10-18 | [chain-coco-330939.zip](chain-coco-330939/chain-coco-330939.zip) | Finished | +40.45 | [scores.json](chain-coco-330939/scoring_result/scores.json) |
 | — | 2026-10-18 | [chain-dota-330938.zip](chain-dota-330938/chain-dota-330938.zip) | Finished | +40.73 | [scores.json](chain-dota-330938/scoring_result/scores.json) |
 | — | 2026-10-18 | [speckle-cand.zip](speckle-cand/speckle-cand.zip) | Finished | +37.38 | [scores.json](speckle-cand/scoring_result/scores.json) |
