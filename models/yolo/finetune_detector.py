@@ -155,6 +155,9 @@ def main() -> None:
     parser.add_argument('--no-augment', action='store_true',
                         help='memorise stage: no flips, shifts, scaling or brightness changes, so the detector learns to '
                              'reproduce the exact training boxes of every labelled scene (official near-copies benefit)')
+    parser.add_argument('--keep-flips', action='store_true',
+                        help='with --no-augment: keep the flips, which leave box geometry exact, and switch off only '
+                             'the shifts, scaling and brightness changes that blur it')
     parser.add_argument('--all-data', action='store_true',
                         help='also train on the 939 holdout images (final-model recipe); the last epoch is used, and holdout '
                              'scores become optimistic because those images were trained on')
@@ -187,7 +190,7 @@ def main() -> None:
                 'lr0': args.lr0, 'nwd_weight': args.nwd_weight, 'nwd_constant': args.nwd_constant,
                 'speckle_prob': args.speckle_prob, 'speckle_looks': args.speckle_looks, 'seed': args.seed,
                 'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
-                'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment,
+                'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
@@ -205,6 +208,10 @@ def main() -> None:
         if args.speckle_prob:
             raise ValueError('--no-augment and --speckle-prob contradict each other')
         augmentation = {key: 0.0 for key in augmentation}
+        if args.keep_flips:  # a mirrored box is still pixel-exact
+            augmentation.update(fliplr=0.5, flipud=0.5)
+    elif args.keep_flips:
+        raise ValueError('--keep-flips only applies with --no-augment')
     started = time.monotonic()
     detector = YOLO(str(args.source))
     detector.train(  # the continue_2 recipe, unchanged
