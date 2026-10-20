@@ -107,6 +107,131 @@ def enable_augment_annealing(detector, epochs: int, tail: int) -> None:
     detector.add_callback('on_train_epoch_start', anneal)
 
 
+class BoxPaste:
+    """Paste labelled objects from other training images of the SAME scene class into empty, similar-looking spots.
+
+    Box-based copy-paste for SAR (cf. BoxPaste, Remote Sensing 2022), with the restrictions our data needs:
+    - same scene class only: every image holds objects of exactly one class, so a turbine only goes into another
+      wind-farm image (cross-scene pastes would create scenes that never occur);
+    - only empty spots: the pasted rectangle (object plus a margin of its own background) overlaps no box;
+    - background match: of `tries` random spots, the one whose surroundings best match the donor's margin in mean and
+      spread of brightness is used, and the paste is skipped if even that one differs too much;
+    - feathered border: the margin blends linearly into the new background, so there is no hard seam.
+    The pasted box is the donor's label, unchanged. Training images only; added just before Ultralytics' Format step.
+    """
+
+    def __init__(self, dataset, p: float, max_objects: int, tries: int = 20):
+        import numpy as np
+
+        self.dataset, self.p, self.max_objects, self.tries = dataset, p, max_objects, tries
+        self.by_class: dict[int, list[int]] = {}
+        for index, label in enumerate(dataset.labels):
+            classes = set(int(c) for c in np.asarray(label['cls']).ravel())
+            if len(classes) == 1:
+                self.by_class.setdefault(classes.pop(), []).append(index)
+
+    def donor_objects(self, cls: int, rng):
+        """A random image of this class (as the model sees it, 512 x 512) and its boxes in pixels (x1, y1, x2, y2)."""
+        import numpy as np
+
+        index = int(rng.choice(self.by_class[cls]))
+        image = self.dataset.load_image(index)[0]
+        h, w = image.shape[:2]
+        xywh = np.asarray(self.dataset.labels[index]['bboxes'], dtype=np.float32).reshape(-1, 4)
+        boxes = np.stack([(xywh[:, 0] - xywh[:, 2] / 2) * w, (xywh[:, 1] - xywh[:, 3] / 2) * h,
+                          (xywh[:, 0] + xywh[:, 2] / 2) * w, (xywh[:, 1] + xywh[:, 3] / 2) * h], 1)
+        return image, boxes
+
+    def __call__(self, labels: dict) -> dict:
+        import numpy as np
+        from ultralytics.utils.instance import Instances
+
+        rng = np.random
+        cls = np.asarray(labels['cls']).ravel()
+        if rng.random() >= self.p or len(cls) == 0 or int(cls[0]) not in self.by_class:
+            return labels
+        target_cls = int(cls[0])
+        img = labels['img']
+        h, w = img.shape[:2]
+        instances = labels['instances']
+        instances.convert_bbox('xyxy')
+        if instances.normalized:
+            instances.denormalize(w, h)
+        occupied = [b for b in instances.bboxes]
+        pasted, pasted_cls = [], []
+        donor, donor_boxes = self.donor_objects(target_cls, rng)
+        if donor.ndim == 2:
+            donor = donor[..., None].repeat(img.shape[2], 2)
+        for k in rng.permutation(len(donor_boxes))[: rng.randint(1, self.max_objects + 1)]:
+            x1, y1, x2, y2 = donor_boxes[k]
+            bw, bh = x2 - x1, y2 - y1
+            if bw < 2 or bh < 2 or bw > w / 3 or bh > h / 3:
+                continue
+            margin = int(max(2, round(0.25 * max(bw, bh))))
+            cx1, cy1 = int(max(0, np.floor(x1)) - margin), int(max(0, np.floor(y1)) - margin)
+            cx2, cy2 = int(min(donor.shape[1], np.ceil(x2)) + margin), int(min(donor.shape[0], np.ceil(y2)) + margin)
+            if cx1 < 0 or cy1 < 0 or cx2 > donor.shape[1] or cy2 > donor.shape[0]:
+                continue  # object too close to its own image border for a full margin
+            crop = donor[cy1:cy2, cx1:cx2].astype(np.float32)
+            ch, cw = crop.shape[:2]
+            if ch >= h or cw >= w:
+                continue
+            ring = np.ones((ch, cw), bool)
+            ring[margin:ch - margin, margin:cw - margin] = False
+            ring_mean, ring_std = crop[ring].mean(), crop[ring].std() + 1e-3
+            best, best_cost = None, None
+            for _ in range(self.tries):
+                px, py = rng.randint(0, w - cw + 1), rng.randint(0, h - ch + 1)
+                region = np.array([px, py, px + cw, py + ch], dtype=np.float32)
+                if any(region[0] < b[2] and b[0] < region[2] and region[1] < b[3] and b[1] < region[3]
+                       for b in occupied):
+                    continue
+                spot = img[py:py + ch, px:px + cw].astype(np.float32)
+                if spot.std() < 2 or (spot == spot.flat[0]).mean() > 0.2:
+                    continue  # flat letterbox padding from scale augmentation, not image content
+                cost = abs(spot[ring].mean() - ring_mean) / ring_std + abs(spot[ring].std() - ring_std) / ring_std
+                if best_cost is None or cost < best_cost:
+                    best, best_cost = (px, py), cost
+            if best is None or best_cost > 1.0:
+                continue
+            px, py = best
+            ramp_y = np.minimum(np.arange(ch), np.arange(ch)[::-1])[:, None]
+            ramp_x = np.minimum(np.arange(cw), np.arange(cw)[::-1])[None, :]
+            alpha = np.clip(np.minimum(ramp_y, ramp_x) / margin, 0, 1)[..., None]
+            spot = img[py:py + ch, px:px + cw].astype(np.float32)
+            img[py:py + ch, px:px + cw] = np.clip(alpha * crop + (1 - alpha) * spot, 0, 255).astype(img.dtype)
+            box = np.array([px + (x1 - cx1), py + (y1 - cy1), px + (x2 - cx1), py + (y2 - cy1)], dtype=np.float32)
+            occupied.append(np.array([px, py, px + cw, py + ch], dtype=np.float32))
+            pasted.append(box)
+            pasted_cls.append(target_cls)
+        if pasted:
+            boxes = np.concatenate([instances.bboxes, np.stack(pasted)], 0).astype(np.float32)
+            segments = instances.segments
+            labels['instances'] = Instances(boxes, np.zeros((0, segments.shape[1] if segments.ndim == 3 else 0, 2),
+                                                            dtype=np.float32), None, bbox_format='xyxy',
+                                            normalized=False)
+            labels['cls'] = np.concatenate([np.asarray(labels['cls']).reshape(-1, 1),
+                                            np.array(pasted_cls, dtype=np.float32).reshape(-1, 1)], 0)
+            labels['img'] = img
+        return labels
+
+
+def enable_box_paste(p: float, max_objects: int) -> None:
+    """Insert BoxPaste into every training dataset's transforms, just before the final Format step."""
+    from ultralytics.data import dataset as ul_dataset
+
+    original = ul_dataset.YOLODataset.build_transforms
+
+    def build_transforms(self, hyp=None):
+        transforms = original(self, hyp)
+        if self.augment:
+            transforms.transforms.insert(len(transforms.transforms) - 1, BoxPaste(self, p, max_objects))
+        return transforms
+
+    ul_dataset.YOLODataset.build_transforms = build_transforms
+    print(f'BoxPaste: probability {p}, up to {max_objects} objects, same scene class, matched background', flush=True)
+
+
 def enable_speckle(p: float, looks: float) -> None:
     """Insert SpeckleNoise into every training dataset's transforms, just before the final Format step."""
     from ultralytics.data import dataset as ul_dataset
@@ -314,6 +439,9 @@ def main() -> None:
     parser.add_argument('--alpha-iou', type=float, help='alpha-CIoU box loss with this power (the paper uses 3)')
     parser.add_argument('--tal-topk', type=int, help="grid points per object in the one-to-many head (YOLO26: 10)")
     parser.add_argument('--tal-beta', type=float, help='weight of box overlap when picking them (YOLO26: 6)')
+    parser.add_argument('--box-paste', type=float, default=0.0,
+                        help='probability of pasting objects from another same-class training image (BoxPaste)')
+    parser.add_argument('--box-paste-max', type=int, default=3, help='at most this many pasted objects per image')
     parser.add_argument('--skip-evaluation', action='store_true',
                         help='save detector and curves only; use when a later stage refits the image classifier')
     args = parser.parse_args()
@@ -329,6 +457,10 @@ def main() -> None:
             raise FileNotFoundError(path)
     if args.nwd_weight:
         enable_nwd(args.nwd_weight, args.nwd_constant)
+    if args.box_paste:
+        if args.no_augment:
+            raise ValueError('--box-paste is an augmentation; memorise (--no-augment) runs without it')
+        enable_box_paste(args.box_paste, args.box_paste_max)
     if args.alpha_iou:
         enable_alpha_iou(args.alpha_iou)
     if args.tal_topk or args.tal_beta:
@@ -356,6 +488,7 @@ def main() -> None:
                 'constant_lr': args.constant_lr, 'aug_scale': args.aug_scale, 'aug_translate': args.aug_translate,
                 'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride, 'alpha_iou': args.alpha_iou,
                 'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta,
+                'box_paste': args.box_paste, 'box_paste_max': args.box_paste_max,
                 'batch': args.batch, 'anneal_augment': args.anneal_augment,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
