@@ -250,18 +250,26 @@ def enable_speckle(p: float, looks: float) -> None:
 CLASSES = ('aircraft', 'airport', 'bridge', 'car', 'harbor', 'oil_tank', 'playground', 'ship', 'wind_turbine')
 
 
-def repeat_labels(labels: list[dict], class_ids: set[int], factor: int) -> list[dict]:
-    """Repeat-factor sampling: list every image containing one of class_ids `factor` times instead of once."""
+def repeat_labels(labels: list[dict], class_ids: set[int], factor: int, only_width: int | None = None) -> list[dict]:
+    """Repeat-factor sampling: list every image containing one of class_ids `factor` times instead of once.
+
+    only_width: repeat only images whose ORIGINAL width is this (data/yolo11s-sar-512/image_map.json; every training
+    image is stored at 512, so 256 px sources are told apart there). 512 picks the M4-SAR-like source of bridge,
+    harbor and oil tank, whose objects are still data-limited, and skips their well-learned 256 px source."""
+    widths = {}
+    if only_width is not None:
+        image_map = json.loads((ROOT / 'data/yolo11s-sar-512/image_map.json').read_text())
+        widths = {key.split('/')[-1]: info['width'] for key, info in image_map.items()}
     out = []
     for label in labels:
         out.append(label)
         classes = {int(c) for c in label['cls'].ravel()} if len(label['cls']) else set()
-        if classes & class_ids:
+        if classes & class_ids and (only_width is None or widths.get(Path(label['im_file']).name) == only_width):
             out.extend(dict(label) for _ in range(factor - 1))
     return out
 
 
-def enable_class_repeat(class_ids: set[int], factor: int) -> None:
+def enable_class_repeat(class_ids: set[int], factor: int, only_width: int | None = None) -> None:
     """Apply repeat_labels to every training dataset (validation keeps each image once)."""
     from ultralytics.data import dataset as ul_dataset
 
@@ -271,7 +279,7 @@ def enable_class_repeat(class_ids: set[int], factor: int) -> None:
         labels = original(self)
         if not self.augment:
             return labels
-        labels = repeat_labels(labels, class_ids, factor)
+        labels = repeat_labels(labels, class_ids, factor, only_width)
         self.im_files = [label['im_file'] for label in labels]
         print(f'class repeat: {len(labels)} training entries after repeating {sorted(class_ids)} x{factor}', flush=True)
         return labels
@@ -403,6 +411,8 @@ def main() -> None:
                         help='comma-separated classes whose training images are shown --repeat-factor times, '
                              'e.g. bridge,playground,wind_turbine')
     parser.add_argument('--repeat-factor', type=int, default=2)
+    parser.add_argument('--repeat-width', type=int, help='repeat only images whose original width is this (512 = the '
+                                                         'M4-SAR-like source); default: every matching image')
     parser.add_argument('--seed', type=int, default=0, help='0 matches the control; change it to measure run-to-run noise')
     parser.add_argument('--no-augment', action='store_true',
                         help='memorise stage: no flips, shifts, scaling or brightness changes, so the detector learns to '
@@ -477,13 +487,14 @@ def main() -> None:
         unknown = set(repeat) - set(CLASSES)
         if unknown:
             raise ValueError(f'unknown classes {unknown}; choose from {CLASSES}')
-        enable_class_repeat({CLASSES.index(name) for name in repeat}, args.repeat_factor)
+        enable_class_repeat({CLASSES.index(name) for name in repeat}, args.repeat_factor, args.repeat_width)
     run_root = ROOT / 'runs' / args.tag
     run_root.mkdir(parents=True, exist_ok=True)
     settings = {'source': str(args.source), 'classifier_for_scoring': str(args.classifier), 'epochs': args.epochs,
                 'lr0': args.lr0, 'nwd_weight': args.nwd_weight, 'nwd_constant': args.nwd_constant,
                 'speckle_prob': args.speckle_prob, 'speckle_looks': args.speckle_looks, 'seed': args.seed,
                 'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
+                'repeat_width': args.repeat_width,
                 'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes, 'box_gain': args.box_gain,
                 'constant_lr': args.constant_lr, 'aug_scale': args.aug_scale, 'aug_translate': args.aug_translate,
                 'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride, 'alpha_iou': args.alpha_iou,
