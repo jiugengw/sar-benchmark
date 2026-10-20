@@ -221,6 +221,45 @@ def enable_missing_label_loss(class_ids: set[int], threshold: float = 0.5, facto
           f'(score > {threshold}, outside {factor}x every label)', flush=True)
 
 
+def enable_alpha_iou(alpha: float) -> None:
+    """alpha-CIoU box loss (He et al., NeurIPS 2021): 1 - IoU^a + penalty^a instead of 1 - IoU + penalty.
+
+    With a > 1 the gradient grows for boxes that already overlap well, so training pushes harder on exactly the
+    0.75-0.95 range the strict thresholds score; the paper also reports robustness to noisy boxes. Only the box loss
+    changes (Ultralytics' loss module imports bbox_iou by name; the label assigner keeps its own copy)."""
+    from ultralytics.utils import loss as ul_loss
+    from ultralytics.utils.metrics import bbox_iou
+
+    def alpha_bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
+        if not CIoU:
+            return bbox_iou(box1, box2, xywh=xywh, GIoU=GIoU, DIoU=DIoU, CIoU=CIoU, eps=eps)
+        iou = bbox_iou(box1, box2, xywh=xywh, eps=eps)
+        penalty = (iou - bbox_iou(box1, box2, xywh=xywh, CIoU=True, eps=eps)).clamp(min=0)  # centre distance + shape
+        return iou.clamp(min=eps).pow(alpha) - penalty.clamp(min=eps).pow(alpha)
+
+    ul_loss.bbox_iou = alpha_bbox_iou
+    print(f'alpha-CIoU box loss, alpha {alpha}', flush=True)
+
+
+def tune_assigner(topk: int | None, beta: float | None) -> None:
+    """Change YOLO's task-aligned assigner: how many grid points learn each object (top-k of the one-to-many head,
+    default 10) and how strongly box overlap weighs in choosing them (beta, default 6; higher favours points that
+    already predict tight boxes)."""
+    from ultralytics.utils import loss as ul_loss
+
+    original_init = ul_loss.v8DetectionLoss.__init__
+
+    def __init__(self, model, tal_topk=10, tal_topk2=None):
+        original_init(self, model, tal_topk=tal_topk, tal_topk2=tal_topk2)
+        if topk is not None and tal_topk == 10:  # the one-to-many head; the one-to-one head (7 -> 1) is left alone
+            self.assigner.topk = self.assigner.topk2 = topk
+        if beta is not None:
+            self.assigner.beta = beta
+
+    ul_loss.v8DetectionLoss.__init__ = __init__
+    print(f'Assigner: one-to-many top-k {topk or 10}, beta {beta or 6.0}', flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--tag', required=True, help='name for runs/<tag>, results/<tag> and the curves folder')
@@ -272,6 +311,9 @@ def main() -> None:
                              '(strides 2/4/8/16 instead of 4/8/16/32) on the same 512 input; about 4x the activation '
                              'memory, so lower --batch')
     parser.add_argument('--batch', type=int, default=16)
+    parser.add_argument('--alpha-iou', type=float, help='alpha-CIoU box loss with this power (the paper uses 3)')
+    parser.add_argument('--tal-topk', type=int, help="grid points per object in the one-to-many head (YOLO26: 10)")
+    parser.add_argument('--tal-beta', type=float, help='weight of box overlap when picking them (YOLO26: 6)')
     parser.add_argument('--skip-evaluation', action='store_true',
                         help='save detector and curves only; use when a later stage refits the image classifier')
     args = parser.parse_args()
@@ -287,6 +329,10 @@ def main() -> None:
             raise FileNotFoundError(path)
     if args.nwd_weight:
         enable_nwd(args.nwd_weight, args.nwd_constant)
+    if args.alpha_iou:
+        enable_alpha_iou(args.alpha_iou)
+    if args.tal_topk or args.tal_beta:
+        tune_assigner(args.tal_topk, args.tal_beta)
     if args.speckle_prob:
         enable_speckle(args.speckle_prob, args.speckle_looks)
     missing = [name.strip() for name in args.missing_label_classes.split(',') if name.strip()]
@@ -308,7 +354,8 @@ def main() -> None:
                 'repeat_classes': args.repeat_classes, 'repeat_factor': args.repeat_factor,
                 'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes, 'box_gain': args.box_gain,
                 'constant_lr': args.constant_lr, 'aug_scale': args.aug_scale, 'aug_translate': args.aug_translate,
-                'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride,
+                'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride, 'alpha_iou': args.alpha_iou,
+                'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta,
                 'batch': args.batch, 'anneal_augment': args.anneal_augment,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
