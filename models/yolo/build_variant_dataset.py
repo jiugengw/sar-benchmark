@@ -31,6 +31,20 @@ from models.yolo.input_filters import FILTERS, apply  # noqa: E402
 SOURCE = ROOT / 'data/yolo11s-sar-512'
 
 
+def kept_train_files(image_map: dict, fraction: float, complement: bool = False) -> set[str]:
+    """File names of the training share used by --train-fraction (seeded per image class), or of its complement."""
+    by_class: dict[int, list[str]] = {}
+    for path, info in sorted(image_map.items()):
+        if path.startswith('images/train/'):
+            by_class.setdefault(info['csv_image_label'], []).append(Path(path).name)
+    kept = set()
+    for label, files in sorted(by_class.items()):
+        random.Random(label).shuffle(files)
+        cut = round(len(files) * fraction)
+        kept.update(files[cut:] if complement else files[:cut])
+    return kept
+
+
 def enlarge_line(line: str, classes: set[int], factor: float) -> str:
     """One YOLO label line (class cx cy w h, normalised); boxes of `classes` grow around their centre."""
     parts = line.split()
@@ -51,27 +65,22 @@ def main() -> None:
     parser.add_argument('--filter', choices=FILTERS, default='none')
     parser.add_argument('--train-fraction', type=float, default=1.0,
                         help='keep this share of the training images, drawn per image class')
+    parser.add_argument('--complement', action='store_true',
+                        help='keep the OTHER training images instead (e.g. the half not used by --train-fraction 0.5)')
     args = parser.parse_args()
     manifest = json.loads((args.source / 'conversion_manifest.json').read_text())
     names = manifest['classes']
     context = [n.strip() for n in args.context_classes.split(',') if n.strip()]
     if set(context) - set(names):
         raise ValueError(f'unknown classes {set(context) - set(names)}')
-    if not context and args.filter == 'none' and args.train_fraction >= 1:
+    if not context and args.filter == 'none' and args.train_fraction >= 1 and not args.complement:
         raise ValueError('nothing to change: give --context-classes, --filter and/or --train-fraction')
     if args.out.exists():
         raise FileExistsError(f'{args.out} exists; delete it first or choose another --out')
     out = args.out.resolve()
     class_ids = {names.index(n) for n in context}
     image_map = json.loads((args.source / 'image_map.json').read_text())
-    by_class: dict[int, list[str]] = {}
-    for path, info in sorted(image_map.items()):
-        if path.startswith('images/train/'):
-            by_class.setdefault(info['csv_image_label'], []).append(Path(path).name)
-    kept = set()
-    for label, files in sorted(by_class.items()):
-        random.Random(label).shuffle(files)
-        kept.update(files[:round(len(files) * args.train_fraction)])
+    kept = kept_train_files(image_map, args.train_fraction, args.complement)
 
     for split in ('train', 'val'):
         source_images, source_labels = args.source / 'images' / split, args.source / 'labels' / split
@@ -122,7 +131,8 @@ def main() -> None:
     (out / 'dataset.yaml').write_text(f'path: {out}\ntrain: images/train\nval: images/val\nnc: {len(names)}\nnames:{names_yaml}\n')
     (out / 'variant.json').write_text(json.dumps({
         'source': str(args.source.resolve()), 'context_classes': context, 'context_factor': args.context_factor,
-        'filter': args.filter, 'train_fraction': args.train_fraction, 'train_images': len(kept)}, indent=2) + '\n')
+        'filter': args.filter, 'train_fraction': args.train_fraction, 'complement': args.complement,
+        'train_images': len(kept)}, indent=2) + '\n')
     print(f'VARIANT_READY {out / "dataset.yaml"}', flush=True)
 
 
