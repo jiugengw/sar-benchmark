@@ -141,6 +141,7 @@ def main() -> None:
 
     detections: list[dict] = []
     labels_by_id: dict[int, int] = {}
+    probabilities_by_id: dict[int, list[float]] = {}  # the image classifier's class probabilities, saved beside the ZIP
     image_by_temp_stem: dict[str, dict] = {}
     active_classifier_probabilities: list[list[float]] = []
     active_classifier_index = 0
@@ -216,6 +217,7 @@ def main() -> None:
                 classifier_class = max(range(len(probabilities)), key=probabilities.__getitem__)
                 classifier_confidence = float(probabilities[classifier_class])
                 labels_by_id[image_id] = classifier_class
+                probabilities_by_id[image_id] = [float(v) for v in probabilities]
 
             boxes = result.boxes
             if boxes is None or len(boxes) == 0:
@@ -279,6 +281,8 @@ def main() -> None:
             text_stream.detach()
         archive.writestr("detection.json", json.dumps(detections, separators=(",", ":")))
     temporary_zip.replace(args.out)
+    if probabilities_by_id:
+        args.out.with_suffix('.probabilities.json').write_text(json.dumps(probabilities_by_id))
 
     metadata = {
         "format": "project classification.csv + COCO detection.json",

@@ -61,6 +61,8 @@ def evaluate_export(weights, classifier, branch, output, batch=16, nms_iou=0.7):
             labels = {int(row['image_id']): int(row['label']) for row in csv.DictReader(
                 io.StringIO(archive.read('classification.csv').decode()))}
         inference = json.loads(package.with_suffix('.inference.json').read_text())
+        probabilities_path = package.with_suffix('.probabilities.json')
+        probabilities = json.loads(probabilities_path.read_text()) if probabilities_path.is_file() else None
     image_ids = [int(image['id']) for image in ground_truth['images']]
     if set(labels) != set(image_ids):
         raise RuntimeError('Submission-path validation did not cover the saved holdout exactly')
@@ -73,6 +75,8 @@ def evaluate_export(weights, classifier, branch, output, batch=16, nms_iou=0.7):
                                        'split': '939-image labeled training holdout; no official labels'})
     write_json(output / 'predictions_val.json', predictions)
     write_json(output / 'image_classification_predictions.json', labels)
+    if probabilities is not None:
+        write_json(output / 'image_class_probabilities.json', probabilities)
     shutil.copy2(ground_truth_path, output / 'instances_val_holdout.json')
     print('EXACT_HOLDOUT_RESULT', branch, {key: metrics[key] for key in ('macro_f1', 'mAP', 'combined_delta_m')}, flush=True)
     return metrics
