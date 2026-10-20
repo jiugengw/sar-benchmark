@@ -79,7 +79,7 @@ def build_cfg(args, out: Path):
     cfg.DATALOADER.NUM_WORKERS = 4
     cfg.DATALOADER.FILTER_EMPTY_ANNOTATIONS = True
     cfg.SOLVER.IMS_PER_BATCH = args.batch
-    cfg.SOLVER.BASE_LR = 0.02 * args.batch / 16
+    cfg.SOLVER.BASE_LR = (args.base_lr or 0.02) * args.batch / 16
     cfg.SOLVER.MAX_ITER = args.iters
     cfg.SOLVER.STEPS = (int(args.iters * 0.75), int(args.iters * 0.9))
     cfg.SOLVER.WARMUP_ITERS = 500
@@ -100,6 +100,10 @@ def main() -> None:
     parser.add_argument('--fc-dim', type=int, default=256, help='box-head width; 256 keeps trainable parameters < 40M')
     parser.add_argument('--eval-period', type=int, default=2000)
     parser.add_argument('--weights', type=Path, help='start from these weights instead of the COCO model-zoo ones')
+    parser.add_argument('--scale-jitter', type=float, nargs=2, metavar=('LOW', 'HIGH'),
+                        help='random rescale by LOW..HIGH, then crop or pad back to 512 x 512 (the variety phase)')
+    parser.add_argument('--no-augment', action='store_true', help='no flips, no jitter at all (the memorise phase)')
+    parser.add_argument('--base-lr', type=float, help='learning rate at batch 16 (default 0.02, as Detectron2)')
     parser.add_argument('--smoke', action='store_true', help='50 iterations and a 50-image holdout, to test the setup')
     args = parser.parse_args()
     if args.smoke:
@@ -133,7 +137,12 @@ def main() -> None:
     clean_from = args.iters - args.clean_iters
 
     def augmentations(flips: bool):
-        augs = [T.ResizeShortestEdge(512, 512, 'choice')]
+        if args.no_augment:
+            return [T.ResizeShortestEdge(512, 512, 'choice')]
+        if args.scale_jitter and flips:
+            augs = [T.ResizeScale(args.scale_jitter[0], args.scale_jitter[1], 512, 512), T.FixedSizeCrop((512, 512))]
+        else:
+            augs = [T.ResizeShortestEdge(512, 512, 'choice')]
         if flips:
             augs += [T.RandomFlip(horizontal=True, vertical=False), T.RandomFlip(horizontal=False, vertical=True)]
         return augs
