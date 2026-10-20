@@ -4,6 +4,7 @@
 # Both stages leave their own scores and ZIP, so the 100-epoch result is not lost if the chain is ignored.
 #   sbatch sbatch/yolo26_pretrained_full.sbatch dota l      (DOTA weights: pretrained/yolo26<scale>-obb.pt)
 #   sbatch sbatch/yolo26_pretrained_full.sbatch coco l      (COCO weights: pretrained/yolo26<scale>.pt)
+#   sbatch sbatch/yolo26_pretrained_full.sbatch obj365 m    (Objects365 weights: pretrained/yolo26m-objv1-150.pt)
 # Input-filter variant (experiment B): FILTER=water sbatch sbatch/yolo26_pretrained_full.sbatch dota m
 #   trains and predicts on [SAR, despeckled, water map] (see input_filters.py); images are filtered as they are read,
 #   so no filtered copy of the dataset is written (the cluster allows only 100,000 files)
@@ -42,6 +43,7 @@ case "$INITIALIZATION:$SCALE" in
     dota:l) WEIGHTS=pretrained/yolo26l-obb.pt; SHA=8674b0c24bf68aab5eb45009e0ac3808ce432237edf8cb5c50ae2191cb263a2b ;;
     coco:m) WEIGHTS=pretrained/yolo26m.pt; SHA= ;;
     coco:l) WEIGHTS=pretrained/yolo26l.pt; SHA=9fe3c544f2b19bebad7ea41e76d7ad3d88b7c2f10d11d24430c5311f6b32db26 ;;
+    obj365:m) WEIGHTS=pretrained/yolo26m-objv1-150.pt; SHA= ;;  # Ultralytics' YOLO26m trained on Objects365v1, 150 epochs
     *) echo "Unsupported: $INITIALIZATION $SCALE" >&2; exit 2 ;;
 esac
 [[ -z "$SHA" ]] || echo "$SHA  $WEIGHTS" | sha256sum --check
