@@ -506,6 +506,13 @@ Behind after 100 epochs, slightly ahead after the chain. It was cancelled 2 epoc
 so the final comparison is still open. Only the third stage is kept (`runs/ft40-third-333749`), to run its memorise
 later; the other stages were deleted.
 
+## 90-degree rotation — 21 October 2026
+
+`--rotate90 0.5` (exact 90/180/270-degree turns of image and boxes) in the M4-like oversampling third stage, then
+memorise with beta 8 (`sbatch/third_then_memorise.sbatch`, job 334368), against the same recipe without it
+(333674): official-mix 52.37 vs 52.39, clean 50.82 vs 50.92. No class moved by more than about 2 AP. Flips already
+give four of the eight orientations; the other four add nothing.
+
 ## Cross-cutting lessons
 
 - **Detection is the score.** 1 mAP point ≈ 1.91 Δm vs 0.54 for F1. Changes that trade mAP for F1 (Phase 3)
