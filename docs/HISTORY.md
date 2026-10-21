@@ -514,6 +514,10 @@ memorise with beta 8 (`sbatch/third_then_memorise.sbatch`, job 334368), against 
 (333674): official-mix 52.37 vs 52.39, clean 50.82 vs 50.92. No class moved by more than about 2 AP. Flips already
 give four of the eight orientations; the other four add nothing.
 
+Leaving harbor out of the M4-like oversampling (job 334715; harbor at 512 px had dropped about 1.5 AP when
+oversampled): official-mix 52.21 vs 52.39, and harbor at 512 px stays at 49.7. The harbor drop comes from
+oversampling the other classes (or noise), not from repeating harbor images.
+
 ## Cross-cutting lessons
 
 - **Detection is the score.** 1 mAP point ≈ 1.91 Δm vs 0.54 for F1. Changes that trade mAP for F1 (Phase 3)
