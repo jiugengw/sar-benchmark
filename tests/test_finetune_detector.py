@@ -28,5 +28,12 @@ def test_repeat_labels_duplicates_only_images_with_chosen_classes():
     from models.yolo.finetune_detector import repeat_labels
     labels = [{'im_file': 'a', 'cls': np.array([[2.0]])}, {'im_file': 'b', 'cls': np.array([[0.0], [0.0]])},
               {'im_file': 'c', 'cls': np.zeros((0, 1))}]
-    out = repeat_labels(labels, {2, 6}, 3)
+    out = repeat_labels(labels, {2: 3, 6: 3})
     assert [label['im_file'] for label in out] == ['a', 'a', 'a', 'b', 'c']
+
+
+def test_repeat_labels_uses_the_largest_factor_of_an_images_classes():
+    from models.yolo.finetune_detector import repeat_labels
+    labels = [{'im_file': 'a', 'cls': np.array([[1.0], [2.0]])}, {'im_file': 'b', 'cls': np.array([[1.0]])}]
+    out = repeat_labels(labels, {1: 2, 2: 4})
+    assert [label['im_file'] for label in out] == ['a'] * 4 + ['b'] * 2

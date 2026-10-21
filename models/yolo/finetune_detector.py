@@ -300,8 +300,9 @@ def enable_speckle(p: float, looks: float) -> None:
 CLASSES = ('aircraft', 'airport', 'bridge', 'car', 'harbor', 'oil_tank', 'playground', 'ship', 'wind_turbine')
 
 
-def repeat_labels(labels: list[dict], class_ids: set[int], factor: int, only_width: int | None = None) -> list[dict]:
-    """Repeat-factor sampling: list every image containing one of class_ids `factor` times instead of once.
+def repeat_labels(labels: list[dict], factors: dict[int, int], only_width: int | None = None) -> list[dict]:
+    """Repeat-factor sampling: list every image containing one of the classes in `factors` that many times instead of
+    once (the largest factor among its classes).
 
     only_width: repeat only images whose ORIGINAL width is this (data/yolo11s-sar-512/image_map.json; every training
     image is stored at 512, so 256 px sources are told apart there). 512 picks the M4-SAR-like source of bridge,
@@ -314,12 +315,13 @@ def repeat_labels(labels: list[dict], class_ids: set[int], factor: int, only_wid
     for label in labels:
         out.append(label)
         classes = {int(c) for c in label['cls'].ravel()} if len(label['cls']) else set()
-        if classes & class_ids and (only_width is None or widths.get(Path(label['im_file']).name) == only_width):
+        factor = max((factors[c] for c in classes & factors.keys()), default=1)
+        if factor > 1 and (only_width is None or widths.get(Path(label['im_file']).name) == only_width):
             out.extend(dict(label) for _ in range(factor - 1))
     return out
 
 
-def enable_class_repeat(class_ids: set[int], factor: int, only_width: int | None = None) -> None:
+def enable_class_repeat(factors: dict[int, int], only_width: int | None = None) -> None:
     """Apply repeat_labels to every training dataset (validation keeps each image once)."""
     from ultralytics.data import dataset as ul_dataset
 
@@ -329,9 +331,9 @@ def enable_class_repeat(class_ids: set[int], factor: int, only_width: int | None
         labels = original(self)
         if not self.augment:
             return labels
-        labels = repeat_labels(labels, class_ids, factor, only_width)
+        labels = repeat_labels(labels, factors, only_width)
         self.im_files = [label['im_file'] for label in labels]
-        print(f'class repeat: {len(labels)} training entries after repeating {sorted(class_ids)} x{factor}', flush=True)
+        print(f'class repeat: {len(labels)} training entries after repeating {factors}', flush=True)
         return labels
 
     ul_dataset.YOLODataset.get_labels = get_labels
@@ -458,8 +460,8 @@ def main() -> None:
     parser.add_argument('--speckle-prob', type=float, default=0.0)
     parser.add_argument('--speckle-looks', type=float, default=4.0)
     parser.add_argument('--repeat-classes', default='',
-                        help='comma-separated classes whose training images are shown --repeat-factor times, '
-                             'e.g. bridge,playground,wind_turbine')
+                        help='comma-separated classes whose training images are shown --repeat-factor times; '
+                             'name:N sets that class\'s own factor, e.g. airport,harbor,bridge:4,playground:4')
     parser.add_argument('--repeat-factor', type=int, default=2)
     parser.add_argument('--repeat-width', type=int, help='repeat only images whose original width is this (512 = the '
                                                          'M4-SAR-like source); default: every matching image')
@@ -538,12 +540,14 @@ def main() -> None:
         if set(missing) - set(CLASSES):
             raise ValueError(f'unknown classes {set(missing) - set(CLASSES)}; choose from {CLASSES}')
         enable_missing_label_loss({CLASSES.index(name) for name in missing}, args.missing_label_threshold)
-    repeat = [name.strip() for name in args.repeat_classes.split(',') if name.strip()]
+    repeat = {}
+    for entry in (e.strip() for e in args.repeat_classes.split(',') if e.strip()):
+        name, _, factor = entry.partition(':')
+        if name not in CLASSES:
+            raise ValueError(f'unknown class {name}; choose from {CLASSES}')
+        repeat[CLASSES.index(name)] = int(factor) if factor else args.repeat_factor
     if repeat:
-        unknown = set(repeat) - set(CLASSES)
-        if unknown:
-            raise ValueError(f'unknown classes {unknown}; choose from {CLASSES}')
-        enable_class_repeat({CLASSES.index(name) for name in repeat}, args.repeat_factor, args.repeat_width)
+        enable_class_repeat(repeat, args.repeat_width)
     run_root = ROOT / 'runs' / args.tag
     run_root.mkdir(parents=True, exist_ok=True)
     settings = {'source': str(args.source), 'classifier_for_scoring': str(args.classifier), 'epochs': args.epochs,
