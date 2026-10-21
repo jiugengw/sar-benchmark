@@ -490,6 +490,22 @@ no left-right flips in the 100-epoch stage (`sbatch/noflip_exact.sbatch`, stage 
 (`P4_ATTENTION=1 THEN_MEMORISE=1`); weight averaging of the control's last checkpoints
 (`sbatch/swa_study.sbatch`); and the half-data learning curve.
 
+## Objects365 instead of DOTA weights — 20–21 October 2026
+
+The full YOLO pipeline (`OBJ365=m` in `sbatch/yolo26_pretrained_full.sbatch`, job 333749) started from Ultralytics'
+YOLO26m Objects365 weights (`pretrained/yolo26m-objv1-150.pt`) instead of the DOTA ones. Official-mix holdout
+mAP at each stage, against the DOTA pipeline at the same stage:
+
+| Stage | Objects365 | DOTA | Difference |
+|---|---:|---:|---:|
+| 100 epochs | 41.21 | 42.01 | −0.80 |
+| plain + speckle chain | 45.57 | 45.23 | +0.34 |
+| third stage | 46.19 | 45.80 | +0.39 |
+
+Behind after 100 epochs, slightly ahead after the chain. It was cancelled 2 epochs into memorise to free the GPU,
+so the final comparison is still open. Only the third stage is kept (`runs/ft40-third-333749`), to run its memorise
+later; the other stages were deleted.
+
 ## Cross-cutting lessons
 
 - **Detection is the score.** 1 mAP point ≈ 1.91 Δm vs 0.54 for F1. Changes that trade mAP for F1 (Phase 3)
