@@ -232,6 +232,56 @@ def enable_box_paste(p: float, max_objects: int) -> None:
     print(f'BoxPaste: probability {p}, up to {max_objects} objects, same scene class, matched background', flush=True)
 
 
+class Rotate90:
+    """Rotate the image and its boxes by 90, 180 or 270 degrees, with probability p (each angle equally likely).
+
+    Exact for axis-aligned boxes: a box's width and height just swap, so no box grows (unlike Ultralytics' `degrees`,
+    which enlarges every box to hold the rotated corners). Radar objects such as bridges, harbours and runways appear
+    at any heading, so each one is seen at four orientations. Square images only (all of ours after the letterbox)."""
+
+    def __init__(self, p: float = 0.5):
+        self.p = p
+
+    def __call__(self, labels: dict) -> dict:
+        import numpy as np
+        from ultralytics.utils.instance import Instances
+
+        img = labels['img']
+        h, w = img.shape[:2]
+        if np.random.random() >= self.p or h != w:
+            return labels
+        k = np.random.randint(1, 4)
+        instances = labels['instances']
+        instances.convert_bbox('xyxy')
+        if instances.normalized:
+            instances.denormalize(w, h)
+        boxes = instances.bboxes.copy()
+        for _ in range(k):  # np.rot90 turns counter-clockwise: (x, y) -> (y, w - x)
+            boxes = np.stack([boxes[:, 1], w - boxes[:, 2], boxes[:, 3], w - boxes[:, 0]], 1)
+        labels['img'] = np.ascontiguousarray(np.rot90(img, k))
+        segments = instances.segments
+        labels['instances'] = Instances(boxes.astype(np.float32),
+                                        np.zeros((0, segments.shape[1] if segments.ndim == 3 else 0, 2), dtype=np.float32),
+                                        None, bbox_format='xyxy', normalized=False)
+        return labels
+
+
+def enable_rotate90(p: float) -> None:
+    """Insert Rotate90 into every training dataset's transforms, just before the final Format step."""
+    from ultralytics.data import dataset as ul_dataset
+
+    original = ul_dataset.YOLODataset.build_transforms
+
+    def build_transforms(self, hyp=None):
+        transforms = original(self, hyp)
+        if self.augment:  # training only; validation images stay untouched
+            transforms.transforms.insert(len(transforms.transforms) - 1, Rotate90(p))
+        return transforms
+
+    ul_dataset.YOLODataset.build_transforms = build_transforms
+    print(f'Rotate90: probability {p} of a 90, 180 or 270 degree turn', flush=True)
+
+
 def enable_speckle(p: float, looks: float) -> None:
     """Insert SpeckleNoise into every training dataset's transforms, just before the final Format step."""
     from ultralytics.data import dataset as ul_dataset
@@ -452,6 +502,8 @@ def main() -> None:
     parser.add_argument('--box-paste', type=float, default=0.0,
                         help='probability of pasting objects from another same-class training image (BoxPaste)')
     parser.add_argument('--box-paste-max', type=int, default=3, help='at most this many pasted objects per image')
+    parser.add_argument('--rotate90', type=float, default=0.0,
+                        help='probability of turning a training image and its boxes by 90, 180 or 270 degrees')
     parser.add_argument('--skip-evaluation', action='store_true',
                         help='save detector and curves only; use when a later stage refits the image classifier')
     args = parser.parse_args()
@@ -471,6 +523,10 @@ def main() -> None:
         if args.no_augment:
             raise ValueError('--box-paste is an augmentation; memorise (--no-augment) runs without it')
         enable_box_paste(args.box_paste, args.box_paste_max)
+    if args.rotate90:
+        if args.no_augment:
+            raise ValueError('--rotate90 is an augmentation; memorise (--no-augment) runs without it')
+        enable_rotate90(args.rotate90)
     if args.alpha_iou:
         enable_alpha_iou(args.alpha_iou)
     if args.tal_topk or args.tal_beta:
@@ -499,7 +555,7 @@ def main() -> None:
                 'constant_lr': args.constant_lr, 'aug_scale': args.aug_scale, 'aug_translate': args.aug_translate,
                 'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride, 'alpha_iou': args.alpha_iou,
                 'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta,
-                'box_paste': args.box_paste, 'box_paste_max': args.box_paste_max,
+                'box_paste': args.box_paste, 'box_paste_max': args.box_paste_max, 'rotate90': args.rotate90,
                 'batch': args.batch, 'anneal_augment': args.anneal_augment,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}

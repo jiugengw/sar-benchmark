@@ -4,6 +4,10 @@
 #   third stage: 40 epochs from the DOTA chain's speckle stage, lr 0.001, the usual jitter + the options given here
 #   memorise:    40 epochs without augmentation, lr 0.002
 #   sbatch sbatch/third_then_memorise.sbatch boxpaste --box-paste 0.5
+# MEMORISE_EXTRA adds options to the memorise stage; PACKAGE=1 then builds a submission ZIP (classifier, holdout, box
+# audit), e.g. the M4-like oversampling + beta 8 recipe (333334 + 333674, official 50.12) with 90-degree turns:
+#   MEMORISE_EXTRA="--tal-beta 8" PACKAGE=1 sbatch sbatch/third_then_memorise.sbatch rot90 --rotate90 0.5 \
+#       --repeat-classes airport,harbor,oil_tank,playground,wind_turbine --repeat-factor 2 --repeat-width 512
 #SBATCH --job-name=sar-3rd-mem
 #SBATCH --partition=student
 #SBATCH --gres=gpu:rtx_pro_6000_blackwell_max:1
@@ -31,4 +35,10 @@ python -u models/yolo/finetune_detector.py --tag "$THIRD" \
     --classifier runs/chain-dota-330938-package/image_classifier.pt --skip-evaluation "$@"
 python -u models/yolo/finetune_detector.py --tag "ft40-${NAME}-memorise-${SLURM_JOB_ID}" \
     --source "runs/$THIRD/train/weights/best.pt" \
-    --classifier runs/third-stage-331789-package/image_classifier.pt --no-augment --lr0 0.002
+    --classifier runs/third-stage-331789-package/image_classifier.pt --no-augment --lr0 0.002 ${MEMORISE_EXTRA:-}
+if [[ "${PACKAGE:-0}" == 1 ]]; then
+    MEMORISE="ft40-${NAME}-memorise-${SLURM_JOB_ID}"
+    python -u models/yolo/package_candidate.py --tag "${NAME}-${SLURM_JOB_ID}" \
+        --detector "runs/$MEMORISE/train/weights/best.pt" --curves "runs/$MEMORISE/train/results.csv"
+fi
+echo "THIRD_THEN_MEMORISE_COMPLETE ${NAME}-${SLURM_JOB_ID}"
