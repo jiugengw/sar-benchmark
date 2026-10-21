@@ -501,10 +501,11 @@ mAP at each stage, against the DOTA pipeline at the same stage:
 | 100 epochs | 41.21 | 42.01 | −0.80 |
 | plain + speckle chain | 45.57 | 45.23 | +0.34 |
 | third stage | 46.19 | 45.80 | +0.39 |
+| memorise | 51.12 | 51.80 | −0.68 |
 
-Behind after 100 epochs, slightly ahead after the chain. It was cancelled 2 epochs into memorise to free the GPU,
-so the final comparison is still open. Only the third stage is kept (`runs/ft40-third-333749`), to run its memorise
-later; the other stages were deleted.
+Behind after 100 epochs, slightly ahead after the chain and third stage, but **behind after memorise**: the same
+memorise as the DOTA control (40 epochs, no augmentation, lr 0.002; job 334608) gives official-mix 51.12 against
+51.80 (clean 49.46 vs 50.40), with harbor at 512 px 7 AP lower. DOTA weights stay. The Objects365 runs were deleted.
 
 ## 90-degree rotation — 21 October 2026
 
