@@ -266,6 +266,50 @@ class Rotate90:
         return labels
 
 
+def enable_same_class_mosaic() -> None:
+    """Make Ultralytics' mosaic draw its three partner tiles from training images of the SAME class and the same
+    original width (source) as the first tile, instead of any image: four bridge scenes, four playground scenes...
+
+    Every course image holds one class, so a mixed mosaic shows class pairings that never occur; a same-class mosaic
+    keeps that pattern while showing four times the objects of the class per sample, each in its own context.
+    Images whose class has no partner fall back to random partners. Use with --mosaic P."""
+    import random
+
+    import numpy as np
+    from ultralytics.data import augment as ul_augment
+
+    image_map = json.loads((ROOT / 'data/yolo11s-sar-512/image_map.json').read_text())
+    widths = {key.split('/')[-1]: info['width'] for key, info in image_map.items()}
+
+    def key(label):
+        cls = label['cls'].ravel().astype(int) if len(label['cls']) else []
+        if not len(cls):
+            return None
+        return int(np.bincount(cls).argmax()), widths.get(Path(label['im_file']).name)
+
+    original_get_params = ul_augment.Mosaic.get_params
+
+    def get_params(self, labels):
+        self._first_key = key(labels)
+        return original_get_params(self, labels)
+
+    def get_indexes(self):
+        groups = getattr(self, '_groups', None)
+        if groups is None:
+            groups = {}
+            for index, label in enumerate(self.dataset.labels):
+                groups.setdefault(key(label), []).append(index)
+            self._groups = groups
+        pool = groups.get(getattr(self, '_first_key', None))
+        if not pool or len(pool) < 2:
+            return [random.randint(0, len(self.dataset) - 1) for _ in range(self.n - 1)]
+        return random.choices(pool, k=self.n - 1)
+
+    ul_augment.Mosaic.get_params = get_params
+    ul_augment.Mosaic.get_indexes = get_indexes
+    print('mosaic partners: same class and source width as the first tile', flush=True)
+
+
 def enable_rotate90(p: float) -> None:
     """Insert Rotate90 into every training dataset's transforms, just before the final Format step."""
     from ultralytics.data import dataset as ul_dataset
@@ -506,6 +550,8 @@ def main() -> None:
     parser.add_argument('--box-paste-max', type=int, default=3, help='at most this many pasted objects per image')
     parser.add_argument('--rotate90', type=float, default=0.0,
                         help='probability of turning a training image and its boxes by 90, 180 or 270 degrees')
+    parser.add_argument('--same-class-mosaic', action='store_true',
+                        help='with --mosaic: the partner tiles share the first tile\'s class and source width')
     parser.add_argument('--skip-evaluation', action='store_true',
                         help='save detector and curves only; use when a later stage refits the image classifier')
     args = parser.parse_args()
@@ -529,6 +575,10 @@ def main() -> None:
         if args.no_augment:
             raise ValueError('--rotate90 is an augmentation; memorise (--no-augment) runs without it')
         enable_rotate90(args.rotate90)
+    if args.same_class_mosaic:
+        if not args.mosaic or args.no_augment:
+            raise ValueError('--same-class-mosaic needs --mosaic P > 0 (and augmentation on)')
+        enable_same_class_mosaic()
     if args.alpha_iou:
         enable_alpha_iou(args.alpha_iou)
     if args.tal_topk or args.tal_beta:
@@ -560,6 +610,7 @@ def main() -> None:
                 'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride, 'alpha_iou': args.alpha_iou,
                 'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta,
                 'box_paste': args.box_paste, 'box_paste_max': args.box_paste_max, 'rotate90': args.rotate90,
+                'same_class_mosaic': args.same_class_mosaic,
                 'batch': args.batch, 'anneal_augment': args.anneal_augment,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
