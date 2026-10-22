@@ -591,7 +591,7 @@ def main() -> None:
         # The trainer rebuilds the model from its YAML and loads the weights into it, so change the YAML: the first
         # Conv's stride. No weight changes shape; the model's strides are recomputed when it is rebuilt.
         stem = detector.model.yaml['backbone'][0]
-        if stem[2] != 'Conv' or stem[3][2] != 2:
+        if stem[2] != 'Conv' or stem[3][2] not in (1, 2):  # 1: a model already continued at stride 1
             raise RuntimeError(f'Unexpected first layer {stem}')
         stem[3][2] = args.stem_stride
     if args.anneal_augment is not None:
