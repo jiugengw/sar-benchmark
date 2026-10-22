@@ -15,9 +15,10 @@ both ways round, so the reported gain is not tuned on the images it is scored on
     python models/yolo/hedge_study.py study results/ft40-m4rep-bp4-memorise-335138/one2many
     python models/yolo/hedge_study.py zip in.zip out.zip          # +-8% copies below every box (the chosen setting)
 
-Chosen setting (cross-fitted +0.58 official-mix on the x4 holdout; +-5% to +-10% all give +0.5): two copies per box,
-8% larger and 8% smaller around the same centre, scored below every original box. The submission writer keeps boxes
-down to score 0.001, so copies are scored at 0.0009 x the original score: the same order as in the study.
+Chosen setting: two tiers of copies. Tier 1: each box 8% larger and 8% smaller around the same centre; tier 2: each
+box shifted by 8% of its size left, right, up and down. Every tier-1 copy ranks below every original box (the
+submission writer keeps boxes down to score 0.001) and every tier-2 copy below every tier-1 copy. Cross-fitted on the
+holdout: about +0.8 official-mix on three different models (resized copies alone +0.6; both in one tier +0.67).
 """
 from __future__ import annotations
 
@@ -38,9 +39,10 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'models/yolo'))
 
 
-def hedge(predictions: list[dict], scales: list[tuple[float, float]], min_score: float, factor: float,
+def hedge(predictions: list[dict], scales: list[tuple[float, ...]], min_score: float, factor: float,
           max_per_class: int = 100) -> list[dict]:
-    """Each box scoring >= min_score gets a copy per (width, height) scale, centred on it, at score * factor.
+    """Each box scoring >= min_score gets a copy per (width, height) scale, centred on it (or shifted by (dx, dy) times
+    its size when given), at score * factor.
     Copies are dropped first when an image and class would exceed max_per_class boxes."""
     by_key = defaultdict(list)
     for p in predictions:
@@ -54,16 +56,39 @@ def hedge(predictions: list[dict], scales: list[tuple[float, float]], min_score:
                 break
             x, y, w, h = p['bbox']
             cx, cy = x + w / 2, y + h / 2
-            for sw, sh in scales:
+            for sw, sh, *shift in scales:
                 nw, nh = w * sw, h * sh
-                copies.append({**p, 'bbox': [cx - nw / 2, cy - nh / 2, nw, nh], 'score': p['score'] * factor})
+                dx, dy = (shift[0] * w, shift[1] * h) if shift else (0.0, 0.0)
+                copies.append({**p, 'bbox': [cx + dx - nw / 2, cy + dy - nh / 2, nw, nh], 'score': p['score'] * factor})
         merged = sorted(boxes + copies, key=lambda p: -p['score'])[:max_per_class]
         out.extend(merged)
     return out
 
 
-CHOSEN_SCALES = [(1.08, 1.08), (0.92, 0.92)]
-CHOSEN_FACTOR = 0.0009  # every original box scores >= 0.001, so every copy ranks below every original
+def hedge_tiers(predictions: list[dict], tiers: list[list[tuple[float, ...]]], top: float = 0.0009,
+                step: float = 0.001, max_per_class: int = 100) -> list[dict]:
+    """Copies in tiers: every copy of tier k ranks below every copy of tier k-1, and tier 1 below every original
+    (originals score >= 0.001; tier k copies score original * top * step**(k-1)). Within a tier, copies keep their
+    originals' order. Every original is kept; copies only fill an image and class up to max_per_class boxes."""
+    copies = []
+    for k, transforms in enumerate(tiers):
+        tier = hedge(predictions, transforms, 0.0, top * step ** k, max_per_class=10 ** 9)
+        copies += [p for p in tier if p['score'] < (0.001 * top * step ** (k - 1) if k else 0.001)]
+    room = defaultdict(lambda: max_per_class)
+    for p in predictions:
+        room[(p['image_id'], p['category_id'])] -= 1
+    out = list(predictions)
+    for p in sorted(copies, key=lambda p: -p['score']):
+        key = (p['image_id'], p['category_id'])
+        if room[key] > 0:
+            room[key] -= 1
+            out.append(p)
+    return out
+
+
+SIZES = [(1.08, 1.08), (0.92, 0.92)]
+SHIFTS = [(1, 1, 0.08, 0), (1, 1, -0.08, 0), (1, 1, 0, 0.08), (1, 1, 0, -0.08)]
+CHOSEN_TIERS = [SIZES, SHIFTS]
 
 
 def rewrite_zip(source: Path, target: Path) -> None:
@@ -72,7 +97,7 @@ def rewrite_zip(source: Path, target: Path) -> None:
     predictions = json.loads(members['detection.json'])
     if min(p['score'] for p in predictions) < 0.001:
         raise ValueError('boxes below score 0.001: copies would not rank below every original box')
-    hedged = hedge(predictions, CHOSEN_SCALES, 0.0, CHOSEN_FACTOR)
+    hedged = hedge_tiers(predictions, CHOSEN_TIERS)
     members['detection.json'] = json.dumps(hedged).encode()
     with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED) as archive:
         for name, data in members.items():
@@ -111,27 +136,26 @@ def study(results: Path) -> None:
 
     base = [mix(predictions, h) for h in halves]
     print(f'no hedging: official-mix {base[0]:.2f} / {base[1]:.2f} on the two halves', flush=True)
-    scale_sets = {
-        '+-5% both': [(1.05, 1.05), (0.95, 0.95)],
-        '+-8% both': [(1.08, 1.08), (0.92, 0.92)],
-        '+-10% both': [(1.1, 1.1), (0.9, 0.9)],
-        '+8% only': [(1.08, 1.08)],
-        '-8% only': [(0.92, 0.92)],
-        '+-8% and +-4%': [(1.08, 1.08), (0.92, 0.92), (1.04, 1.04), (0.96, 0.96)],
+    layouts = {
+        'sizes': [SIZES],
+        'sizes + shifts, one tier': [SIZES + SHIFTS],
+        'sizes, then shifts (chosen)': [SIZES, SHIFTS],
+        'sizes, shifts, then +-16% sizes': [SIZES, SHIFTS, [(1.16, 1.16), (0.84, 0.84)]],
+        'sizes, shifts, then diagonal shifts': [SIZES, SHIFTS, [(1, 1, 0.08, 0.08), (1, 1, -0.08, -0.08),
+                                                                 (1, 1, 0.08, -0.08), (1, 1, -0.08, 0.08)]],
     }
     results = []
-    for (name, scales), min_score, factor in itertools.product(scale_sets.items(), (0.01,), (0.0001,)):
-        hedged = hedge(predictions, scales, min_score, factor)
+    for name, tiers in layouts.items():
+        hedged = hedge_tiers(predictions, tiers)
         gains = [mix(hedged, h) - b for h, b in zip(halves, base)]
-        results.append((name, min_score, factor, gains))
-        print(f'  {name:20s} score >= {min_score:.1f}, copies at x{factor:<5} gain {gains[0]:+.2f} / {gains[1]:+.2f}',
-              flush=True)
+        results.append((name, 0.0, 0.0, gains))
+        print(f'  {name:36s} gain {gains[0]:+.2f} / {gains[1]:+.2f}', flush=True)
     # cross-fit: pick on one half, report on the other
     picked = []
     for pick, report in ((0, 1), (1, 0)):
         best = max(results, key=lambda r: r[3][pick])
         picked.append(best[3][report])
-        print(f'chosen on half {pick}: {best[0]}, score >= {best[1]}, x{best[2]} -> on half {report}: '
+        print(f'chosen on half {pick}: {best[0]} -> on half {report}: '
               f'{best[3][report]:+.2f}')
     print(f'cross-fitted gain in official-mix mAP: {np.mean(picked):+.2f}')
 
