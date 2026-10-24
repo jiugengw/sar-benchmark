@@ -37,6 +37,10 @@ def alias_legacy_modules() -> None:
 def load_detector(checkpoint: str | Path, architecture: str = "yolo"):
     """Load a detector checkpoint using its architecture-specific wrapper."""
     alias_legacy_modules()
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import spd  # noqa: F401  checkpoints with an SPD first layer unpickle spd.SPDConv
     if architecture == "deformable_detr":
         from deformable_detr_support import DeformableDetrAdapter
 

@@ -71,12 +71,18 @@ class SpeckleNoise:
     'looks' sets the strength: a gamma(L, 1/L) multiplier has standard deviation 1/sqrt(L), so L = 4 gives about
     50% grain. The same noise is used for every channel because the images are grayscale."""
 
-    def __init__(self, p: float = 0.5, looks: float = 4.0):
+    def __init__(self, p: float = 0.5, looks: float = 4.0, only: dict | None = None):
         self.p, self.looks = p, looks  # NumPy's global generator: Ultralytics seeds it per data-loader worker
+        self.only = only  # {'classes': set of class ids, 'widths': {file name: original width}, 'width': int}
 
     def __call__(self, labels: dict) -> dict:
         import numpy as np
 
+        if self.only is not None:
+            classes = {int(c) for c in np.asarray(labels.get('cls', [])).ravel()}
+            name = Path(str(labels.get('im_file', ''))).name
+            if not classes & self.only['classes'] or self.only['widths'].get(name) != self.only['width']:
+                return labels
         if np.random.random() >= self.p:
             return labels
         img = labels['img']
@@ -326,16 +332,23 @@ def enable_rotate90(p: float) -> None:
     print(f'Rotate90: probability {p} of a 90, 180 or 270 degree turn', flush=True)
 
 
-def enable_speckle(p: float, looks: float) -> None:
-    """Insert SpeckleNoise into every training dataset's transforms, just before the final Format step."""
+def enable_speckle(p: float, looks: float, only_classes: set[int] | None = None, only_width: int | None = None) -> None:
+    """Insert SpeckleNoise into every training dataset's transforms, just before the final Format step; with
+    only_classes / only_width, only images holding one of those classes at that original width get speckle."""
     from ultralytics.data import dataset as ul_dataset
+
+    only = None
+    if only_classes:
+        image_map = json.loads((ROOT / 'data/yolo11s-sar-512/image_map.json').read_text())
+        only = {'classes': only_classes, 'width': only_width,
+                'widths': {key.split('/')[-1]: info['width'] for key, info in image_map.items()}}
 
     original = ul_dataset.YOLODataset.build_transforms
 
     def build_transforms(self, hyp=None):
         transforms = original(self, hyp)
         if self.augment:  # training only; validation images stay untouched
-            transforms.transforms.insert(len(transforms.transforms) - 1, SpeckleNoise(p, looks))
+            transforms.transforms.insert(len(transforms.transforms) - 1, SpeckleNoise(p, looks, only))
         return transforms
 
     ul_dataset.YOLODataset.build_transforms = build_transforms
@@ -450,6 +463,66 @@ def enable_missing_label_loss(class_ids: set[int], threshold: float = 0.5, facto
           f'(score > {threshold}, outside {factor}x every label)', flush=True)
 
 
+class ClassWeightedBCE:
+    """BCE classification loss whose positive targets of chosen classes count `weight` times (negatives unchanged), so
+    the few labelled bridges / playgrounds / ships pull harder against the background they are confused with."""
+
+    def __init__(self, weights: dict[int, float], nc: int):
+        self.weights = [weights.get(c, 1.0) for c in range(nc)]
+
+    def __call__(self, pred, target):
+        import torch
+        import torch.nn.functional as F
+
+        loss = F.binary_cross_entropy_with_logits(pred, target, reduction='none')
+        w = torch.tensor(self.weights, device=pred.device, dtype=loss.dtype)
+        return loss * torch.where(target > 0, w, torch.ones_like(w))
+
+
+def enable_class_weights(weights: dict[int, float]) -> None:
+    """Install ClassWeightedBCE in every detection loss Ultralytics builds (both YOLO26 heads use v8DetectionLoss)."""
+    from ultralytics.utils import loss as ul_loss
+
+    original_init = ul_loss.v8DetectionLoss.__init__
+
+    def __init__(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        self.bce = ClassWeightedBCE(weights, self.nc)
+
+    ul_loss.v8DetectionLoss.__init__ = __init__
+    print('Class-weighted classification loss (positives): '
+          + ', '.join(f'{CLASSES[c]} x{w:g}' for c, w in sorted(weights.items())), flush=True)
+
+
+def enable_hard_targets(class_ids: set[int]) -> None:
+    """Classification target 1 for every grid point the assigner matches to an object of the chosen classes.
+
+    YOLO's task-aligned assigner sets a matched point's target to its normalised alignment, capped at the best IoU any
+    prediction reaches for that object. On 8 px bridges with 1-2 px label noise that is a random 0.3-0.6, so a correct
+    detection is trained to a low, noisy confidence and ranks below confident false alarms. For these classes the
+    target becomes 1 (the box loss is unchanged)."""
+    from ultralytics.utils import loss as ul_loss
+
+    original_init = ul_loss.v8DetectionLoss.__init__
+    cols = sorted(class_ids)
+
+    def __init__(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        assign = self.assigner
+
+        def assigner(*a, **k):
+            labels, bboxes, scores, fg, gt_idx = assign(*a, **k)
+            scores = scores.clone()
+            sub = scores[..., cols]
+            scores[..., cols] = (sub > 0).to(sub.dtype)
+            return labels, bboxes, scores, fg, gt_idx
+
+        self.assigner = assigner
+
+    ul_loss.v8DetectionLoss.__init__ = __init__
+    print(f'Hard classification targets (1 for matched points): {[CLASSES[c] for c in cols]}', flush=True)
+
+
 def enable_alpha_iou(alpha: float) -> None:
     """alpha-CIoU box loss (He et al., NeurIPS 2021): 1 - IoU^a + penalty^a instead of 1 - IoU + penalty.
 
@@ -489,6 +562,77 @@ def tune_assigner(topk: int | None, beta: float | None) -> None:
     print(f'Assigner: one-to-many top-k {topk or 10}, beta {beta or 6.0}', flush=True)
 
 
+def convert_to_spd(detector, layers: list[int]) -> None:
+    """Turn the chosen stride-2 backbone convolutions of a trained detector into SPD layers (space-to-depth + stride-1
+    conv, spd.py), each an exact copy of the trained layer, so the model computes the same thing before training.
+
+    Every SPD layer sees all pixels of each 2 x 2 block and a 6 x 6 pixel window instead of skipping between strides
+    (the SPD-Conv paper replaces every strided convolution this way). With a stride-1 first layer this keeps stride 1's
+    full-resolution start and adds SPD's lossless downsampling at the later shrink steps."""
+    import copy
+
+    import spd
+    from ultralytics.nn.tasks import DetectionModel
+
+    old = detector.model
+    config = copy.deepcopy(old.yaml)
+    for i in layers:
+        layer = config['backbone'][i]
+        if layer[2] != 'Conv' or layer[3][1:3] != [3, 2]:
+            raise RuntimeError(f'Layer {i} is not a 3x3 stride-2 Conv: {layer}')
+        layer[3][2] = -2
+    spd.install()
+    new = DetectionModel(config, ch=3, nc=config['nc'], verbose=False)
+    converted = tuple(f'model.{i}.' for i in layers)
+    state = {k: v for k, v in old.state_dict().items() if not k.startswith(converted)}
+    missing, unexpected = new.load_state_dict(state, strict=False)
+    if unexpected or any(not key.startswith(converted) for key in missing):
+        raise RuntimeError(f'SPD transfer mismatch: unexpected {unexpected[:5]}, missing {missing[:5]}')
+    old.eval()
+    for i in layers:
+        spd.exact_copy(new.model[i], old.model[i])
+    new.names, new.args = old.names, getattr(old, 'args', None)
+    detector.model = new
+    params = sum(p.numel() for p in new.parameters())
+    print(f'SPD layers {layers}: exact copies of the trained stride-2 convolutions; {params:,} parameters', flush=True)
+
+
+def add_level_to(detector, level: str) -> None:
+    """Give a trained YOLO26-P2 detector a fifth detection level: 'p1' (stride 2, below P2; see
+    train_yolo26s_p2.add_p1_level) or 'p6' (above P5; see add_p6_level).
+
+    Every trained layer keeps its weights: layers 0-28 by name, the detection head's existing branches at their level.
+    The new neck layers start fresh and the new head branch starts as a copy of its trained neighbour (P2 for P1, P5
+    for P6; same channels, the nearest scale), so before training the model's old outputs are exactly the trained
+    model's."""
+    from train_yolo26s_p2 import add_p1_level, add_p6_level
+    from ultralytics.nn.tasks import DetectionModel
+
+    old = detector.model
+    config = (add_p1_level if level == 'p1' else add_p6_level)(old.yaml)
+    new = DetectionModel(config, ch=3, nc=config['nc'], verbose=False)
+    old_detect, new_detect = len(old.model) - 1, len(new.model) - 1
+    shift, neighbour, new_branch = (1, 0, 0) if level == 'p1' else (0, 3, 4)
+    per_level = ('cv2', 'cv3', 'one2one_cv2', 'one2one_cv3')
+    state = {}
+    for key, value in old.state_dict().items():
+        parts = key.split('.')
+        if parts[0] == 'model' and int(parts[1]) == old_detect:
+            parts[1] = str(new_detect)
+            if parts[2] in per_level:
+                if int(parts[3]) == neighbour:
+                    state['.'.join(parts[:3] + [str(new_branch)] + parts[4:])] = value
+                parts[3] = str(int(parts[3]) + shift)
+        state['.'.join(parts)] = value
+    missing, unexpected = new.load_state_dict(state, strict=False)
+    new_layers = tuple(f'model.{i}.' for i in range(old_detect, new_detect))
+    if unexpected or any(not key.startswith(new_layers) for key in missing):
+        raise RuntimeError(f'{level} transfer mismatch: unexpected {unexpected[:5]}, missing {missing[:5]}')
+    new.names, new.args = old.names, getattr(old, 'args', None)
+    detector.model = new
+    print(f'{level.upper()} level added: {len(missing)} new tensors, strides {new.stride.tolist()}', flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--tag', required=True, help='name for runs/<tag>, results/<tag> and the curves folder')
@@ -503,6 +647,9 @@ def main() -> None:
     parser.add_argument('--nwd-constant', type=float, default=16.0, help='typical object size in pixels')
     parser.add_argument('--speckle-prob', type=float, default=0.0)
     parser.add_argument('--speckle-looks', type=float, default=4.0)
+    parser.add_argument('--speckle-classes', default='', help='speckle only images holding one of these classes '
+                        '(comma-separated) at original width --speckle-width')
+    parser.add_argument('--speckle-width', type=int, default=512)
     parser.add_argument('--repeat-classes', default='',
                         help='comma-separated classes whose training images are shown --repeat-factor times; '
                              'name:N sets that class\'s own factor, e.g. airport,harbor,bridge:4,playground:4')
@@ -542,6 +689,16 @@ def main() -> None:
                              '(strides 2/4/8/16 instead of 4/8/16/32) on the same 512 input; about 4x the activation '
                              'memory, so lower --batch')
     parser.add_argument('--batch', type=int, default=16)
+    parser.add_argument('--add-level', choices=('p1', 'p6'),
+                        help='add a fifth detection level to a YOLO26-P2 source: p1 (finer than P2) or p6 (coarser '
+                             'than P5); trained layers keep their weights (see add_level_to)')
+    parser.add_argument('--add-p1', dest='add_level', action='store_const', const='p1', help='same as --add-level p1')
+    parser.add_argument('--spd-layers', help="backbone layers to convert from stride-2 Conv to SPD (exact copies), e.g. "
+                        "'1,3,5,7'")
+    parser.add_argument('--hard-targets', help="classes trained to confidence 1 at matched points instead of the "
+                        "IoU-capped target, e.g. 'bridge,playground,ship'")
+    parser.add_argument('--class-weights', help="positive-target weight per class in the classification loss, e.g. "
+                        "'bridge:3,playground:3,ship:2'")
     parser.add_argument('--alpha-iou', type=float, help='alpha-CIoU box loss with this power (the paper uses 3)')
     parser.add_argument('--tal-topk', type=int, help="grid points per object in the one-to-many head (YOLO26: 10)")
     parser.add_argument('--tal-beta', type=float, help='weight of box overlap when picking them (YOLO26: 6)')
@@ -581,10 +738,17 @@ def main() -> None:
         enable_same_class_mosaic()
     if args.alpha_iou:
         enable_alpha_iou(args.alpha_iou)
+    if args.hard_targets:
+        enable_hard_targets({CLASSES.index(k.strip()) for k in args.hard_targets.split(',')})
+    if args.class_weights:
+        if args.missing_label_classes:
+            raise ValueError('--class-weights and the missing-label loss both replace the classification loss')
+        enable_class_weights({CLASSES.index(k): float(v) for k, v in (item.split(':') for item in args.class_weights.split(','))})
     if args.tal_topk or args.tal_beta:
         tune_assigner(args.tal_topk, args.tal_beta)
     if args.speckle_prob:
-        enable_speckle(args.speckle_prob, args.speckle_looks)
+        only = {CLASSES.index(n.strip()) for n in args.speckle_classes.split(',') if n.strip()} or None
+        enable_speckle(args.speckle_prob, args.speckle_looks, only, args.speckle_width)
     missing = [name.strip() for name in args.missing_label_classes.split(',') if name.strip()]
     if missing:
         if set(missing) - set(CLASSES):
@@ -607,8 +771,8 @@ def main() -> None:
                 'repeat_width': args.repeat_width,
                 'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes, 'box_gain': args.box_gain,
                 'constant_lr': args.constant_lr, 'aug_scale': args.aug_scale, 'aug_translate': args.aug_translate,
-                'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride, 'alpha_iou': args.alpha_iou,
-                'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta,
+                'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride, 'add_level': args.add_level, 'alpha_iou': args.alpha_iou,
+                'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta, 'class_weights': args.class_weights, 'hard_targets': args.hard_targets, 'spd_layers': args.spd_layers,
                 'box_paste': args.box_paste, 'box_paste_max': args.box_paste_max, 'rotate90': args.rotate90,
                 'same_class_mosaic': args.same_class_mosaic,
                 'batch': args.batch, 'anneal_augment': args.anneal_augment,
@@ -627,8 +791,8 @@ def main() -> None:
     augmentation = dict(translate=args.aug_translate, scale=args.aug_scale, fliplr=0.5, flipud=0.5, hsv_v=0.2,
                         mosaic=args.mosaic)
     if args.no_augment:
-        if args.speckle_prob and not args.photometric:
-            raise ValueError('--no-augment and --speckle-prob contradict each other (unless --photometric)')
+        if args.speckle_prob:  # speckle changes pixel grain, never geometry: allowed in memorise
+            print(f'memorise with speckle noise p {args.speckle_prob}, looks {args.speckle_looks}', flush=True)
         augmentation = {key: 0.0 for key in augmentation}
         if args.photometric:
             augmentation.update(hsv_v=0.2)
@@ -637,7 +801,12 @@ def main() -> None:
     elif args.keep_flips or args.photometric:
         raise ValueError('--keep-flips and --photometric only apply with --no-augment')
     started = time.monotonic()
+    sys.path.insert(0, str(ROOT / 'models/yolo'))
+    import spd  # checkpoints with an SPD first layer unpickle spd.SPDConv
+
     detector = YOLO(str(args.source))
+    if any(layer[2] == 'Conv' and layer[3][2:3] == [-2] for layer in detector.model.yaml['backbone']):
+        spd.install()  # the trainer rebuilds the model from its YAML: 'Conv' with stride -2 must build SPDConv
     if args.stem_stride != 2:
         # The trainer rebuilds the model from its YAML and loads the weights into it, so change the YAML: the first
         # Conv's stride. No weight changes shape; the model's strides are recomputed when it is rebuilt.
@@ -645,6 +814,10 @@ def main() -> None:
         if stem[2] != 'Conv' or stem[3][2] not in (1, 2):  # 1: a model already continued at stride 1
             raise RuntimeError(f'Unexpected first layer {stem}')
         stem[3][2] = args.stem_stride
+    if args.add_level:
+        add_level_to(detector, args.add_level)
+    if args.spd_layers:
+        convert_to_spd(detector, [int(i) for i in args.spd_layers.split(',')])
     if args.anneal_augment is not None:
         if args.no_augment:
             raise ValueError('--anneal-augment needs augmentation to anneal; drop --no-augment')
