@@ -1,5 +1,7 @@
 # Beating official Δm +45: plan
 
+**18 October update:** use [the current 48-hour plan](DELTA45_48H.md) for next actions. It incorporates completed NWD, speckle, P1 and 200-epoch runs, keeps targeted YOLO work first, and leaves Dome-DETR to the user's independent track. The draft below predates those completed experiments.
+
 Target raised from +35 to **+45** on 2026-10-18, after the best official result reached **Δm +36.80**
 (`yolo26m_p2_candidate_330230.zip`: macro-F1 94.69%, mAP 44.98%). This top section is the current plan, a first
 draft to refine. Everything below it is the record from the +35 phase: diagnostics, twins, the box-edge correction

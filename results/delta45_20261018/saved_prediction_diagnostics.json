@@ -1,0 +1,1071 @@
+{
+  "note": "Diagnostic greedy same-class matching, not COCO AP. All 939 holdout images; best_calibrated includes calibration-fit images. Saved predictions have already passed exporter filtering and NMS.",
+  "runs": {
+    "best_calibrated": {
+      "aircraft": {
+        "gt_boxes": 244,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9877049180327869,
+            "precision": 0.12578288100208768,
+            "matched": 241,
+            "predictions": 1916
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.9795081967213115,
+            "precision": 0.6789772727272727,
+            "matched": 239,
+            "predictions": 352
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.9631147540983607,
+            "precision": 0.8216783216783217,
+            "matched": 235,
+            "predictions": 286
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.9713114754098361,
+            "precision": 0.12369519832985386,
+            "matched": 237,
+            "predictions": 1916
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.9590163934426229,
+            "precision": 0.6647727272727273,
+            "matched": 234,
+            "predictions": 352
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.9426229508196722,
+            "precision": 0.8041958041958042,
+            "matched": 230,
+            "predictions": 286
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.8483606557377049,
+            "precision": 0.1080375782881002,
+            "matched": 207,
+            "predictions": 1916
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.8401639344262295,
+            "precision": 0.5823863636363636,
+            "matched": 205,
+            "predictions": 352
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.8237704918032787,
+            "precision": 0.7027972027972028,
+            "matched": 201,
+            "predictions": 286
+          }
+        }
+      },
+      "airport": {
+        "gt_boxes": 93,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 1.0,
+            "precision": 0.21577726218097448,
+            "matched": 93,
+            "predictions": 431
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.956989247311828,
+            "precision": 0.6496350364963503,
+            "matched": 89,
+            "predictions": 137
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.946236559139785,
+            "precision": 0.88,
+            "matched": 88,
+            "predictions": 100
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.989247311827957,
+            "precision": 0.21345707656612528,
+            "matched": 92,
+            "predictions": 431
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.956989247311828,
+            "precision": 0.6496350364963503,
+            "matched": 89,
+            "predictions": 137
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.946236559139785,
+            "precision": 0.88,
+            "matched": 88,
+            "predictions": 100
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.9139784946236559,
+            "precision": 0.19721577726218098,
+            "matched": 85,
+            "predictions": 431
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.9032258064516129,
+            "precision": 0.6131386861313869,
+            "matched": 84,
+            "predictions": 137
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.9032258064516129,
+            "precision": 0.84,
+            "matched": 84,
+            "predictions": 100
+          }
+        }
+      },
+      "bridge": {
+        "gt_boxes": 359,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.6211699164345403,
+            "precision": 0.009840695467984642,
+            "matched": 223,
+            "predictions": 22661
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.30919220055710306,
+            "precision": 0.16204379562043797,
+            "matched": 111,
+            "predictions": 685
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.14206128133704735,
+            "precision": 0.75,
+            "matched": 51,
+            "predictions": 68
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.5069637883008357,
+            "precision": 0.008031419619610784,
+            "matched": 182,
+            "predictions": 22661
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.2618384401114206,
+            "precision": 0.13722627737226278,
+            "matched": 94,
+            "predictions": 685
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.10863509749303621,
+            "precision": 0.5735294117647058,
+            "matched": 39,
+            "predictions": 68
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.17270194986072424,
+            "precision": 0.0027359781121751026,
+            "matched": 62,
+            "predictions": 22661
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.10027855153203342,
+            "precision": 0.052554744525547446,
+            "matched": 36,
+            "predictions": 685
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.0584958217270195,
+            "precision": 0.3088235294117647,
+            "matched": 21,
+            "predictions": 68
+          }
+        }
+      },
+      "car": {
+        "gt_boxes": 446,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9887892376681614,
+            "precision": 0.24244090159428258,
+            "matched": 441,
+            "predictions": 1819
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.9641255605381166,
+            "precision": 0.7977736549165121,
+            "matched": 430,
+            "predictions": 539
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.9461883408071748,
+            "precision": 0.8737060041407867,
+            "matched": 422,
+            "predictions": 483
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.9775784753363229,
+            "precision": 0.23969213853765806,
+            "matched": 436,
+            "predictions": 1819
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.952914798206278,
+            "precision": 0.7884972170686456,
+            "matched": 425,
+            "predictions": 539
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.9349775784753364,
+            "precision": 0.8633540372670807,
+            "matched": 417,
+            "predictions": 483
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.8699551569506726,
+            "precision": 0.21330401319406267,
+            "matched": 388,
+            "predictions": 1819
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.8475336322869955,
+            "precision": 0.7012987012987013,
+            "matched": 378,
+            "predictions": 539
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.8363228699551569,
+            "precision": 0.772256728778468,
+            "matched": 373,
+            "predictions": 483
+          }
+        }
+      },
+      "harbor": {
+        "gt_boxes": 213,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9436619718309859,
+            "precision": 0.05929203539823009,
+            "matched": 201,
+            "predictions": 3390
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.8732394366197183,
+            "precision": 0.5619335347432024,
+            "matched": 186,
+            "predictions": 331
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.8262910798122066,
+            "precision": 0.8110599078341014,
+            "matched": 176,
+            "predictions": 217
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.9295774647887324,
+            "precision": 0.0584070796460177,
+            "matched": 198,
+            "predictions": 3390
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.8591549295774648,
+            "precision": 0.552870090634441,
+            "matched": 183,
+            "predictions": 331
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.8169014084507042,
+            "precision": 0.8018433179723502,
+            "matched": 174,
+            "predictions": 217
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.7793427230046949,
+            "precision": 0.04896755162241888,
+            "matched": 166,
+            "predictions": 3390
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.7323943661971831,
+            "precision": 0.47129909365558914,
+            "matched": 156,
+            "predictions": 331
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.704225352112676,
+            "precision": 0.6912442396313364,
+            "matched": 150,
+            "predictions": 217
+          }
+        }
+      },
+      "oil_tank": {
+        "gt_boxes": 601,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9384359400998337,
+            "precision": 0.05472540267805162,
+            "matched": 564,
+            "predictions": 10306
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.8818635607321131,
+            "precision": 0.25866276232308444,
+            "matched": 530,
+            "predictions": 2049
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.6755407653910149,
+            "precision": 0.7085514834205934,
+            "matched": 406,
+            "predictions": 573
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.8968386023294509,
+            "precision": 0.052299631282747915,
+            "matched": 539,
+            "predictions": 10306
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.8202995008319468,
+            "precision": 0.24060517325524647,
+            "matched": 493,
+            "predictions": 2049
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.6339434276206323,
+            "precision": 0.6649214659685864,
+            "matched": 381,
+            "predictions": 573
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.6156405990016639,
+            "precision": 0.03590141665049486,
+            "matched": 370,
+            "predictions": 10306
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.562396006655574,
+            "precision": 0.16495851634943876,
+            "matched": 338,
+            "predictions": 2049
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.46589018302828616,
+            "precision": 0.4886561954624782,
+            "matched": 280,
+            "predictions": 573
+          }
+        }
+      },
+      "playground": {
+        "gt_boxes": 252,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.6706349206349206,
+            "precision": 0.007080906691247329,
+            "matched": 169,
+            "predictions": 23867
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.40476190476190477,
+            "precision": 0.1191588785046729,
+            "matched": 102,
+            "predictions": 856
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.23015873015873015,
+            "precision": 0.5576923076923077,
+            "matched": 58,
+            "predictions": 104
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.5873015873015873,
+            "precision": 0.006201030711861566,
+            "matched": 148,
+            "predictions": 23867
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.3611111111111111,
+            "precision": 0.10630841121495327,
+            "matched": 91,
+            "predictions": 856
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.20634920634920634,
+            "precision": 0.5,
+            "matched": 52,
+            "predictions": 104
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.2619047619047619,
+            "precision": 0.0027653245066409688,
+            "matched": 66,
+            "predictions": 23867
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.1388888888888889,
+            "precision": 0.04088785046728972,
+            "matched": 35,
+            "predictions": 856
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.10317460317460317,
+            "precision": 0.25,
+            "matched": 26,
+            "predictions": 104
+          }
+        }
+      },
+      "ship": {
+        "gt_boxes": 150,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9733333333333334,
+            "precision": 0.13734713076199437,
+            "matched": 146,
+            "predictions": 1063
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.9266666666666666,
+            "precision": 0.6017316017316018,
+            "matched": 139,
+            "predictions": 231
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.9,
+            "precision": 0.7988165680473372,
+            "matched": 135,
+            "predictions": 169
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.9466666666666667,
+            "precision": 0.13358419567262464,
+            "matched": 142,
+            "predictions": 1063
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.9066666666666666,
+            "precision": 0.5887445887445888,
+            "matched": 136,
+            "predictions": 231
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.8666666666666667,
+            "precision": 0.7692307692307693,
+            "matched": 130,
+            "predictions": 169
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.5666666666666667,
+            "precision": 0.0799623706491063,
+            "matched": 85,
+            "predictions": 1063
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.54,
+            "precision": 0.35064935064935066,
+            "matched": 81,
+            "predictions": 231
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.52,
+            "precision": 0.46153846153846156,
+            "matched": 78,
+            "predictions": 169
+          }
+        }
+      },
+      "wind_turbine": {
+        "gt_boxes": 923,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9956663055254604,
+            "precision": 0.1639607493309545,
+            "matched": 919,
+            "predictions": 5605
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.9902491874322861,
+            "precision": 0.5178470254957507,
+            "matched": 914,
+            "predictions": 1765
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.9707475622968581,
+            "precision": 0.8924302788844621,
+            "matched": 896,
+            "predictions": 1004
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.9729144095341279,
+            "precision": 0.16021409455842997,
+            "matched": 898,
+            "predictions": 5605
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.9393282773564464,
+            "precision": 0.4912181303116147,
+            "matched": 867,
+            "predictions": 1765
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.9122426868905742,
+            "precision": 0.8386454183266933,
+            "matched": 842,
+            "predictions": 1004
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.5644637053087758,
+            "precision": 0.09295272078501338,
+            "matched": 521,
+            "predictions": 5605
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.4745395449620802,
+            "precision": 0.2481586402266289,
+            "matched": 438,
+            "predictions": 1765
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.4333694474539545,
+            "precision": 0.398406374501992,
+            "matched": 400,
+            "predictions": 1004
+          }
+        }
+      }
+    },
+    "speckle": {
+      "aircraft": {
+        "gt_boxes": 244,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9877049180327869,
+            "precision": 0.12936124530327428,
+            "matched": 241,
+            "predictions": 1863
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.9754098360655737,
+            "precision": 0.6556473829201102,
+            "matched": 238,
+            "predictions": 363
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.9713114754098361,
+            "precision": 0.8006756756756757,
+            "matched": 237,
+            "predictions": 296
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.9713114754098361,
+            "precision": 0.12721417069243157,
+            "matched": 237,
+            "predictions": 1863
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.9508196721311475,
+            "precision": 0.6391184573002755,
+            "matched": 232,
+            "predictions": 363
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.9467213114754098,
+            "precision": 0.7804054054054054,
+            "matched": 231,
+            "predictions": 296
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.8319672131147541,
+            "precision": 0.10896403650026838,
+            "matched": 203,
+            "predictions": 1863
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.8155737704918032,
+            "precision": 0.5482093663911846,
+            "matched": 199,
+            "predictions": 363
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.8114754098360656,
+            "precision": 0.668918918918919,
+            "matched": 198,
+            "predictions": 296
+          }
+        }
+      },
+      "airport": {
+        "gt_boxes": 93,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.989247311827957,
+            "precision": 0.2365038560411311,
+            "matched": 92,
+            "predictions": 389
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.967741935483871,
+            "precision": 0.7142857142857143,
+            "matched": 90,
+            "predictions": 126
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.946236559139785,
+            "precision": 0.8543689320388349,
+            "matched": 88,
+            "predictions": 103
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.989247311827957,
+            "precision": 0.2365038560411311,
+            "matched": 92,
+            "predictions": 389
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.956989247311828,
+            "precision": 0.7063492063492064,
+            "matched": 89,
+            "predictions": 126
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.9354838709677419,
+            "precision": 0.8446601941747572,
+            "matched": 87,
+            "predictions": 103
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.8709677419354839,
+            "precision": 0.20822622107969152,
+            "matched": 81,
+            "predictions": 389
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.8709677419354839,
+            "precision": 0.6428571428571429,
+            "matched": 81,
+            "predictions": 126
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.8709677419354839,
+            "precision": 0.7864077669902912,
+            "matched": 81,
+            "predictions": 103
+          }
+        }
+      },
+      "bridge": {
+        "gt_boxes": 359,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.637883008356546,
+            "precision": 0.009682875264270613,
+            "matched": 229,
+            "predictions": 23650
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.3203342618384401,
+            "precision": 0.17665130568356374,
+            "matched": 115,
+            "predictions": 651
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.1532033426183844,
+            "precision": 0.7638888888888888,
+            "matched": 55,
+            "predictions": 72
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.5069637883008357,
+            "precision": 0.007695560253699788,
+            "matched": 182,
+            "predictions": 23650
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.2646239554317549,
+            "precision": 0.14592933947772657,
+            "matched": 95,
+            "predictions": 651
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.12256267409470752,
+            "precision": 0.6111111111111112,
+            "matched": 44,
+            "predictions": 72
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.1671309192200557,
+            "precision": 0.002536997885835095,
+            "matched": 60,
+            "predictions": 23650
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.09192200557103064,
+            "precision": 0.05069124423963134,
+            "matched": 33,
+            "predictions": 651
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.04735376044568245,
+            "precision": 0.2361111111111111,
+            "matched": 17,
+            "predictions": 72
+          }
+        }
+      },
+      "car": {
+        "gt_boxes": 446,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9977578475336323,
+            "precision": 0.2874677002583979,
+            "matched": 445,
+            "predictions": 1548
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.9730941704035875,
+            "precision": 0.7736185383244206,
+            "matched": 434,
+            "predictions": 561
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.9551569506726457,
+            "precision": 0.8729508196721312,
+            "matched": 426,
+            "predictions": 488
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.9932735426008968,
+            "precision": 0.28617571059431524,
+            "matched": 443,
+            "predictions": 1548
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.9663677130044843,
+            "precision": 0.768270944741533,
+            "matched": 431,
+            "predictions": 561
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.9484304932735426,
+            "precision": 0.8668032786885246,
+            "matched": 423,
+            "predictions": 488
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.852017937219731,
+            "precision": 0.2454780361757106,
+            "matched": 380,
+            "predictions": 1548
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.8363228699551569,
+            "precision": 0.6648841354723708,
+            "matched": 373,
+            "predictions": 561
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.8251121076233184,
+            "precision": 0.7540983606557377,
+            "matched": 368,
+            "predictions": 488
+          }
+        }
+      },
+      "harbor": {
+        "gt_boxes": 213,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9342723004694836,
+            "precision": 0.07127507163323782,
+            "matched": 199,
+            "predictions": 2792
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.8779342723004695,
+            "precision": 0.6254180602006689,
+            "matched": 187,
+            "predictions": 299
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.8356807511737089,
+            "precision": 0.8516746411483254,
+            "matched": 178,
+            "predictions": 209
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.9295774647887324,
+            "precision": 0.07091690544412607,
+            "matched": 198,
+            "predictions": 2792
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.8732394366197183,
+            "precision": 0.6220735785953178,
+            "matched": 186,
+            "predictions": 299
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.8309859154929577,
+            "precision": 0.84688995215311,
+            "matched": 177,
+            "predictions": 209
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.7981220657276995,
+            "precision": 0.06088825214899714,
+            "matched": 170,
+            "predictions": 2792
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.7370892018779343,
+            "precision": 0.5250836120401338,
+            "matched": 157,
+            "predictions": 299
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.7230046948356808,
+            "precision": 0.7368421052631579,
+            "matched": 154,
+            "predictions": 209
+          }
+        }
+      },
+      "oil_tank": {
+        "gt_boxes": 601,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9384359400998337,
+            "precision": 0.05992986930188078,
+            "matched": 564,
+            "predictions": 9411
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.8851913477537438,
+            "precision": 0.2523719165085389,
+            "matched": 532,
+            "predictions": 2108
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.6755407653910149,
+            "precision": 0.7328519855595668,
+            "matched": 406,
+            "predictions": 554
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.908485856905158,
+            "precision": 0.058017213898629266,
+            "matched": 546,
+            "predictions": 9411
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.8302828618968386,
+            "precision": 0.23671726755218217,
+            "matched": 499,
+            "predictions": 2108
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.6356073211314476,
+            "precision": 0.6895306859205776,
+            "matched": 382,
+            "predictions": 554
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.6505823627287853,
+            "precision": 0.04154712570396345,
+            "matched": 391,
+            "predictions": 9411
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.5973377703826955,
+            "precision": 0.170303605313093,
+            "matched": 359,
+            "predictions": 2108
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.5041597337770383,
+            "precision": 0.5469314079422383,
+            "matched": 303,
+            "predictions": 554
+          }
+        }
+      },
+      "playground": {
+        "gt_boxes": 252,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.6547619047619048,
+            "precision": 0.009993337774816789,
+            "matched": 165,
+            "predictions": 16511
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.4166666666666667,
+            "precision": 0.15532544378698224,
+            "matched": 105,
+            "predictions": 676
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.24206349206349206,
+            "precision": 0.5648148148148148,
+            "matched": 61,
+            "predictions": 108
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.5793650793650794,
+            "precision": 0.008842589788625765,
+            "matched": 146,
+            "predictions": 16511
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.36507936507936506,
+            "precision": 0.13609467455621302,
+            "matched": 92,
+            "predictions": 676
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.21428571428571427,
+            "precision": 0.5,
+            "matched": 54,
+            "predictions": 108
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.2896825396825397,
+            "precision": 0.0044212948943128825,
+            "matched": 73,
+            "predictions": 16511
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.17063492063492064,
+            "precision": 0.06360946745562131,
+            "matched": 43,
+            "predictions": 676
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.12698412698412698,
+            "precision": 0.2962962962962963,
+            "matched": 32,
+            "predictions": 108
+          }
+        }
+      },
+      "ship": {
+        "gt_boxes": 150,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9666666666666667,
+            "precision": 0.15010351966873706,
+            "matched": 145,
+            "predictions": 966
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.9266666666666666,
+            "precision": 0.6233183856502242,
+            "matched": 139,
+            "predictions": 223
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.8933333333333333,
+            "precision": 0.8481012658227848,
+            "matched": 134,
+            "predictions": 158
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.9466666666666667,
+            "precision": 0.14699792960662525,
+            "matched": 142,
+            "predictions": 966
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.9,
+            "precision": 0.6053811659192825,
+            "matched": 135,
+            "predictions": 223
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.86,
+            "precision": 0.8164556962025317,
+            "matched": 129,
+            "predictions": 158
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.5666666666666667,
+            "precision": 0.08799171842650104,
+            "matched": 85,
+            "predictions": 966
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.5466666666666666,
+            "precision": 0.36771300448430494,
+            "matched": 82,
+            "predictions": 223
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.5266666666666666,
+            "precision": 0.5,
+            "matched": 79,
+            "predictions": 158
+          }
+        }
+      },
+      "wind_turbine": {
+        "gt_boxes": 923,
+        "matched_recall": {
+          "iou0.3_score0.001": {
+            "recall": 0.9956663055254604,
+            "precision": 0.15531519351022477,
+            "matched": 919,
+            "predictions": 5917
+          },
+          "iou0.3_score0.05": {
+            "recall": 0.9869989165763814,
+            "precision": 0.5223623853211009,
+            "matched": 911,
+            "predictions": 1744
+          },
+          "iou0.3_score0.25": {
+            "recall": 0.9599133261105092,
+            "precision": 0.9105858170606372,
+            "matched": 886,
+            "predictions": 973
+          },
+          "iou0.5_score0.001": {
+            "recall": 0.971830985915493,
+            "precision": 0.1515970931215143,
+            "matched": 897,
+            "predictions": 5917
+          },
+          "iou0.5_score0.05": {
+            "recall": 0.9371614301191766,
+            "precision": 0.4959862385321101,
+            "matched": 865,
+            "predictions": 1744
+          },
+          "iou0.5_score0.25": {
+            "recall": 0.8970747562296858,
+            "precision": 0.8509763617677287,
+            "matched": 828,
+            "predictions": 973
+          },
+          "iou0.75_score0.001": {
+            "recall": 0.5460455037919827,
+            "precision": 0.08517829981409498,
+            "matched": 504,
+            "predictions": 5917
+          },
+          "iou0.75_score0.05": {
+            "recall": 0.46153846153846156,
+            "precision": 0.24426605504587157,
+            "matched": 426,
+            "predictions": 1744
+          },
+          "iou0.75_score0.25": {
+            "recall": 0.4084507042253521,
+            "precision": 0.3874614594039055,
+            "matched": 377,
+            "predictions": 973
+          }
+        }
+      }
+    }
+  }
+}
