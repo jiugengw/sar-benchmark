@@ -303,6 +303,8 @@ def main() -> None:
                         help="add a stride-2 detection level below P2; the pretrained layers and grids stay unchanged")
     parser.add_argument("--p6-level", action="store_true",
                         help="add a detection level above P5 (with --stem-stride 1 it restores the 32 px-per-cell grid)")
+    parser.add_argument("--lr0", type=float,
+                        help="starting learning rate with MuSGD (default: Ultralytics' automatic choice, MuSGD 0.01 here)")
     parser.add_argument("--seed", type=int, default=0, help="0 reproduces the verified runs; others measure seed noise")
     parser.add_argument("--stem-stride", type=int, choices=(1, 2), default=2,
                         help="1: first convolution at full resolution, every grid twice as fine (about 4x compute)")
@@ -383,7 +385,7 @@ def main() -> None:
         "p1_level": args.p1_level,
         "p6_level": args.p6_level,
         "close_mosaic": args.close_mosaic,
-        "optimizer": "auto (Ultralytics default)",
+        "optimizer": f"MuSGD lr0 {args.lr0}" if args.lr0 else "auto (Ultralytics default)",
         "augmentation": "Ultralytics YOLO26 defaults",
         "trainable_parameters": parameter_count,
         "split": "runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json",
@@ -404,7 +406,7 @@ def main() -> None:
         workers=args.workers,
         device=0,
         pretrained=True,
-        optimizer="auto",
+        **({"optimizer": "MuSGD", "lr0": args.lr0} if args.lr0 else {"optimizer": "auto"}),
         patience=args.epochs + 1,
         seed=args.seed,
         deterministic=True,

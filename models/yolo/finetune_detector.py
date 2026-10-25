@@ -543,6 +543,23 @@ def enable_alpha_iou(alpha: float) -> None:
     print(f'alpha-CIoU box loss, alpha {alpha}', flush=True)
 
 
+def set_assigner_min_side(side: float) -> None:
+    """Task-aligned assigner: while choosing which grid points may learn an object, label boxes with a side below
+    `side` pixels are enlarged to it about their centre (Ultralytics' stride_val, by default the second-finest stride:
+    8 px in a YOLO26-P2 model, 4 px at stride 1). A larger floor gives 5-10 px objects more candidate points; the
+    YOLO26 report raised small-object AP with 16 instead of 8. Only candidate selection changes, not the box targets."""
+    from ultralytics.utils import loss as ul_loss
+
+    original_init = ul_loss.v8DetectionLoss.__init__
+
+    def __init__(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        self.assigner.stride_val = side
+
+    ul_loss.v8DetectionLoss.__init__ = __init__
+    print(f'Assigner: label boxes smaller than {side:g} px are enlarged to it when choosing candidate points', flush=True)
+
+
 def tune_assigner(topk: int | None, beta: float | None) -> None:
     """Change YOLO's task-aligned assigner: how many grid points learn each object (top-k of the one-to-many head,
     default 10) and how strongly box overlap weighs in choosing them (beta, default 6; higher favours points that
@@ -695,6 +712,9 @@ def main() -> None:
     parser.add_argument('--add-p1', dest='add_level', action='store_const', const='p1', help='same as --add-level p1')
     parser.add_argument('--spd-layers', help="backbone layers to convert from stride-2 Conv to SPD (exact copies), e.g. "
                         "'1,3,5,7'")
+    parser.add_argument('--assigner-min-side', type=float,
+                        help='floor (px) on label box sides when the assigner picks candidate points (default: the '
+                             'second-finest stride, 8 px in a P2 model, 4 px at stride 1)')
     parser.add_argument('--hard-targets', help="classes trained to confidence 1 at matched points instead of the "
                         "IoU-capped target, e.g. 'bridge,playground,ship'")
     parser.add_argument('--class-weights', help="positive-target weight per class in the classification loss, e.g. "
@@ -738,6 +758,8 @@ def main() -> None:
         enable_same_class_mosaic()
     if args.alpha_iou:
         enable_alpha_iou(args.alpha_iou)
+    if args.assigner_min_side:
+        set_assigner_min_side(args.assigner_min_side)
     if args.hard_targets:
         enable_hard_targets({CLASSES.index(k.strip()) for k in args.hard_targets.split(',')})
     if args.class_weights:
@@ -772,7 +794,7 @@ def main() -> None:
                 'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes, 'box_gain': args.box_gain,
                 'constant_lr': args.constant_lr, 'aug_scale': args.aug_scale, 'aug_translate': args.aug_translate,
                 'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride, 'add_level': args.add_level, 'alpha_iou': args.alpha_iou,
-                'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta, 'class_weights': args.class_weights, 'hard_targets': args.hard_targets, 'spd_layers': args.spd_layers,
+                'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta, 'class_weights': args.class_weights, 'hard_targets': args.hard_targets, 'spd_layers': args.spd_layers, 'assigner_min_side': args.assigner_min_side,
                 'box_paste': args.box_paste, 'box_paste_max': args.box_paste_max, 'rotate90': args.rotate90,
                 'same_class_mosaic': args.same_class_mosaic,
                 'batch': args.batch, 'anneal_augment': args.anneal_augment,

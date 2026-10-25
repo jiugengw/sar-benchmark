@@ -35,6 +35,8 @@ def main() -> None:
     parser.add_argument('--native', action='store_true',
                         help='feed images smaller than 512 at their own size instead of upscaling them (a stride-1 '
                              'model then sees a 256 px image on the same grid as a normal model sees it upscaled)')
+    parser.add_argument('--resample', choices=('bilinear', 'nearest'), default='bilinear',
+                        help='how images below 512 px are enlarged (nearest: each pixel becomes a sharp block)')
     args = parser.parse_args()
     from PIL import Image
     from detector_support import load_detector
@@ -52,7 +54,8 @@ def main() -> None:
             sizes.add(size)
             (Path(temp) / str(size)).mkdir(exist_ok=True)
             with Image.open(args.split_root / image['file_name']) as original:
-                original.convert('L').resize((size, size), Image.Resampling.BILINEAR).save(
+                resample = Image.Resampling.NEAREST if args.resample == 'nearest' else Image.Resampling.BILINEAR
+                original.convert('L').resize((size, size), resample).save(
                     Path(temp) / str(size) / f'{stem}.png')
         for size in sorted(sizes):
             for result in detector.predict(source=Path(temp) / str(size), imgsz=size, batch=16, device=args.device,
