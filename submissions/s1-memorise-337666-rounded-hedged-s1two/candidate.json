@@ -1,0 +1,8 @@
+{
+  "detector": "runs/ft40-s1r-memorise-337666/train/weights/best.pt (m stride-1 chain, training split)",
+  "classifier": "0.5 branch (runs/s1-heads-337761/branch_head.pt) + 0.5 conv head (runs/s1-heads-337761/conv_head.pt), both on the stride-1 features; size rule",
+  "post": "rounded + two-tier hedging (boxes identical to s1cls)",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512
+}

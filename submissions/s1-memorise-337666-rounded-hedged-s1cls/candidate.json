@@ -1,0 +1,9 @@
+{
+  "detector": "runs/ft40-s1r-memorise-337666/train/weights/best.pt (m stride-1 chain, training split)",
+  "classifier": "runs/s1-heads-337761/branch_head.pt (branch copy of backbone layers 5-10, epoch 18)",
+  "post": "rounded (whole-pixel classes) + two-tier hedging",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512,
+  "holdout_official_mix": 54.73
+}

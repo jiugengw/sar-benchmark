@@ -1,0 +1,1 @@
+source: Codabench submission list, 2026-10-24 22:30 SGT, read from a screenshot (values rounded to 2 decimals); delta_m computed as 50 * (macro_f1 / 93.31 + mAP / 26.13 - 2)

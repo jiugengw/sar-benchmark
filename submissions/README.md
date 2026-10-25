@@ -4,9 +4,13 @@ Every ZIP uploaded to the [Codabench competition](https://www.codabench.org/comp
 
 | Codabench ID | Uploaded | ZIP | Status | Official Δm | Scoring result |
 |---:|---|---|---|---:|---|
+| — | 2026-10-25 21:22 | [alldata-s1-soup6-rounded-hedged.zip](alldata-s1-soup6-rounded-hedged/alldata-s1-soup6-rounded-hedged.zip) | Finished | **+57.59** | [scores.json](alldata-s1-soup6-rounded-hedged/scoring_result/scores.json) ¹ |
+| — | 2026-10-25 | [alldata-s1-rounded-hedged.zip](alldata-s1-rounded-hedged/alldata-s1-rounded-hedged.zip) | Finished | +56.18 | [scores.json](alldata-s1-rounded-hedged/scoring_result/scores.json) ¹ |
+| — | 2026-10-25 | [s1-memorise-337666-rounded-hedged-s1two.zip](s1-memorise-337666-rounded-hedged-s1two/s1-memorise-337666-rounded-hedged-s1two.zip) | Finished | +54.36 | [scores.json](s1-memorise-337666-rounded-hedged-s1two/scoring_result/scores.json) ¹ |
+| — | 2026-10-24 22:30 | [s1-memorise-337666-rounded-hedged-s1cls.zip](s1-memorise-337666-rounded-hedged-s1cls/s1-memorise-337666-rounded-hedged-s1cls.zip) | Finished | +53.84 | [scores.json](s1-memorise-337666-rounded-hedged-s1cls/scoring_result/scores.json) ¹ |
 | — | 2026-10-24 19:35 | [alldata-soup6-rounded.zip](alldata-soup6-rounded/alldata-soup6-rounded.zip) | Finished | +53.40 | [scores.json](alldata-soup6-rounded/scoring_result/scores.json) ¹ |
 | — | 2026-10-24 19:33 | [alldata-soup6-rounded-hedged.zip](alldata-soup6-rounded-hedged/alldata-soup6-rounded-hedged.zip) | Finished | +55.02 | [scores.json](alldata-soup6-rounded-hedged/scoring_result/scores.json) ¹ |
-| — | 2026-10-24 19:33 | [alldata-soup6-rounded-hedged-2head.zip](alldata-soup6-rounded-hedged-2head/alldata-soup6-rounded-hedged-2head.zip) | Finished | **+55.06** | [scores.json](alldata-soup6-rounded-hedged-2head/scoring_result/scores.json) ¹ |
+| — | 2026-10-24 19:33 | [alldata-soup6-rounded-hedged-2head.zip](alldata-soup6-rounded-hedged-2head/alldata-soup6-rounded-hedged-2head.zip) | Finished | +55.06 | [scores.json](alldata-soup6-rounded-hedged-2head/scoring_result/scores.json) ¹ |
 | 1002421 | 2026-10-19 15:54 | [memorise-lr2-332326.zip](memorise-lr2-332326/memorise-lr2-332326.zip) | Finished | +49.21 | [scores.json](memorise-lr2-332326/scoring_result/scores.json) |
 | 1001865 | 2026-10-19 10:06 | [memorise-332085.zip](memorise-332085/memorise-332085.zip) | Finished | +48.83 | [scores.json](memorise-332085/scoring_result/scores.json) |
 | 1001721 | 2026-10-19 07:53 | [third-stage-331789.zip](third-stage-331789/third-stage-331789.zip) | Finished | +41.23 | [scores.json](third-stage-331789/scoring_result/scores.json) |

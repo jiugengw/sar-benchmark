@@ -1,0 +1,8 @@
+{
+  "detector": "runs/soup-s1/alldata-s1-six.pt: weight average of six all-data memorise runs from the all-data stride-1 third stage (ft40-s1ad-third-338033): memorise beta 8, beta 12, beta 10, speckle, M4-like speckle 0.5 and 0.8",
+  "classifier": "all-data 1024-unit spatial-pooling head on the soup",
+  "post": "rounded + two-tier hedging",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512
+}

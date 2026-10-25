@@ -1,0 +1,8 @@
+{
+  "detector": "runs/ft40-s1ad-memorise-338116/train/weights/last.pt (m stride-1 chain; fine-tune stages on all data, from the training-split stride-1 100-epoch model 336150)",
+  "classifier": "all-data 1024-unit spatial-pooling head (package_candidate.py --classifier-all-data)",
+  "post": "rounded + two-tier hedging",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512
+}
