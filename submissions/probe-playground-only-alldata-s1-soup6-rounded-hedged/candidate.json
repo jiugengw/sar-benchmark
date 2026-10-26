@@ -1,0 +1,6 @@
+{
+  "purpose": "probe of the test-set playground AP: alldata-s1-soup6-rounded-hedged.zip with only the playground boxes kept, classification unchanged; Codabench mAP averages 9 classes, so playground AP = mAP x 9",
+  "source_zip": "submissions/alldata-s1-soup6-rounded-hedged/alldata-s1-soup6-rounded-hedged.zip",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true
+}

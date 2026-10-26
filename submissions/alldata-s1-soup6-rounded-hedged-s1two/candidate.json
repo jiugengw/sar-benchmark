@@ -1,0 +1,8 @@
+{
+  "detector": "runs/soup-s1/alldata-s1-six.pt (same boxes as alldata-s1-soup6-rounded-hedged, +57.59)",
+  "classifier": "stride-1 two-head on the soup: 0.5 x all-data branch head (backbone layers 5-10 copied, 20 epochs) + 0.5 x all-data conv head (30 epochs), size rule (job 338577; branch from 338442)",
+  "post": "rounded + two-tier hedging",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512
+}
