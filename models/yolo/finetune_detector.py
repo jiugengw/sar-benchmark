@@ -440,6 +440,44 @@ def enable_speckle(p: float, looks: float, only_classes: set[int] | None = None,
     return state
 
 
+class SharpnessJitter:
+    """With probability p, blur the image slightly (Gaussian, sigma 0.3-0.8 px) or sharpen it (unsharp mask, amount
+    0.2-0.5), half the time each. Pixels never move, so boxes stay exact. The holdout's twins are the same capture as a
+    training image with different brightness (about +-20%) and sharpness (about +-17%); with --photometric
+    (brightness) this lets memorise recognise such re-processed copies instead of only the exact pixels."""
+
+    def __init__(self, p: float):
+        self.p = p
+
+    def __call__(self, labels: dict) -> dict:
+        import cv2
+        import numpy as np
+
+        if np.random.random() >= self.p:
+            return labels
+        img = labels['img'].astype(np.float32)
+        blurred = cv2.GaussianBlur(img, (0, 0), np.random.uniform(0.3, 0.8))
+        out = blurred if np.random.random() < 0.5 else img + np.random.uniform(0.2, 0.5) * (img - blurred)
+        labels['img'] = np.clip(out, 0, 255).astype(labels['img'].dtype)
+        return labels
+
+
+def enable_sharpness(p: float) -> None:
+    """Insert SharpnessJitter into every training dataset's transforms, just before the final Format step."""
+    from ultralytics.data import dataset as ul_dataset
+
+    original = ul_dataset.YOLODataset.build_transforms
+
+    def build_transforms(self, hyp=None):
+        transforms = original(self, hyp)
+        if self.augment:  # training only; validation images stay untouched
+            transforms.transforms.insert(len(transforms.transforms) - 1, SharpnessJitter(p))
+        return transforms
+
+    ul_dataset.YOLODataset.build_transforms = build_transforms
+    print(f'Sharpness jitter: probability {p} of a slight blur or sharpen', flush=True)
+
+
 def enable_speckle_annealing(detector, state: dict, epochs: int, tail: int) -> None:
     """Fade speckle out: its probability falls linearly from the full value at epoch 0 to zero at epoch
     epochs - tail, and the last `tail` epochs see clean images. Grain first teaches a scene's structure (a re-captured
@@ -801,6 +839,9 @@ def main() -> None:
     parser.add_argument('--photometric', action='store_true',
                         help='with --no-augment: keep brightness jitter and allow --speckle-prob; they change how the '
                              'image looks, not where objects are, so boxes stay pixel-exact')
+    parser.add_argument('--sharpness-prob', type=float, default=0.0,
+                        help='probability of a slight blur or sharpen per training view (SharpnessJitter); pixels '
+                             'never move, so it is allowed in memorise')
     parser.add_argument('--anneal-augment', type=int, metavar='TAIL',
                         help='shrink augmentation linearly to zero, the last TAIL epochs without any (see '
                              'enable_augment_annealing)')
@@ -889,6 +930,8 @@ def main() -> None:
         enable_class_weights({CLASSES.index(k): float(v) for k, v in (item.split(':') for item in args.class_weights.split(','))})
     if args.tal_topk or args.tal_beta:
         tune_assigner(args.tal_topk, args.tal_beta)
+    if args.sharpness_prob:
+        enable_sharpness(args.sharpness_prob)
     speckle_state = None
     if args.speckle_prob:
         only = {CLASSES.index(n.strip()) for n in args.speckle_classes.split(',') if n.strip()} or None
@@ -917,7 +960,7 @@ def main() -> None:
                 'repeat_width': args.repeat_width,
                 'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes, 'box_gain': args.box_gain,
                 'constant_lr': args.constant_lr, 'aug_scale': args.aug_scale, 'aug_translate': args.aug_translate,
-                'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride, 'add_level': args.add_level, 'alpha_iou': args.alpha_iou,
+                'mosaic': args.mosaic, 'photometric': args.photometric, 'sharpness_prob': args.sharpness_prob, 'stem_stride': args.stem_stride, 'add_level': args.add_level, 'alpha_iou': args.alpha_iou,
                 'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta, 'class_weights': args.class_weights, 'hard_targets': args.hard_targets, 'spd_layers': args.spd_layers, 'assigner_min_side': args.assigner_min_side,
                 'box_paste': args.box_paste, 'box_paste_max': args.box_paste_max, 'rotate90': args.rotate90,
                 'dataset_flips': args.dataset_flips, 'dataset_flips_classes': args.dataset_flips_classes, 'same_class_mosaic': args.same_class_mosaic,
