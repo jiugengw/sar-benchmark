@@ -1,11 +1,15 @@
 # CS701 SAR benchmark
 
 Our work on the CS701 SAR multi-task benchmark: classify each SAR image (9 classes) and detect its objects. Our best
-official result is **Δm +36.80**, from `yolo26m_p2_candidate_330230.zip`: a YOLO26m-P2 detector with a separate image
-classifier and a per-class box-edge correction.
+official result is **Δm +58.00** (macro-F1 95.13, mAP 55.93), from `alldata-s1-soup6-rounded-hedged-s1two.zip`: one
+YOLO26m-P2 detector with a stride-1 first layer, the weight average of six all-data memorise runs, rounded and hedged
+boxes, and a two-head image classifier on its frozen features.
 
 ## What to read
 
+- **[How we got here](docs/HISTORY.md#summary): the path from Δm −1.47 to +58.00**, one table row per step, and
+  [the last week in detail](docs/HISTORY.md#rounding-hedging-soup-stride-1-and-repeated-scenes--2026-october-2026)
+  (rounding, hedging, soup, stride 1, the classifier, per-class probes and the flipped copies in the test set).
 - **[docs/HISTORY.md](docs/HISTORY.md): the full record.** Every attempt, part by part: why we tried it, what we
   ran (configs, job IDs, code), local and official scores, and the lesson.
 - **[docs/DELTA45_PLAN.md](docs/DELTA45_PLAN.md): our plan to reach Δm +45** (draft), followed by the +35-phase analysis. The candidate models are explained [below](#candidate-models-to-run-next). Where the remaining

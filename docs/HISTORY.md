@@ -26,6 +26,10 @@ a quarter of the labelled images (and of the official validation set) are same-s
 which is why official scores land between our full and twin-free ("clean") local scores. On 18–19 October a
 longer chain from DOTA weights reached +40.7, and 40 final epochs **without augmentation** ("memorise") added
 about 4 official mAP points, for **Δm +49.21**; see [18–19 October](#chain-memorise-and-headroom--1819-october-2026).
+From 20 to 26 October, rounding, box hedging, a six-run weight soup, a stride-1 first layer, all-data training and a
+two-head image classifier carried it to **Δm +58.00** (95.13 F1, 55.93 mAP). On 26 October we found that about 250 test
+images (18%) repeat labelled scenes only in flipped form, with labels flipped one pixel off an exact mirror; see
+[20–26 October](#rounding-hedging-soup-stride-1-and-repeated-scenes--2026-october-2026).
 
 | Date (2026) | Approach | Official F1 | Official mAP | Official Δm |
 |---|---|---:|---:|---:|
@@ -45,9 +49,13 @@ about 4 official mAP points, for **Δm +49.21**; see [18–19 October](#chain-me
 | Oct 19 | Same, YOLO26l from DOTA | 93.25 | 47.51 | +40.88 |
 | Oct 19 | DOTA m chain + third 40-epoch stage | 93.93 | 47.51 | +41.23 |
 | Oct 19 | Third stage + 40 epochs without augmentation (memorise) | 93.34 | 51.64 | +48.83 |
-| Oct 19 | Memorise at lr 0.002 | 93.83 | 51.70 | **+49.21** |
+| Oct 19 | Memorise at lr 0.002 | 93.83 | 51.70 | +49.21 |
+| Oct 24 | All-data six-run soup, rounded + hedged, two-head classifier | 93.40 | 54.88 | +55.06 |
+| Oct 25 | Stride-1 all-data single model, rounded + hedged | 94.45 | 55.17 | +56.18 |
+| Oct 25 | Stride-1 all-data soup, rounded + hedged | 94.37 | 55.93 | +57.59 |
+| Oct 26 | Same + stride-1 two-head classifier retrained on the soup | 95.13 | 55.93 | **+58.00** |
 
-All 25 uploads, with Codabench IDs, are in [submissions/README.md](../submissions/README.md). Unless stated,
+All uploads, with Codabench IDs where known, are in [submissions/README.md](../submissions/README.md). Unless stated,
 "local" scores below are on the fixed 939-image holdout of the labelled training set (8,453 train / 939 holdout,
 seed 0); "clean" means the 720 holdout images with no near-duplicate in training (Part 6).
 
@@ -518,6 +526,95 @@ Leaving harbor out of the M4-like oversampling (job 334715; harbor at 512 px had
 oversampled): official-mix 52.21 vs 52.39, and harbor at 512 px stays at 49.7. The harbor drop comes from
 oversampling the other classes (or noise), not from repeating harbor images.
 
+## Rounding, hedging, soup, stride 1 and repeated scenes — 20–26 October 2026
+
+**The path from +49.21 to +58.00.** Scores are official (Codabench). The stride-1 rows start from scratch on the
+training split and rejoin the soup recipe on all data; every other row keeps everything above it.
+
+| Date | Step | What changed | Official F1 | Official mAP | Official Δm |
+|---|---|---|---:|---:|---:|
+| Oct 19 | Memorise at lr 0.002 (start of this section) | | 93.83 | 51.70 | +49.21 |
+| Oct 20–23 | Rounding, assigner β 8, M4-like ×4 oversampling | eight rounded uploads; their scores were not recorded here (best about 52.9 mAP) | | | |
+| Oct 24 | All-data six-run **soup**, rounded | one averaged model of six memorise variants | 93.33 | 54.03 | +53.40 |
+| Oct 24 | + **hedging** | ±8% copies of every box ranked below all originals | 93.33 | 54.88 | +55.02 |
+| Oct 24 | **Stride 1**, training split only, own classifier | first convolution at full resolution | 93.26 | 54.28 | +53.84 |
+| Oct 25 | Same boxes + stride-1 **two-head classifier** | branch copy of layers 5–10 + conv head | 94.24 | 54.28 | +54.36 |
+| Oct 25 | Stride 1 on all data, single model | fine-tune stages on train + holdout | 94.45 | 55.17 | +56.18 |
+| Oct 25 | Stride-1 all-data **soup** | six memorise variants averaged | 94.37 | 55.93 | +57.59 |
+| Oct 26 | Soup + its own two-head classifier | heads retrained on the soup | 95.13 | 55.93 | **+58.00** |
+
+### What each step was
+
+- **Rounding (Oct 20).** Labels of some classes are whole pixels; snapping predicted edges of those classes to whole
+  pixels lifts the strict IoU thresholds a little (`models/yolo/round_boxes.py`, `whole-pixel-classes`).
+- **Assigner β 8 and M4-like oversampling (Oct 20–22).** The task-aligned assigner's β 8 (default 6) favours grid
+  points whose box overlaps the label best; the third stage repeats the 512 px M4-SAR-like images of bridge and
+  playground ×4 (`--repeat-classes bridge:4,playground:4 --repeat-width 512`). Small, consistent gains.
+- **Hedging (Oct 22–23).** Our boxes find objects but often miss 0.85–0.95 IoU by a pixel. Each box gets ±8% resized
+  copies (tier 1) and ±8% shifted copies (tier 2), every copy ranked below every original, so they can only add
+  recall at strict thresholds. Cross-fitted on the holdout +0.84; Codabench +0.85 (`models/yolo/hedge_study.py`).
+- **Soup (Oct 24).** Six memorise runs from the same third stage (β 8, 10, 12, speckle, two M4-like speckle levels),
+  their weights averaged into **one** model (no ensemble). Worth about +1.4 Δm over the single all-data model.
+  Averaging checkpoints within one run (epochs 20/30/40) gave nothing (−0.1).
+- **Stride 1 (Oct 23–24).** The first convolution at stride 1 instead of 2, so every grid is twice as fine and the
+  model sees full-resolution pixels (about 4× compute; L40S, batch 16). Official-mix +1.1 over the normal model
+  (oil tank at 512 px +10.7); +0.7 on Codabench. A finer output level alone (P1) added nothing, so the gain comes
+  from full-resolution processing, not the grid.
+- **Two-head classifier (Oct 25–26).** Average of two heads on the frozen stride-1 detector: a trainable copy of
+  backbone layers 5–10 (`models/yolo/branch_head_study.py`) and a conv head; +0.8–1.0 F1.
+- **All data.** Final models train the fine-tune stages on train + holdout (about +0.9 mAP over the same recipe on
+  the training split).
+
+### What did not help (20–26 October)
+
+SPD down-sampling (alone or with stride 1), P1 and P6 levels, YOLO26l at stride 1 (led after the first stages,
+ended 0.8 behind), class-weighted loss and hard targets for bridge / playground / ship, 140 epochs straight instead
+of 100 + 40 (−3.3 official-mix), nearest-neighbour upscaling of 256 px images (+0.1, noise), within-run weight
+averaging, extra large-shift box copies for bridges (+0.01), and every post-processing study on the soup (box
+voting, size snapping, re-scoring, classifier gating).
+
+### Where the remaining mAP is (Oct 26)
+
+- **Per-class test AP by probing.** A ZIP with only one class's boxes scores that class's AP / 9 (checked on the
+  local metric). Two uploads: test bridge AP **5.8** (AP50 14.1), playground **20.3** (AP50 30.5), close to the
+  clean holdout (8.0 / 19.3). The other seven classes average about 68.
+- **Bridges and playgrounds are mostly invisible, not mislocated.** 57% of holdout bridges and 62% of playgrounds
+  have no box anywhere near; misses come in whole images. Crops show found bridges cross clear dark rivers and found
+  playgrounds are dark rectangles in the city; the missed ones sit on narrow streams or show nothing
+  (`nonsubmissions/261026/bridge-miss-audit/`). The model fits training bridges at 96.8 AP, so it can memorise them
+  but not generalise.
+
+### Repeated scenes: flipped copies (Oct 26)
+
+The twin check (`sarbench/twins.py`) compares whole images the same way round. Comparing also after flips, across
+tile shifts and across sizes (`tools/analysis/`) showed how the 1,426 Codabench test images repeat labelled ones:
+
+| Test images that repeat labelled content | Images |
+|---|---:|
+| the right way round (identical framing, near-copy or a shared 200 px tile strip) | 475 |
+| **only flipped** (left-right, up-down or 180°; never 90°) | **250** |
+| nothing | 701 |
+
+- **Flipped copies are pixel copies** (holdout: pixel correlation 1.00 after flipping back), and their labels are the
+  original's mirrored **one pixel further left / up** than an exact mirror (x' = W − x − w − 1 at 512 px: 536 of
+  548 holdout boxes; − 2 at 256 px on a small sample). Ultralytics' random flip mirrors exactly, so it teaches boxes 1 px off — likely
+  why "memorise keeping flips" lost 3.1 on 19 October.
+- **Memorise learns exact pixels in one orientation:** the current model scores 66.5 mAP on the holdout's flipped
+  copies, against about 83 on same-way-round twins and 51 on new scenes.
+- **The "twins" are not re-captures** but the same capture with different brightness / sharpness (fine-grain
+  correlation 0.95); **near-copies** (r 0.7–0.9) are re-captures with new speckle (fine grain 0.14–0.32).
+- **Tiles:** the 512 px images are cut every 312 px, so neighbours share a 200 px strip (208 test images share one
+  with a labelled tile, about 110 more with a flipped one). No repeats across 256 / 512 px.
+- The image classifier is already 100% on twins and flipped copies (it trains with flips, which move no labels); its
+  32 holdout errors are on near-copies (7) and new scenes (25), mostly bridge ↔ playground.
+
+**Flip-memorise** (`--dataset-flips`): memorise with every training image also shown in the three flipped
+orientations, boxes flipped with the dataset's offset (training data only; no label is copied onto test images).
+Training-split test (job 338727) against the same third stage: raw holdout mAP 59.8 at epoch 14 of 20 against the
+plain memorise's best 57.9. Strong constant speckle on top (338730) runs about 2 behind it; a speckle-then-clean
+schedule (`--anneal-speckle`, 338803) is queued. If flips win on the clean holdout, the all-data soup is rebuilt
+with flipped ingredients (`~/sbatch-staging/flipsoup2.sh`).
+
 ## Cross-cutting lessons
 
 - **Detection is the score.** 1 mAP point ≈ 1.91 Δm vs 0.54 for F1. Changes that trade mAP for F1 (Phase 3)
@@ -543,6 +640,12 @@ oversampling the other classes (or noise), not from repeating harbor images.
   other (the classifier lost 2 F1 points that way, matching Codabench).
 - **Know the ceiling before tuning.** Label noise limits strict-threshold AP for small objects; measure it (twins)
   before spending GPU time on box precision.
+- **Look for repeats under every symmetry the data might have been made with.** Our twin check compared images
+  the same way round and missed that 18% of the test images repeat labelled scenes only flipped; checking flips, tile shifts and
+  sizes took minutes on CPU.
+- **Probe what the score hides.** One-class uploads gave the test-set AP of a single class for one upload each.
+- **Average weights, not models.** A soup of six runs from one start point is still one model and gained more
+  than any single recipe change (+1.4 Δm).
 - **Budget the infrastructure.** Uploads (5/day), Slurm concurrency (2 running GPUs, 4 submitted jobs), 24 h job limit,
   the 100,000-file and 500 GB quota, and MIG slices decided what could run as much as the ideas did.
 
