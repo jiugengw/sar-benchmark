@@ -317,9 +317,14 @@ class DatasetFlip:
         return labels
 
 
-def enable_dataset_flips() -> None:
+def enable_dataset_flips(only_classes: set[int] | None = None) -> None:
     """List every training image four times, as it is and in the three flipped orientations of DatasetFlip, so that
-    memorise learns each scene in every orientation the dataset copies it in (four times the steps per epoch)."""
+    memorise learns each scene in every orientation the dataset copies it in (four times the steps per epoch).
+
+    only_classes: flip only images holding one of these classes; the others are listed four times as they are. The
+    dataset has no flipped copies of aircraft, car or ship scenes, and flipping them anyway cost those classes 0.8 to
+    3.2 AP in the first test (half the passes in their real orientation, boxes shifted by an offset they never have)."""
+    import numpy as np
     from ultralytics.data import dataset as ul_dataset
 
     image_map = json.loads((ROOT / 'data/yolo11s-sar-512/image_map.json').read_text())
@@ -331,9 +336,13 @@ def enable_dataset_flips() -> None:
         labels = original_labels(self)
         if not self.augment:
             return labels
-        labels = [dict(label, dataset_flip=flip) for flip in range(4) for label in labels]
+        def flips(label):
+            classes = {int(c) for c in np.asarray(label['cls']).ravel()}
+            return only_classes is None or bool(classes & only_classes)
+        labels = [dict(label, dataset_flip=flip if flips(label) else 0) for flip in range(4) for label in labels]
         self.im_files = [label['im_file'] for label in labels]
-        print(f'dataset flips: {len(labels)} training entries (each image as it is and flipped three ways)', flush=True)
+        flipped = sum(1 for label in labels if label['dataset_flip'])
+        print(f'dataset flips: {len(labels)} training entries, {flipped} of them flipped (each image four times)', flush=True)
         return labels
 
     def build_transforms(self, hyp=None):
@@ -827,6 +836,9 @@ def main() -> None:
     parser.add_argument('--dataset-flips', action='store_true',
                         help='list every training image four times: as it is, left-right, up-down and 180-degree '
                              'flipped, boxes flipped with the dataset\'s own 1 px (512) / 2 px (256) offset')
+    parser.add_argument('--dataset-flips-classes', default='',
+                        help="with --dataset-flips: flip only images holding one of these classes (the others four "
+                             "times as they are), e.g. 'airport,bridge,harbor,oil_tank,playground,wind_turbine'")
     parser.add_argument('--same-class-mosaic', action='store_true',
                         help='with --mosaic: the partner tiles share the first tile\'s class and source width')
     parser.add_argument('--skip-evaluation', action='store_true',
@@ -855,7 +867,12 @@ def main() -> None:
     if args.dataset_flips:
         if args.keep_flips:
             raise ValueError('--dataset-flips replaces --keep-flips (Ultralytics flips mirror without the dataset offset)')
-        enable_dataset_flips()
+        names = [n.strip() for n in args.dataset_flips_classes.split(',') if n.strip()]
+        if set(names) - set(CLASSES):
+            raise ValueError(f'unknown classes {set(names) - set(CLASSES)}; choose from {CLASSES}')
+        enable_dataset_flips({CLASSES.index(n) for n in names} or None)
+    elif args.dataset_flips_classes:
+        raise ValueError('--dataset-flips-classes needs --dataset-flips')
     if args.same_class_mosaic:
         if not args.mosaic or args.no_augment:
             raise ValueError('--same-class-mosaic needs --mosaic P > 0 (and augmentation on)')
@@ -903,7 +920,7 @@ def main() -> None:
                 'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride, 'add_level': args.add_level, 'alpha_iou': args.alpha_iou,
                 'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta, 'class_weights': args.class_weights, 'hard_targets': args.hard_targets, 'spd_layers': args.spd_layers, 'assigner_min_side': args.assigner_min_side,
                 'box_paste': args.box_paste, 'box_paste_max': args.box_paste_max, 'rotate90': args.rotate90,
-                'dataset_flips': args.dataset_flips, 'same_class_mosaic': args.same_class_mosaic,
+                'dataset_flips': args.dataset_flips, 'dataset_flips_classes': args.dataset_flips_classes, 'same_class_mosaic': args.same_class_mosaic,
                 'batch': args.batch, 'anneal_augment': args.anneal_augment, 'anneal_speckle': args.anneal_speckle,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
