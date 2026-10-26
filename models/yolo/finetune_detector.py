@@ -272,6 +272,80 @@ class Rotate90:
         return labels
 
 
+class DatasetFlip:
+    """Show a training image left-right flipped, up-down flipped or turned 180 degrees (labels['dataset_flip'] 1, 2,
+    3; 0 leaves it), with its boxes flipped the way the course dataset flips them.
+
+    The course images include flipped copies of other images (the Codabench test images too), and their labels are
+    the original's mirrored one pixel further left / up than an exact mirror: x' = W - x - w - 1 in a 512 px image,
+    - 2 in a 256 px one (548 holdout boxes against their training originals). Ultralytics' fliplr mirrors exactly,
+    so it teaches boxes 1 px off those labels. `widths` gives each training file's original width; every training
+    image is stored at 512, so the offset is scaled to the stored size."""
+
+    def __init__(self, widths: dict[str, int]):
+        self.widths = widths
+
+    def __call__(self, labels: dict) -> dict:
+        import numpy as np
+        from ultralytics.utils.instance import Instances
+
+        flip = labels.get('dataset_flip', 0)
+        if not flip:
+            return labels
+        img = labels['img']
+        h, w = img.shape[:2]
+        original = self.widths.get(Path(labels['im_file']).name, w)
+        offset = (2 if original <= 300 else 1) * w / original
+        instances = labels['instances']
+        instances.convert_bbox('xyxy')
+        if instances.normalized:
+            instances.denormalize(w, h)
+        boxes = instances.bboxes.copy()
+        if flip in (1, 3):
+            img = img[:, ::-1]
+            boxes[:, [0, 2]] = w - boxes[:, [2, 0]] - offset
+        if flip in (2, 3):
+            img = img[::-1]
+            boxes[:, [1, 3]] = h - boxes[:, [3, 1]] - offset
+        boxes[:, [0, 2]] = boxes[:, [0, 2]].clip(0, w)
+        boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, h)
+        labels['img'] = np.ascontiguousarray(img)
+        segments = instances.segments
+        labels['instances'] = Instances(boxes.astype(np.float32),
+                                        np.zeros((0, segments.shape[1] if segments.ndim == 3 else 0, 2), dtype=np.float32),
+                                        None, bbox_format='xyxy', normalized=False)
+        return labels
+
+
+def enable_dataset_flips() -> None:
+    """List every training image four times, as it is and in the three flipped orientations of DatasetFlip, so that
+    memorise learns each scene in every orientation the dataset copies it in (four times the steps per epoch)."""
+    from ultralytics.data import dataset as ul_dataset
+
+    image_map = json.loads((ROOT / 'data/yolo11s-sar-512/image_map.json').read_text())
+    widths = {key.split('/')[-1]: info['width'] for key, info in image_map.items()}
+    original_labels = ul_dataset.YOLODataset.get_labels
+    original_transforms = ul_dataset.YOLODataset.build_transforms
+
+    def get_labels(self):
+        labels = original_labels(self)
+        if not self.augment:
+            return labels
+        labels = [dict(label, dataset_flip=flip) for flip in range(4) for label in labels]
+        self.im_files = [label['im_file'] for label in labels]
+        print(f'dataset flips: {len(labels)} training entries (each image as it is and flipped three ways)', flush=True)
+        return labels
+
+    def build_transforms(self, hyp=None):
+        transforms = original_transforms(self, hyp)
+        if self.augment:  # training only; validation images stay untouched
+            transforms.transforms.insert(len(transforms.transforms) - 1, DatasetFlip(widths))
+        return transforms
+
+    ul_dataset.YOLODataset.get_labels = get_labels
+    ul_dataset.YOLODataset.build_transforms = build_transforms
+
+
 def enable_same_class_mosaic() -> None:
     """Make Ultralytics' mosaic draw its three partner tiles from training images of the SAME class and the same
     original width (source) as the first tile, instead of any image: four bridge scenes, four playground scenes...
@@ -332,9 +406,10 @@ def enable_rotate90(p: float) -> None:
     print(f'Rotate90: probability {p} of a 90, 180 or 270 degree turn', flush=True)
 
 
-def enable_speckle(p: float, looks: float, only_classes: set[int] | None = None, only_width: int | None = None) -> None:
+def enable_speckle(p: float, looks: float, only_classes: set[int] | None = None, only_width: int | None = None) -> dict:
     """Insert SpeckleNoise into every training dataset's transforms, just before the final Format step; with
-    only_classes / only_width, only images holding one of those classes at that original width get speckle."""
+    only_classes / only_width, only images holding one of those classes at that original width get speckle.
+    Returns the mutable {'p': ...} the transforms are built from, for enable_speckle_annealing."""
     from ultralytics.data import dataset as ul_dataset
 
     only = None
@@ -342,16 +417,35 @@ def enable_speckle(p: float, looks: float, only_classes: set[int] | None = None,
         image_map = json.loads((ROOT / 'data/yolo11s-sar-512/image_map.json').read_text())
         only = {'classes': only_classes, 'width': only_width,
                 'widths': {key.split('/')[-1]: info['width'] for key, info in image_map.items()}}
+    state = {'p': p}
 
     original = ul_dataset.YOLODataset.build_transforms
 
     def build_transforms(self, hyp=None):
         transforms = original(self, hyp)
         if self.augment:  # training only; validation images stay untouched
-            transforms.transforms.insert(len(transforms.transforms) - 1, SpeckleNoise(p, looks, only))
+            transforms.transforms.insert(len(transforms.transforms) - 1, SpeckleNoise(state['p'], looks, only))
         return transforms
 
     ul_dataset.YOLODataset.build_transforms = build_transforms
+    return state
+
+
+def enable_speckle_annealing(detector, state: dict, epochs: int, tail: int) -> None:
+    """Fade speckle out: its probability falls linearly from the full value at epoch 0 to zero at epoch
+    epochs - tail, and the last `tail` epochs see clean images. Grain first teaches a scene's structure (a re-captured
+    scene has new speckle); the clean tail then memorises the exact pixels and box edges. The data loader is rebuilt
+    each epoch so its worker processes see the new probability."""
+    start = state['p']
+
+    def anneal(trainer):
+        state['p'] = start * max(0.0, 1.0 - trainer.epoch / max(1, epochs - tail))
+        dataset = trainer.train_loader.dataset
+        dataset.transforms = dataset.build_transforms(trainer.args)
+        trainer.train_loader.reset()
+        print(f'SPECKLE_ANNEALING epoch {trainer.epoch}: speckle probability {state["p"]:.3f}', flush=True)
+
+    detector.add_callback('on_train_epoch_start', anneal)
 
 
 CLASSES = ('aircraft', 'airport', 'bridge', 'car', 'harbor', 'oil_tank', 'playground', 'ship', 'wind_turbine')
@@ -701,6 +795,9 @@ def main() -> None:
     parser.add_argument('--anneal-augment', type=int, metavar='TAIL',
                         help='shrink augmentation linearly to zero, the last TAIL epochs without any (see '
                              'enable_augment_annealing)')
+    parser.add_argument('--anneal-speckle', type=int, metavar='TAIL',
+                        help='with --speckle-prob: fade speckle linearly to zero, the last TAIL epochs clean (see '
+                             'enable_speckle_annealing)')
     parser.add_argument('--stem-stride', type=int, choices=(1, 2), default=2,
                         help='1: the first convolution keeps full resolution, so every level works at twice the detail '
                              '(strides 2/4/8/16 instead of 4/8/16/32) on the same 512 input; about 4x the activation '
@@ -727,6 +824,9 @@ def main() -> None:
     parser.add_argument('--box-paste-max', type=int, default=3, help='at most this many pasted objects per image')
     parser.add_argument('--rotate90', type=float, default=0.0,
                         help='probability of turning a training image and its boxes by 90, 180 or 270 degrees')
+    parser.add_argument('--dataset-flips', action='store_true',
+                        help='list every training image four times: as it is, left-right, up-down and 180-degree '
+                             'flipped, boxes flipped with the dataset\'s own 1 px (512) / 2 px (256) offset')
     parser.add_argument('--same-class-mosaic', action='store_true',
                         help='with --mosaic: the partner tiles share the first tile\'s class and source width')
     parser.add_argument('--skip-evaluation', action='store_true',
@@ -752,6 +852,10 @@ def main() -> None:
         if args.no_augment:
             raise ValueError('--rotate90 is an augmentation; memorise (--no-augment) runs without it')
         enable_rotate90(args.rotate90)
+    if args.dataset_flips:
+        if args.keep_flips:
+            raise ValueError('--dataset-flips replaces --keep-flips (Ultralytics flips mirror without the dataset offset)')
+        enable_dataset_flips()
     if args.same_class_mosaic:
         if not args.mosaic or args.no_augment:
             raise ValueError('--same-class-mosaic needs --mosaic P > 0 (and augmentation on)')
@@ -768,9 +872,12 @@ def main() -> None:
         enable_class_weights({CLASSES.index(k): float(v) for k, v in (item.split(':') for item in args.class_weights.split(','))})
     if args.tal_topk or args.tal_beta:
         tune_assigner(args.tal_topk, args.tal_beta)
+    speckle_state = None
     if args.speckle_prob:
         only = {CLASSES.index(n.strip()) for n in args.speckle_classes.split(',') if n.strip()} or None
-        enable_speckle(args.speckle_prob, args.speckle_looks, only, args.speckle_width)
+        speckle_state = enable_speckle(args.speckle_prob, args.speckle_looks, only, args.speckle_width)
+    elif args.anneal_speckle is not None:
+        raise ValueError('--anneal-speckle needs --speckle-prob')
     missing = [name.strip() for name in args.missing_label_classes.split(',') if name.strip()]
     if missing:
         if set(missing) - set(CLASSES):
@@ -796,8 +903,8 @@ def main() -> None:
                 'mosaic': args.mosaic, 'photometric': args.photometric, 'stem_stride': args.stem_stride, 'add_level': args.add_level, 'alpha_iou': args.alpha_iou,
                 'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta, 'class_weights': args.class_weights, 'hard_targets': args.hard_targets, 'spd_layers': args.spd_layers, 'assigner_min_side': args.assigner_min_side,
                 'box_paste': args.box_paste, 'box_paste_max': args.box_paste_max, 'rotate90': args.rotate90,
-                'same_class_mosaic': args.same_class_mosaic,
-                'batch': args.batch, 'anneal_augment': args.anneal_augment,
+                'dataset_flips': args.dataset_flips, 'same_class_mosaic': args.same_class_mosaic,
+                'batch': args.batch, 'anneal_augment': args.anneal_augment, 'anneal_speckle': args.anneal_speckle,
                 'skip_evaluation': args.skip_evaluation,
                 'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
@@ -844,6 +951,8 @@ def main() -> None:
         if args.no_augment:
             raise ValueError('--anneal-augment needs augmentation to anneal; drop --no-augment')
         enable_augment_annealing(detector, args.epochs, args.anneal_augment)
+    if args.anneal_speckle is not None:
+        enable_speckle_annealing(detector, speckle_state, args.epochs, args.anneal_speckle)
     detector.train(  # the continue_2 recipe, unchanged
         data=str(data_yaml),
         epochs=args.epochs, imgsz=512, batch=args.batch, workers=4, device=0,
