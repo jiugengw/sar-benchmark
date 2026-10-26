@@ -608,12 +608,25 @@ tile shifts and across sizes (`tools/analysis/`) showed how the 1,426 Codabench 
 - The image classifier is already 100% on twins and flipped copies (it trains with flips, which move no labels); its
   32 holdout errors are on near-copies (7) and new scenes (25), mostly bridge ↔ playground.
 
+**Which classes the dataset flips (labelled data only).** Among the 9,392 labelled images, the share that have
+another labelled image as a flipped copy (`tools/analysis/flip_pairs_labelled.py`): wind turbine 35%, harbor 21%,
+airport 17%, oil tank 10%, playground 10%, bridge 4%, ship 1% (8 of 1,173), aircraft 0 of 1,182, car 0 of 443. The
+dataset mirrors the M4-SAR-like classes and not aircraft, car or ship scenes.
+
 **Flip-memorise** (`--dataset-flips`): memorise with every training image also shown in the three flipped
 orientations, boxes flipped with the dataset's offset (training data only; no label is copied onto test images).
 Training-split test (job 338727) against the same third stage: raw holdout mAP 59.8 at epoch 14 of 20 against the
 plain memorise's best 57.9. Strong constant speckle on top (338730) runs about 2 behind it; a speckle-then-clean
-schedule (`--anneal-speckle`, 338803) is queued. If flips win on the clean holdout, the all-data soup is rebuilt
-with flipped ingredients (`~/sbatch-staging/flipsoup2.sh`).
+schedule (`--anneal-speckle`, 338803) is queued. **Result:** clean-holdout official-mix (rounded + hedged) **58.32 against 54.73 (+3.59)**; the holdout's flipped
+copies 66.5 → 88.1, other clean images 44.6 → 44.0. Per class: wind turbine +16.4, playground +6.2, airport +5.2,
+harbor +5.1, oil tank +4.9, bridge +0.7, but aircraft −0.8, car −2.3 and ship −3.2, mostly at the strict IoU
+thresholds: those classes have no flipped duplicates in the training data, so their flipped views only halve the
+passes in their real orientation and shift their boxes by an offset they never have.
+
+**Class-selective flips** (`--dataset-flips-classes airport,bridge,harbor,oil_tank,playground,wind_turbine`), chosen
+from the two training-data findings above (which classes the dataset mirrors, and which classes lost on the
+holdout): aircraft, car and ship images are listed four times as they are, 80 passes instead of 40. The all-data
+soup is rebuilt with six class-selective ingredients (`~/sbatch-staging/flipsoup3.sh`).
 
 ## Cross-cutting lessons
 
