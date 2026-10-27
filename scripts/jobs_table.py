@@ -28,14 +28,20 @@ jobs = []
 for line in q:
     jid, name, state, elapsed, limit, reason, gres, submit, prio = line.split('|')
     runs = [d for d in glob.glob(f'runs/*-{jid}') if os.path.isdir(d)]
-    run = runs[0] if runs else ''
-    epoch = total = None
+    # A chain job trains several runs in turn; its current one is the run whose args.yaml was written last.
+    started = lambda d: os.path.getmtime(os.path.join(d, 'train', 'args.yaml')) if os.path.exists(
+        os.path.join(d, 'train', 'args.yaml')) else os.path.getmtime(d)
+    run = max(runs, key=started) if runs else ''
+    epoch = total = done_secs = since_secs = None
     if run:
         res = os.path.join(run, 'train', 'results.csv')
         if os.path.exists(res):
             with open(res) as f:
                 rows = list(csv.reader(f))
             epoch = len(rows) - 1 if rows else 0
+            # Time spent on the finished epochs of this run, and on the current epoch so far.
+            done_secs = int(os.path.getmtime(res) - started(run))
+            since_secs = int(time.time() - os.path.getmtime(res))
         args = os.path.join(run, 'train', 'args.yaml')
         if os.path.exists(args):
             for l in open(args):
@@ -43,7 +49,7 @@ for line in q:
                     total = int(l.split(':')[1])
     jobs.append(dict(id=jid, name=name, state=state, elapsed=elapsed, limit=limit, reason=reason,
                      gpu=gres.replace('gres/gpu:', '').replace('rtx_pro_6000_blackwell_max', 'blackwell'),
-                     run=run, epoch=epoch, total=total, prio=int(prio or 0)))
+                     run=run, done_secs=done_secs, since_secs=since_secs, epoch=epoch, total=total, prio=int(prio or 0)))
 logs = {}
 for path in sorted(glob.glob(os.path.expanduser('~/sbatch-staging/*.log')), key=os.path.getmtime)[-6:]:
     with open(path) as f:
@@ -67,6 +73,14 @@ def to_seconds(text: str) -> int:
     return (int(days) if days else 0) * 86400 + parts[0] * 3600 + parts[1] * 60 + parts[2]
 
 
+def seconds_left(job: dict) -> float:
+    """Seconds until the job's current run ends: its time per finished epoch (a chain job's earlier runs excluded)
+    times the epochs left, less the time already spent on the current epoch."""
+    if job.get('done_secs'):
+        return max(0.0, job['done_secs'] / job['epoch'] * (job['total'] - job['epoch']) - job['since_secs'])
+    return to_seconds(job['elapsed']) / job['epoch'] * (job['total'] - job['epoch'])
+
+
 TYPICAL_HOURS = {'sar-s1140': 11.0, 'sar-ft40': 2.5, 'pkg': 1.0, 'heads': 3.0}  # waiting jobs, by job-name pattern
 SLOTS = 2  # running jobs allowed per user (studentqos)
 
@@ -85,7 +99,7 @@ def timeline(data: dict) -> list[tuple[float, float, int, str]]:
     waiting = sorted((j for j in data['jobs'] if j['state'] != 'RUNNING'), key=lambda j: -j['prio'])
     for k, j in enumerate(running[:SLOTS]):
         if j['epoch'] and j['total']:
-            left = to_seconds(j['elapsed']) / j['epoch'] * (j['total'] - j['epoch']) / 3600
+            left = seconds_left(j) / 3600
             mark = ''
         else:
             left = max(0.25, min(to_seconds(j['limit']) - to_seconds(j['elapsed']),
@@ -105,8 +119,19 @@ def timeline(data: dict) -> list[tuple[float, float, int, str]]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--host', default='jgwong.2023@10.193.104.102')
+    parser.add_argument('--direct', action='store_true', help='log in directly (needs a working SSH key) when no '
+                                                              'shared connection is open')
     args = parser.parse_args()
-    out = subprocess.run(['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15', args.host, REMOTE],
+    # Reuse a shared connection the user opened (ssh -o ControlMaster=yes -o ControlPath=~/.ssh/cm-%r@%h:%p ...), if any.
+    from pathlib import Path
+    shared = Path.home() / '.ssh' / f"cm-{args.host}:22"
+    if not shared.exists() and not args.direct:
+        # A direct login without a working key fails, and the cluster counts failed logins against this address
+        # until it refuses connections for a while.
+        sys.exit(f'no shared connection open ({shared}); open one with: ssh -N -o ControlMaster=yes '
+                 f'-o ControlPath=~/.ssh/cm-%r@%h:%p -o ControlPersist=24h -o ServerAliveInterval=60 {args.host}')
+    via = ['-o', f'ControlPath={shared}'] if shared.exists() else []
+    out = subprocess.run(['ssh', *via, '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15', args.host, REMOTE],
                          capture_output=True, text=True)
     lines = [l for l in out.stdout.splitlines() if l.startswith('{')]
     if not lines:
@@ -137,7 +162,7 @@ def main() -> None:
         if j['epoch'] is not None and j['total']:
             progress = f"epoch {j['epoch']}/{j['total']}"
             if j['state'] == 'RUNNING' and j['epoch'] > 0:
-                left = to_seconds(j['elapsed']) / j['epoch'] * (j['total'] - j['epoch'])
+                left = seconds_left(j)
                 eta = f"~{left / 3600:.1f} h"
         state = j['state'] if j['state'] == 'RUNNING' else f"{j['state']} {j['reason']}"
         print(f"| {j['id']} | {j['name']} | {j['run'].replace('runs/', '') or '–'} | {j['gpu'] or '–'} | {state} | "
