@@ -81,7 +81,7 @@ def seconds_left(job: dict) -> float:
     return to_seconds(job['elapsed']) / job['epoch'] * (job['total'] - job['epoch'])
 
 
-TYPICAL_HOURS = {'sar-s1140': 11.0, 'sar-ft40': 2.5, 'pkg': 1.0, 'heads': 3.0}  # waiting jobs, by job-name pattern
+TYPICAL_HOURS = {'sar-s1140': 11.0, 'sar-ft40': 2.5, 'pkg': 1.0, 'heads': 4.1}  # waiting jobs, by job-name pattern
 SLOTS = 2  # running jobs allowed per user (studentqos)
 
 
@@ -122,15 +122,19 @@ def main() -> None:
     parser.add_argument('--direct', action='store_true', help='log in directly (needs a working SSH key) when no '
                                                               'shared connection is open')
     args = parser.parse_args()
-    # Reuse a shared connection the user opened (ssh -o ControlMaster=yes -o ControlPath=~/.ssh/cm-%r@%h:%p ...), if any.
+    # Log in with the cluster's own key (~/.ssh/id_ed25519_smu, comment mac-to-smu); else reuse a shared connection the
+    # user opened (ssh -o ControlMaster=yes -o ControlPath=~/.ssh/cm-%r@%h:%p ...); else a key loaded in the agent.
     from pathlib import Path
+    key = Path.home() / '.ssh' / 'id_ed25519_smu'
     shared = Path.home() / '.ssh' / f"cm-{args.host}:22"
-    if not shared.exists() and not args.direct:
-        # A direct login without a working key fails, and the cluster counts failed logins against this address
-        # until it refuses connections for a while.
-        sys.exit(f'no shared connection open ({shared}); open one with: ssh -N -o ControlMaster=yes '
-                 f'-o ControlPath=~/.ssh/cm-%r@%h:%p -o ControlPersist=24h -o ServerAliveInterval=60 {args.host}')
-    via = ['-o', f'ControlPath={shared}'] if shared.exists() else []
+    has_key = subprocess.run(['ssh-add', '-l'], capture_output=True).returncode == 0
+    if not key.exists() and not shared.exists() and not has_key and not args.direct:
+        # A direct login without a key fails, and the cluster counts failed logins against this address until it
+        # refuses connections for a while.
+        sys.exit(f'no SSH key ({key}) and no shared connection ({shared}); open one with: ssh -N -o ControlMaster=yes '
+                 f'-o ControlPath=~/.ssh/cm-%r@%h:%p -o ControlPersist=24h {args.host}')
+    via = (['-i', str(key), '-o', 'IdentitiesOnly=yes'] if key.exists()
+           else ['-o', f'ControlPath={shared}'] if shared.exists() else [])
     out = subprocess.run(['ssh', *via, '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15', args.host, REMOTE],
                          capture_output=True, text=True)
     lines = [l for l in out.stdout.splitlines() if l.startswith('{')]
