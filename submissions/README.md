@@ -4,7 +4,8 @@ Every ZIP uploaded to the [Codabench competition](https://www.codabench.org/comp
 
 | Codabench ID | Uploaded | ZIP | Status | Official Δm | Scoring result |
 |---:|---|---|---|---:|---|
-| — | 2026-10-27 18:40 | [alldata-s1fs-soup6-rounded-hedged.zip](alldata-s1fs-soup6-rounded-hedged/alldata-s1fs-soup6-rounded-hedged.zip) | Finished | **+64.04** | [scores.json](alldata-s1fs-soup6-rounded-hedged/scoring_result/scores.json) ¹ |
+| — | 2026-10-27 ~21:35 | [alldata-s1fs-soup6-rounded-hedged-s1two.zip](alldata-s1fs-soup6-rounded-hedged-s1two/alldata-s1fs-soup6-rounded-hedged-s1two.zip) | Finished | **+65.55** | [scores.json](alldata-s1fs-soup6-rounded-hedged-s1two/scoring_result/scores.json) ¹ |
+| — | 2026-10-27 18:40 | [alldata-s1fs-soup6-rounded-hedged.zip](alldata-s1fs-soup6-rounded-hedged/alldata-s1fs-soup6-rounded-hedged.zip) | Finished | +64.04 | [scores.json](alldata-s1fs-soup6-rounded-hedged/scoring_result/scores.json) ¹ |
 | — | 2026-10-26 ~07:35 | [alldata-s1-soup6-rounded-hedged-s1two.zip](alldata-s1-soup6-rounded-hedged-s1two/alldata-s1-soup6-rounded-hedged-s1two.zip) | Finished | +58.00 | [scores.json](alldata-s1-soup6-rounded-hedged-s1two/scoring_result/scores.json) ¹ |
 | — | 2026-10-26 00:44 | [probe-playground-only-alldata-s1-soup6-rounded-hedged.zip](probe-playground-only-alldata-s1-soup6-rounded-hedged/probe-playground-only-alldata-s1-soup6-rounded-hedged.zip) | Finished, probe (not posted): playground AP = mAP × 9 = **20.3**, AP50 30.5 | −45.11 | [scores.json](probe-playground-only-alldata-s1-soup6-rounded-hedged/scoring_result/scores.json) ¹ |
 | — | 2026-10-26 00:44 | [probe-bridge-only-alldata-s1-soup6-rounded-hedged.zip](probe-bridge-only-alldata-s1-soup6-rounded-hedged/probe-bridge-only-alldata-s1-soup6-rounded-hedged.zip) | Finished, probe (not posted): bridge AP = mAP × 9 = **5.8**, AP50 14.1 | −48.21 | [scores.json](probe-bridge-only-alldata-s1-soup6-rounded-hedged/scoring_result/scores.json) ¹ |
