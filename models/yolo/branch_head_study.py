@@ -79,13 +79,17 @@ def main() -> None:
                              'augmentation-trained stage) instead of the frozen detector')
     parser.add_argument('--all-data', action='store_true',
                         help='also train on the holdout and keep the last epoch (its printed F1 is then optimistic)')
+    parser.add_argument('--views', choices=('flips', 'unseen'), default='flips',
+                        help="training views: 'flips' (random flips and quarter turns) or 'unseen' (quarter turns + "
+                             "brightness only: views a flip-memorised detector never trained on; see "
+                             "train_image_head.unseen_view)")
     parser.add_argument('--holdout-gt', type=Path,
                         default=ROOT / 'results/ft40-m4rep-bp4-memorise-335138/one2many/instances_val_holdout.json')
     args = parser.parse_args()
     from detector_support import load_detector
     from ranking_study import twin_groups
     from sarbench.twins import clean_image_ids
-    from train_image_head import ImageLabels
+    from train_image_head import ImageLabels, unseen_view
 
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
     device = torch.device('cuda:0')
@@ -157,10 +161,13 @@ def main() -> None:
         head.train()
         for images, targets in train_loader:
             images, targets = images.to(device, non_blocking=True), targets.to(device)
-            flip = [d for d, keep in ((-1, random.random() < 0.5), (-2, random.random() < 0.5)) if keep]
-            if flip:
-                images = images.flip(flip)
-            images = torch.rot90(images, random.randrange(4), dims=(-2, -1))
+            if args.views == 'unseen':
+                images = unseen_view(images)
+            else:
+                flip = [d for d, keep in ((-1, random.random() < 0.5), (-2, random.random() < 0.5)) if keep]
+                if flip:
+                    images = images.flip(flip)
+                images = torch.rot90(images, random.randrange(4), dims=(-2, -1))
             with torch.autocast('cuda', dtype=torch.float16):
                 loss = criterion(head(stem(images)), targets)
             optimizer.zero_grad(set_to_none=True)
@@ -193,7 +200,7 @@ def main() -> None:
     chosen = args.epochs if args.all_data else best[0]
     np.save(args.output.with_suffix('.holdout_probs.npy'), probs_by_epoch[chosen - 1])
     np.save(args.output.with_suffix('.holdout_probs_all_epochs.npy'), np.stack(probs_by_epoch))
-    torch.save({'format': 'sar-branch-head-v1', 'split': args.split, 'init_from': str(args.init_from), 'epoch': chosen, 'all_data': args.all_data,
+    torch.save({'format': 'sar-branch-head-v1', 'split': args.split, 'init_from': str(args.init_from), 'epoch': chosen, 'all_data': args.all_data, 'views': args.views,
                 'detector': str(args.detector), 'state_dict': states[chosen - 1]}, args.output)
     print(f'saved the epoch-{chosen} branch to {args.output}', flush=True)
     args.output.with_suffix('.json').write_text(json.dumps({'history': history, 'val_ids': val_ids}))

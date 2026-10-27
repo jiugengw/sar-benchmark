@@ -46,6 +46,18 @@ class ImageLabels(Dataset):
         return tensor, int(label)
 
 
+def unseen_view(images: torch.Tensor) -> torch.Tensor:
+    """A batch view a flip-memorised detector never trained on: a quarter turn (90 or 270 degrees, mirrored half the
+    time) and brightness x0.8-1.2. Flip-memorise trains on each image as it is and flipped lr / ud / 180 degrees, so on
+    those views the frozen detector's features are memorised and far more certain than on any new image; a classifier
+    trained on them learns from features unlike the test set's. Quarter turns are never memorised."""
+    images = torch.rot90(images, random.choice((1, 3)), dims=(-2, -1))
+    if random.random() < 0.5:
+        images = images.flip(-1)
+    gain = torch.empty(len(images), 1, 1, 1, device=images.device).uniform_(0.8, 1.2)
+    return (images * gain).clamp_(0, 1)
+
+
 def extract_features(detector, loader: DataLoader, device: torch.device,
                      architecture: str = "yolo", pooling: str = "mean",
                      train_flips: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
