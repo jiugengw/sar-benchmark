@@ -28,7 +28,8 @@ longer chain from DOTA weights reached +40.7, and 40 final epochs **without augm
 about 4 official mAP points, for **Δm +49.21**; see [18–19 October](#chain-memorise-and-headroom--1819-october-2026).
 From 20 to 26 October, rounding, box hedging, a six-run weight soup, a stride-1 first layer, all-data training and a
 two-head image classifier carried it to **Δm +58.00** (95.13 F1, 55.93 mAP). On 26 October we found that about 250 test
-images (18%) repeat labelled scenes only in flipped form, with labels flipped one pixel off an exact mirror; see
+images (18%) repeat labelled scenes only in flipped form, with labels flipped one pixel off an exact mirror; a soup
+of memorise runs that also see those classes' images flipped reached **Δm +64.04** (59.80 mAP) on 27 October; see
 [20–26 October](#rounding-hedging-soup-stride-1-and-repeated-scenes--2026-october-2026).
 
 | Date (2026) | Approach | Official F1 | Official mAP | Official Δm |
@@ -53,7 +54,8 @@ images (18%) repeat labelled scenes only in flipped form, with labels flipped on
 | Oct 24 | All-data six-run soup, rounded + hedged, two-head classifier | 93.40 | 54.88 | +55.06 |
 | Oct 25 | Stride-1 all-data single model, rounded + hedged | 94.45 | 55.17 | +56.18 |
 | Oct 25 | Stride-1 all-data soup, rounded + hedged | 94.37 | 55.93 | +57.59 |
-| Oct 26 | Same + stride-1 two-head classifier retrained on the soup | 95.13 | 55.93 | **+58.00** |
+| Oct 26 | Same + stride-1 two-head classifier retrained on the soup | 95.13 | 55.93 | +58.00 |
+| Oct 27 | Class-selective flip-memorise soup, rounded + hedged (refit classifier) | 92.59 | 59.80 | **+64.04** |
 
 All uploads, with Codabench IDs where known, are in [submissions/README.md](../submissions/README.md). Unless stated,
 "local" scores below are on the fixed 939-image holdout of the labelled training set (8,453 train / 939 holdout,
@@ -541,7 +543,8 @@ training split and rejoin the soup recipe on all data; every other row keeps eve
 | Oct 25 | Same boxes + stride-1 **two-head classifier** | branch copy of layers 5–10 + conv head | 94.24 | 54.28 | +54.36 |
 | Oct 25 | Stride 1 on all data, single model | fine-tune stages on train + holdout | 94.45 | 55.17 | +56.18 |
 | Oct 25 | Stride-1 all-data **soup** | six memorise variants averaged | 94.37 | 55.93 | +57.59 |
-| Oct 26 | Soup + its own two-head classifier | heads retrained on the soup | 95.13 | 55.93 | **+58.00** |
+| Oct 26 | Soup + its own two-head classifier | heads retrained on the soup | 95.13 | 55.93 | +58.00 |
+| Oct 27 | **Flip-memorise** soup, rounded + hedged | six memorise variants that also see airport/bridge/harbor/oil-tank/playground/turbine images flipped as the test's copies are; image classifier refit at packaging (two-head pending) | 92.59 | 59.80 | **+64.04** |
 
 ### What each step was
 
