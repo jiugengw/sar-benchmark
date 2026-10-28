@@ -1,0 +1,8 @@
+{
+  "detector": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/ft40-s1adfsr2-340754/train/weights/last.pt (same boxes as alldata-s1fsr2-rounded-hedged, mAP 59.93)",
+  "classifier": "stride-1 two-head on refit 2: 0.5 x all-data branch head + 0.5 x all-data conv head, size rule (job 341248, fliprefit_heads.sbatch)",
+  "post": "rounded + two-tier hedging",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512
+}
