@@ -60,6 +60,8 @@ def main() -> None:
                         help="optional supervised image-classification head trained on detector features")
     parser.add_argument("--detection-branch", choices=("default", "one2one", "one2many"), default="default")
     parser.add_argument("--nms-iou", type=float, default=0.7)
+    parser.add_argument("--conf", type=float, default=0.001, help="lowest box score kept (studies only; ZIPs use 0.001)")
+    parser.add_argument("--max-det", type=int, default=300, help="most boxes kept per image")
     parser.add_argument("--box-class-policy", choices=(
         "native_detector_classes", "classifier_class_all_boxes", "classifier_class_score_weighted"
     ), default="native_detector_classes")
@@ -181,10 +183,10 @@ def main() -> None:
             batch=args.batch,
             workers=args.workers,
             device=0,
-            conf=0.001,
+            conf=args.conf,
             iou=args.nms_iou,
             nms=branch_nms,
-            max_det=300,
+            max_det=args.max_det,
             stream=True,
             verbose=False,
             save=False,
