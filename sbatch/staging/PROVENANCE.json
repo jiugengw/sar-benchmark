@@ -1,0 +1,160 @@
+{
+ "note": "Rebuilt from the Claude session logs on 29 Oct 2026 while the cluster was unreachable. \"source\" = how each file was last written; \"sed_after\" = later one-line edits made on the cluster that are NOT applied here. Verify against ~/sbatch-staging on the cluster.",
+ "source": {
+  "argtest.sh": "heredoc 2026-10-18T08:59",
+  "overnight.sh": "heredoc 2026-10-20T15:20",
+  "m4_curve.sbatch": "heredoc 2026-10-21T04:22",
+  "m4_test_eval.sbatch": "heredoc 2026-10-21T08:13",
+  "m4_full.sbatch": "heredoc 2026-10-21T08:46",
+  "s1_memorise_submit.sh": "heredoc 2026-10-22T06:12",
+  "scmosaic_submit.sh": "heredoc 2026-10-22T11:29",
+  "rawcand.sbatch": "heredoc 2026-10-22T17:30",
+  "convhead.sbatch": "heredoc 2026-10-22T17:33",
+  "polviews.sbatch": "heredoc 2026-10-22T18:21",
+  "polviews_full.sbatch": "heredoc 2026-10-22T20:54",
+  "soup.sbatch": "heredoc 2026-10-22T23:34",
+  "cpu_soup.sh": "heredoc 2026-10-22T23:44",
+  "soup_cls.sbatch": "heredoc 2026-10-22T23:54",
+  "soup8_then_cls.sh": "heredoc 2026-10-22T23:55",
+  "soup7.sh": "heredoc 2026-10-23T01:42",
+  "third_soup.sh": "heredoc 2026-10-23T06:01",
+  "t3_score.sh": "heredoc 2026-10-23T06:08",
+  "reset_s1.sh": "heredoc 2026-10-23T07:16",
+  "alldata_soup.sh": "heredoc 2026-10-23T08:45",
+  "alldata_package.sh": "heredoc 2026-10-23T08:47",
+  "alldata_s1.sh": "heredoc 2026-10-23T15:42 + later sed edits applied by hand",
+  "twohead.sbatch": "heredoc 2026-10-23T15:48",
+  "twohead_driver.sh": "heredoc 2026-10-23T15:48",
+  "s1_seed2.sh": "heredoc 2026-10-23T15:59",
+  "l_s1.sh": "heredoc 2026-10-23T16:01",
+  "spd_chain.sh": "heredoc 2026-10-23T17:01",
+  "s1_stage1_eval.sh": "heredoc 2026-10-23T17:02",
+  "l_watch.sh": "heredoc 2026-10-23T18:01",
+  "watch_chain.sh": "heredoc 2026-10-24T04:44",
+  "s1_final_eval.sh": "heredoc 2026-10-24T10:11",
+  "alldata_s1_soup.sh": "heredoc 2026-10-24T13:27",
+  "s1_zip.sh": "heredoc 2026-10-24T13:31",
+  "s1_branch_zip.sh": "heredoc 2026-10-24T13:57",
+  "s1_two_zip.sh": "heredoc 2026-10-24T17:06",
+  "alldata_s1_soup_heads.sh": "heredoc 2026-10-24T17:51",
+  "nn_eval.sh": "heredoc 2026-10-25T02:22",
+  "swa_within.sh": "heredoc 2026-10-25T14:03",
+  "m140_eval.sh": "heredoc 2026-10-25T14:07",
+  "train_fit.sh": "heredoc 2026-10-25T16:51",
+  "flip_value.sh": "heredoc 2026-10-25T16:58",
+  "flipsoup.sh": "heredoc 2026-10-25T23:36",
+  "resubmit_b12.sh": "heredoc 2026-10-26T04:29",
+  "speckle_eval.sh": "heredoc 2026-10-26T04:36",
+  "gpu_fallback.sh": "heredoc 2026-10-26T09:48",
+  "flip_chain.sbatch": "heredoc 2026-10-26T09:51",
+  "release_b11.sh": "heredoc 2026-10-26T09:55",
+  "flip_multi.sbatch": "heredoc 2026-10-26T11:28",
+  "spktwin.sbatch": "Write 2026-10-27T07:03",
+  "traincopy.sbatch": "heredoc 2026-10-27T07:11",
+  "flipjit_chain.sbatch": "heredoc 2026-10-27T13:42",
+  "flipjit.sh": "heredoc 2026-10-27T13:42",
+  "fliprefit_test.sbatch": "heredoc 2026-10-27T19:47",
+  "fliprefit_alldata.sbatch": "heredoc 2026-10-27T19:47",
+  "fliprefit_package.sbatch": "exact copy printed from the cluster on 29 Oct",
+  "fliprefit_heads.sbatch": "exact copy printed from the cluster on 29 Oct",
+  "fliprefit.sh": "heredoc 2026-10-27T19:47",
+  "fliprefit_go.sh": "heredoc 2026-10-28T01:05",
+  "fliprefit2.sbatch": "heredoc 2026-10-28T01:08 + later sed edits applied by hand",
+  "fliprefit2.sh": "heredoc 2026-10-28T01:10",
+  "watch_r2.sh": "heredoc 2026-10-28T05:56",
+  "fliprefit3.sbatch": "exact copy printed from the cluster on 29 Oct",
+  "fliprefit3.sh": "heredoc 2026-10-28T09:43",
+  "watch_zip.sh": "heredoc 2026-10-28T09:43",
+  "tail_lowconf.sbatch": "heredoc 2026-10-28T13:24",
+  "tail_zip.sbatch": "heredoc 2026-10-28T14:00",
+  "tail3.sh": "heredoc 2026-10-28T14:15",
+  "watch_tail3.sh": "heredoc 2026-10-28T14:15",
+  "flipfit.sbatch": "heredoc 2026-10-28T14:23",
+  "fliprefit_test2.sbatch": "heredoc 2026-10-28T14:27",
+  "tail3b.sh": "heredoc 2026-10-28T14:29",
+  "fliprefit4.sbatch": "heredoc 2026-10-28T15:33",
+  "refit_ship.sh": "exact copy printed from the cluster on 29 Oct",
+  "after3.sh": "heredoc 2026-10-28T15:33",
+  "heads_swa_test.sbatch": "heredoc 2026-10-28T15:47",
+  "twinjit_test.sbatch": "heredoc 2026-10-28T15:47",
+  "twin_vs_copy.sbatch": "heredoc 2026-10-29T02:20",
+  "filter_test.sbatch": "heredoc 2026-10-29T02:28",
+  "fliprefitF.sbatch": "Write 2026-10-29T05:43",
+  "ppcls.sbatch": "Write 2026-10-29T09:18",
+  "where_lost.sbatch": "heredoc 2026-10-29T09:30",
+  "new_scene_runs.sbatch": "heredoc 2026-10-29T09:36",
+  "tm_smoke.sbatch": "heredoc 2026-10-29T10:06",
+  "fliprefitT.sbatch": "Write 2026-10-29T10:07"
+ },
+ "sed_after": {
+  "m4_curve.sbatch": [
+   [
+    "2026-10-21T04:22",
+    "\"s/--mem=48G/--mem=32G/\""
+   ],
+   [
+    "2026-10-21T04:22",
+    "'s/--mem=48G/--mem=32G/'"
+   ]
+  ],
+  "polviews_full.sbatch": [
+   [
+    "2026-10-22T20:56",
+    "-e \"s/--skip-evaluation --lr0 0.001 --repeat-classes/--skip-evaluation --epochs 30 --lr0 0.001 --repeat-classes/\" -e \"s/--no-augment --lr0 0.002 --tal-beta 8/--no-augment --epochs 32 --lr0 0.002 --tal-beta 8/\""
+   ]
+  ],
+  "soup_cls.sbatch": [
+   [
+    "2026-10-22T23:55",
+    "\"s#--output runs/soup-bp4/\\\\\\$NAME-meanhead.pt --epochs 240#--output runs/soup-bp4/\\\\\\$NAME-meanhead.pt --split results/yolo26m-100-p2-328339/seed_0/split.json --epochs 240#\""
+   ]
+  ],
+  "alldata_package.sh": [
+   [
+    "2026-10-23T08:48",
+    "\"s#\\[ -n \\\"\\$r\\\" \\] \\&\\& \\[ -f \\$r/train/weights/last.pt \\] \\&\\& ! squeue -u \\$USER -h -o %j | grep -q sar-ad \\&\\& n=\\$((n+1))#[ -n \\\"\\$r\\\" ] \\&\\& [ -f \\$r/compute.json ] \\&\\& n=\\$((n+1))#\""
+   ]
+  ],
+  "alldata_s1_soup_heads.sh": [
+   [
+    "2026-10-24T21:55",
+    "\"s#conv_head_study.py --detector \\\\\\\\\\$DET --output \\\\\\\\\\$H/conv_head.pt --batch 16 --all-data#conv_head_study.py --detector \\\\\\\\\\$DET --output \\\\\\\\\\$H/conv_head.pt --batch 16 --epochs 50 --all-data#\""
+   ]
+  ],
+  "nn_eval.sh": [
+   [
+    "2026-10-25T02:34",
+    "\"s/338075/$J/g\""
+   ],
+   [
+    "2026-10-25T03:35",
+    "\"s/338077/$J/g\""
+   ]
+  ],
+  "m140_eval.sh": [
+   [
+    "2026-10-25T14:09",
+    "\"s/338487:auto/338492:auto/; s/338488:0.02/338493:0.02/; s#runs/yolo26m-p2-dota-140-#runs/yolo26m-p2-dota-s1-140-#; s/cmp-m140-/cmp-s1140-/; s/cmp-normal-plain/cmp-s1-plain/g; s/M140_EVAL_DONE/S1140_EVAL_DONE/\""
+   ]
+  ],
+  "flipsoup.sh": [
+   [
+    "2026-10-25T23:36",
+    "\"s|-e \\\"s#\\\\\\\\\\$(find_run s1ad-memorise)#\\$(find_run s1adf-memorise)#\\\"|-e \\\"s#runs/ft40-s1ad-memorise-[0-9]*#\\$(find_run s1adf-memorise)#\\\"|\""
+   ]
+  ],
+  "spktwin.sbatch": [
+   [
+    "2026-10-27T07:03",
+    "'s/^from deadline_recovery import evaluate_export/from models.yolo.deadline_recovery import evaluate_export/'"
+   ]
+  ],
+  "watch_zip.sh": [
+   [
+    "2026-10-28T09:44",
+    "-e 's/|refit 3 ended\"/$EXTRA\"/g' -e 's/^H=jgwong/EXTRA=\"\"; [ $TAG = alldata-s1fsr3 ] \\&\\& EXTRA=\"|refit 3 ended\"\\nH=jgwong/'"
+   ]
+  ]
+ },
+ "failed_edits": []
+}
