@@ -1,7 +1,7 @@
 #!/bin/bash
 # Every cluster command from this Mac goes through here: one shared SSH login (ControlMaster, set up in ~/.ssh/config),
-# at most MAX_PER_HOUR new logins an hour, and no retries after a refusal. On 29 Oct about 100 separate logins a day,
-# plus connections left half-open by a VPN drop, got this Mac refused by the cluster ("Not allowed at this time").
+# at most MAX_PER_HOUR new logins an hour, and no retries after a refusal: frequent fresh logins and connections
+# left half-open (a VPN drop) can make the login node refuse an address for a while ("Not allowed at this time").
 #
 #   scripts/cluster.sh 'squeue -u $USER'                 run a command on the cluster
 #   scripts/cluster.sh --put FILE... REMOTE_DIR          copy files up (scp through the shared login)

@@ -31,7 +31,8 @@ two-head image classifier carried it to **Δm +58.00** (95.13 F1, 55.93 mAP). On
 images (18%) repeat labelled scenes only in flipped form, with labels flipped one pixel off an exact mirror; a soup
 of memorise runs that also see those classes' images flipped, with its two-head classifier, reached **Δm +65.55**
 (95.40 F1, 59.80 mAP) on 27 October; see
-[20–26 October](#rounding-hedging-soup-stride-1-and-repeated-scenes--2026-october-2026).
+[20–26 October](#rounding-hedging-soup-stride-1-and-repeated-scenes--2026-october-2026). On 28 October 19 more flip epochs (refit 2), its two-head classifier and a low-score tail gave **Δm +65.92** (95.24 F1,
+60.04 mAP); [BEST_MODEL_RECIPE.md](BEST_MODEL_RECIPE.md) lists the whole chain.
 
 | Date (2026) | Approach | Official F1 | Official mAP | Official Δm |
 |---|---|---:|---:|---:|
@@ -57,7 +58,10 @@ of memorise runs that also see those classes' images flipped, with its two-head 
 | Oct 25 | Stride-1 all-data soup, rounded + hedged | 94.37 | 55.93 | +57.59 |
 | Oct 26 | Same + stride-1 two-head classifier retrained on the soup | 95.13 | 55.93 | +58.00 |
 | Oct 27 | Class-selective flip-memorise soup, rounded + hedged (refit classifier) | 92.59 | 59.80 | +64.04 |
-| Oct 27 | Same + stride-1 two-head classifier retrained on the flip soup | 95.40 | 59.80 | **+65.55** |
+| Oct 27 | Same + stride-1 two-head classifier retrained on the flip soup | 95.40 | 59.80 | +65.55 |
+| Oct 28 | Flip soup + 19 more class-selective flip epochs on all data (refit 2), quick classifier | 92.34 | 59.93 | +64.16 |
+| Oct 28 | Refit 2 + its two-head classifier | 95.24 | 59.93 | +65.71 |
+| Oct 28 | Same + low-score tail (the detector's own boxes under 0.001, ranked below every box) | 95.24 | 60.04 | **+65.92** |
 
 All uploads, with Codabench IDs where known, are in [submissions/README.md](../submissions/README.md). Unless stated,
 "local" scores below are on the fixed 939-image holdout of the labelled training set (8,453 train / 939 holdout,

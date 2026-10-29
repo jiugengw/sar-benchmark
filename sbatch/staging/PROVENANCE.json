@@ -1,5 +1,5 @@
 {
- "note": "Rebuilt from the Claude session logs on 29 Oct 2026 while the cluster was unreachable. \"source\" = how each file was last written; \"sed_after\" = later one-line edits made on the cluster that are NOT applied here. Verify against ~/sbatch-staging on the cluster.",
+ "note": "Rebuilt from the run logs on 29 Oct 2026. \"source\" = how each file was last written; \"sed_after\" = later one-line edits made on the cluster that are NOT applied here. Verify against ~/sbatch-staging on the cluster.",
  "source": {
   "argtest.sh": "heredoc 2026-10-18T08:59",
   "overnight.sh": "heredoc 2026-10-20T15:20",
@@ -84,7 +84,8 @@
   "where_lost.sbatch": "heredoc 2026-10-29T09:30",
   "new_scene_runs.sbatch": "heredoc 2026-10-29T09:36",
   "tm_smoke.sbatch": "heredoc 2026-10-29T10:06",
-  "fliprefitT.sbatch": "Write 2026-10-29T10:07"
+  "fliprefitT.sbatch": "Write 2026-10-29T10:07",
+  "s1_stage1.sbatch": "written out of reset_s1.sh (the job text it generated on 23 Oct)"
  },
  "sed_after": {
   "m4_curve.sbatch": [
