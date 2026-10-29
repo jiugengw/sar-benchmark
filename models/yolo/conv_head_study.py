@@ -79,6 +79,9 @@ def main() -> None:
                         help="training views: 'flips' (random flips) or 'unseen' (quarter turns + "
                              "brightness only: views a flip-memorised detector never trained on; see "
                              "train_image_head.unseen_view)")
+    parser.add_argument('--swa-from', type=int, default=0,
+                        help='also weight-average the epochs from this one to the last (BatchNorm recomputed), score '
+                             'it on the holdout, and save it instead of a single epoch')
     parser.add_argument('--holdout-gt', type=Path,
                         default=ROOT / 'results/ft40-m4rep-bp4-memorise-335138/one2many/instances_val_holdout.json')
     args = parser.parse_args()
@@ -176,9 +179,26 @@ def main() -> None:
           f'picked on half B ({pick_b[0]}) scores {pick_b[3]:.2f} on half A; mean {(pick_a[4] + pick_b[3]) / 2:.2f}')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     chosen = args.epochs if args.all_data else best[0]  # all data: the holdout was trained on, keep the last epoch
-    np.save(args.output.with_suffix('.holdout_probs.npy'), probs_by_epoch[chosen - 1])
+    state, probs_out = states[chosen - 1], probs_by_epoch[chosen - 1]
+    if args.swa_from:
+        from branch_head_study import average_states, recompute_batchnorm
+        branch.load_state_dict(average_states(states, args.swa_from))
+        recompute_batchnorm(branch, (maps(images.to(device)) for images, _ in train_loader))
+        probs = []
+        with torch.no_grad():
+            for images, _ in val_loader:
+                probs.append(torch.softmax(branch(maps(images.to(device))), 1).cpu())
+        probs_out = torch.cat(probs).numpy(); pred = probs_out.argmax(1).tolist()
+        print(f'SWA epochs {args.swa_from}-{args.epochs}: holdout macro-F1 {macro_f1(truth, pred):.2f} (clean '
+              f'{macro_f1([t for t, i in zip(truth, val_ids) if i in clean], [p for p, i in zip(pred, val_ids) if i in clean]):.2f}; '
+              f'halves {macro_f1([t for t, a in zip(truth, in_a) if a], [p for p, a in zip(pred, in_a) if a]):.2f} / '
+              f'{macro_f1([t for t, a in zip(truth, in_a) if not a], [p for p, a in zip(pred, in_a) if not a]):.2f}) '
+              f'against the last epoch {history[-1][1]:.2f}', flush=True)
+        state, chosen = {k: v.detach().cpu().clone() for k, v in branch.state_dict().items()}, f'swa{args.swa_from}-{args.epochs}'
+    np.save(args.output.with_suffix('.holdout_probs.npy'), probs_out)
+    np.save(args.output.with_suffix('.holdout_probs_all_epochs.npy'), np.stack(probs_by_epoch))
     torch.save({'format': 'sar-conv-branch-v1', 'channels': channels, 'width': args.width, 'epoch': chosen, 'views': args.views,
-                'all_data': args.all_data, 'detector': str(args.detector), 'state_dict': states[chosen - 1]}, args.output)
+                'all_data': args.all_data, 'detector': str(args.detector), 'state_dict': state}, args.output)
     print(f'saved the epoch-{chosen} branch to {args.output}', flush=True)
     (args.output.with_suffix('.json')).write_text(json.dumps({'history': history, 'val_ids': val_ids}))
 

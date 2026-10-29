@@ -1,0 +1,9 @@
+{
+  "detector": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/ft40-s1adfsr3-341403/train/weights/last.pt (refit 3: flip soup + 29 class-selective flip epochs)",
+  "classifier": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/alldata-s1fsr3-package/image_classifier.pt (quick classifier)",
+  "branch": "one2many",
+  "post": "rounded + two-tier hedging + low-score tail (conf 1e-5, ranked below every box; packaging job 341718)",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512
+}

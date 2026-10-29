@@ -33,6 +33,7 @@ def main() -> None:
     args = parser.parse_args()
     from PIL import Image
     from conv_head_study import ConvBranch
+    from input_filters import active_filter, apply as apply_input_filter
     from detector_support import detection_head, feature_maps_from_hook, load_detector
 
     device = torch.device(args.device)
@@ -44,6 +45,7 @@ def main() -> None:
     detection_head(model).register_forward_hook(
         lambda _m, inputs, output: captured.append([f.detach() for f in feature_maps_from_hook('yolo', inputs, output)]))
     images = json.loads(args.images.read_text())['images']
+    input_filter = active_filter()
     out = {}
     with torch.no_grad():
         for start in range(0, len(images), 16):
@@ -51,8 +53,9 @@ def main() -> None:
             batch = []
             for im in group:
                 with Image.open(args.split_root / im['file_name']) as original:
-                    gray = np.asarray(original.convert('L').resize((512, 512), Image.Resampling.BILINEAR), np.float32)
-                batch.append(np.repeat(gray[None] / 255.0, 3, axis=0))
+                    gray = np.asarray(original.convert('L').resize((512, 512), Image.Resampling.BILINEAR), np.uint8)
+                # the detector's fixed input filter (SAR_INPUT_FILTER); 'none' copies the image into all 3 channels
+                batch.append(apply_input_filter(input_filter, gray).transpose(2, 0, 1).astype(np.float32) / 255.0)
             captured.clear()
             model(torch.from_numpy(np.stack(batch)).to(device))
             probs = torch.softmax(branch(captured.pop()), 1).cpu().tolist()

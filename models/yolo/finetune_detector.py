@@ -478,6 +478,50 @@ def enable_sharpness(p: float) -> None:
     print(f'Sharpness jitter: probability {p} of a slight blur or sharpen', flush=True)
 
 
+class TwinJitter:
+    """With probability p, re-process the image the way the holdout's twins differ from their training copies
+    (tools: ~/sbatch-staging/twin_filter.py, twin_shift.py, 28 Oct): a linear grey map (gain 0.8-1.1, offset +-8)
+    and, mostly, smoothing (Gaussian sigma 0.4-1.4, or a 3x3 Lee filter). Twins are pixel-aligned with their copy
+    (median shift 0.02 px), so pixels never move and boxes stay exact. SharpnessJitter covered only brightness and
+    light blur / sharpening; here offset, contrast and the stronger smoothing the twins show are included."""
+
+    def __init__(self, p: float):
+        self.p = p
+
+    def __call__(self, labels: dict) -> dict:
+        import cv2
+        import numpy as np
+
+        if np.random.random() >= self.p:
+            return labels
+        img = labels['img'].astype(np.float32)
+        img = img * np.random.uniform(0.8, 1.1) + np.random.uniform(-8, 8)
+        r = np.random.random()
+        if r < 0.6:
+            img = cv2.GaussianBlur(img, (0, 0), np.random.uniform(0.4, 1.4))
+        elif r < 0.8:
+            mean = cv2.blur(img, (3, 3)); var = np.maximum(cv2.blur(img * img, (3, 3)) - mean * mean, 0)
+            img = mean + var / (var + var.mean() + 1e-6) * (img - mean)
+        labels['img'] = np.clip(img, 0, 255).astype(labels['img'].dtype)
+        return labels
+
+
+def enable_twin_jitter(p: float) -> None:
+    """Insert TwinJitter into every training dataset's transforms, just before the final Format step."""
+    from ultralytics.data import dataset as ul_dataset
+
+    original = ul_dataset.YOLODataset.build_transforms
+
+    def build_transforms(self, hyp=None):
+        transforms = original(self, hyp)
+        if self.augment:  # training only; validation images stay untouched
+            transforms.transforms.insert(len(transforms.transforms) - 1, TwinJitter(p))
+        return transforms
+
+    ul_dataset.YOLODataset.build_transforms = build_transforms
+    print(f'Twin jitter: probability {p} of a twin-like grey map and smoothing', flush=True)
+
+
 def enable_speckle_annealing(detector, state: dict, epochs: int, tail: int) -> None:
     """Fade speckle out: its probability falls linearly from the full value at epoch 0 to zero at epoch
     epochs - tail, and the last `tail` epochs see clean images. Grain first teaches a scene's structure (a re-captured
@@ -842,6 +886,9 @@ def main() -> None:
     parser.add_argument('--sharpness-prob', type=float, default=0.0,
                         help='probability of a slight blur or sharpen per training view (SharpnessJitter); pixels '
                              'never move, so it is allowed in memorise')
+    parser.add_argument('--twin-jitter', type=float, default=0.0,
+                        help='probability of a twin-like grey map (gain, offset) and smoothing per training view '
+                             '(TwinJitter); pixels never move, so it is allowed in memorise')
     parser.add_argument('--anneal-augment', type=int, metavar='TAIL',
                         help='shrink augmentation linearly to zero, the last TAIL epochs without any (see '
                              'enable_augment_annealing)')
@@ -853,6 +900,9 @@ def main() -> None:
                              '(strides 2/4/8/16 instead of 4/8/16/32) on the same 512 input; about 4x the activation '
                              'memory, so lower --batch')
     parser.add_argument('--batch', type=int, default=16)
+    parser.add_argument('--terramind-fusion', action='store_true',
+                        help='add frozen TerraMind-1.0-base features to backbone layers 6 and 10 through zero-initialised '
+                             '1x1 convolutions; still one network (see terramind_fusion.py)')
     parser.add_argument('--add-level', choices=('p1', 'p6'),
                         help='add a fifth detection level to a YOLO26-P2 source: p1 (finer than P2) or p6 (coarser '
                              'than P5); trained layers keep their weights (see add_level_to)')
@@ -932,6 +982,8 @@ def main() -> None:
         tune_assigner(args.tal_topk, args.tal_beta)
     if args.sharpness_prob:
         enable_sharpness(args.sharpness_prob)
+    if args.twin_jitter:
+        enable_twin_jitter(args.twin_jitter)
     speckle_state = None
     if args.speckle_prob:
         only = {CLASSES.index(n.strip()) for n in args.speckle_classes.split(',') if n.strip()} or None
@@ -960,7 +1012,7 @@ def main() -> None:
                 'repeat_width': args.repeat_width,
                 'all_data': args.all_data, 'data': str(args.data), 'no_augment': args.no_augment, 'keep_flips': args.keep_flips, 'missing_label_classes': args.missing_label_classes, 'box_gain': args.box_gain,
                 'constant_lr': args.constant_lr, 'aug_scale': args.aug_scale, 'aug_translate': args.aug_translate,
-                'mosaic': args.mosaic, 'photometric': args.photometric, 'sharpness_prob': args.sharpness_prob, 'stem_stride': args.stem_stride, 'add_level': args.add_level, 'alpha_iou': args.alpha_iou,
+                'mosaic': args.mosaic, 'photometric': args.photometric, 'sharpness_prob': args.sharpness_prob, 'twin_jitter': args.twin_jitter, 'stem_stride': args.stem_stride, 'terramind_fusion': args.terramind_fusion, 'add_level': args.add_level, 'alpha_iou': args.alpha_iou,
                 'tal_topk': args.tal_topk, 'tal_beta': args.tal_beta, 'class_weights': args.class_weights, 'hard_targets': args.hard_targets, 'spd_layers': args.spd_layers, 'assigner_min_side': args.assigner_min_side,
                 'box_paste': args.box_paste, 'box_paste_max': args.box_paste_max, 'rotate90': args.rotate90,
                 'dataset_flips': args.dataset_flips, 'dataset_flips_classes': args.dataset_flips_classes, 'same_class_mosaic': args.same_class_mosaic,
@@ -1013,7 +1065,12 @@ def main() -> None:
         enable_augment_annealing(detector, args.epochs, args.anneal_augment)
     if args.anneal_speckle is not None:
         enable_speckle_annealing(detector, speckle_state, args.epochs, args.anneal_speckle)
+    extra = {}
+    if args.terramind_fusion:
+        from terramind_fusion import TerraMindTrainer  # models/yolo, so checkpoints unpickle terramind_fusion.*
+        extra['trainer'] = TerraMindTrainer
     detector.train(  # the continue_2 recipe, unchanged
+        **extra,
         data=str(data_yaml),
         epochs=args.epochs, imgsz=512, batch=args.batch, workers=4, device=0,
         pretrained=True, optimizer='MuSGD', lr0=args.lr0, lrf=1.0 if args.constant_lr else 0.1, momentum=0.9,

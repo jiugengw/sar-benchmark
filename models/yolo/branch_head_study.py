@@ -54,6 +54,32 @@ class BranchHead(nn.Module):
         return self.mlp(torch.cat(pooled, dim=1))
 
 
+def average_states(states: list[dict], start: int) -> dict:
+    """Weight average (SWA) of the per-epoch states from epoch `start` (1-based) to the last; integer buffers
+    (BatchNorm's batch counter) keep the last value. Still one model; BatchNorm statistics are recomputed after."""
+    chosen = states[start - 1:]
+    return {k: (torch.stack([s[k].float() for s in chosen]).mean(0).to(v.dtype) if v.is_floating_point() else v)
+            for k, v in chosen[-1].items()}
+
+
+def recompute_batchnorm(module: nn.Module, batches) -> None:
+    """Running statistics of every BatchNorm in `module` from one pass over `batches` (inputs ready for module)."""
+    norms = [m for m in module.modules() if isinstance(m, nn.modules.batchnorm._BatchNorm)]
+    if not norms:
+        return
+    momenta = [m.momentum for m in norms]
+    for m in norms:
+        m.reset_running_stats()
+        m.momentum = None  # cumulative average over the pass
+    module.train()
+    with torch.no_grad():
+        for x in batches:
+            module(x)
+    for m, momentum in zip(norms, momenta):
+        m.momentum = momentum
+    module.eval()
+
+
 def macro_f1(truth, pred, classes=9):
     f1s = []
     for c in range(classes):
@@ -85,6 +111,9 @@ def main() -> None:
                              "train_image_head.unseen_view)")
     parser.add_argument('--holdout-gt', type=Path,
                         default=ROOT / 'results/ft40-m4rep-bp4-memorise-335138/one2many/instances_val_holdout.json')
+    parser.add_argument('--swa-from', type=int, default=0,
+                        help='also weight-average the epochs from this one to the last (BatchNorm recomputed), score '
+                             'it on the holdout, and save it instead of a single epoch')
     args = parser.parse_args()
     from detector_support import load_detector
     from ranking_study import twin_groups
@@ -110,13 +139,15 @@ def main() -> None:
     backbone_end = len(detector.yaml['backbone'])
     if any(detector.model[i].f != -1 for i in range(backbone_end)):
         raise RuntimeError('expected a plain sequential backbone')
-    frozen = detector.model[:args.split]
+    # A TerraMind-fusion detector (terramind_fusion.py): the branch runs the plain detector layers, without TerraMind
+    from terramind_fusion import unwrap
+    frozen = [unwrap(layer) for layer in detector.model[:args.split]]
     for p in detector.parameters():
         p.requires_grad_(False)
     source = load_detector(args.init_from, 'yolo').model.to(device) if args.init_from else detector
     if source.yaml['backbone'] != detector.yaml['backbone']:
         raise RuntimeError('--init-from must have the same backbone as --detector')
-    trunk = nn.ModuleList(copy.deepcopy(source.model[i]) for i in range(args.split, backbone_end))
+    trunk = nn.ModuleList(copy.deepcopy(unwrap(source.model[i])) for i in range(args.split, backbone_end))
     for p in trunk.parameters():
         p.requires_grad_(True)
 
@@ -198,10 +229,25 @@ def main() -> None:
           f'picked on half B ({pick_b[0]}) scores {pick_b[3]:.2f} on half A; mean {(pick_a[4] + pick_b[3]) / 2:.2f}')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     chosen = args.epochs if args.all_data else best[0]
-    np.save(args.output.with_suffix('.holdout_probs.npy'), probs_by_epoch[chosen - 1])
+    state, probs_out = states[chosen - 1], probs_by_epoch[chosen - 1]
+    if args.swa_from:
+        head.load_state_dict(average_states(states, args.swa_from))
+        recompute_batchnorm(head, (stem(images.to(device)).float() for images, _ in train_loader))
+        probs = []
+        with torch.no_grad(), torch.autocast('cuda', dtype=torch.float16):
+            for images, _ in val_loader:
+                probs.append(torch.softmax(head(stem(images.to(device))).float(), 1).cpu())
+        probs_out = torch.cat(probs).numpy(); pred = probs_out.argmax(1).tolist()
+        print(f'SWA epochs {args.swa_from}-{args.epochs}: holdout macro-F1 {macro_f1(truth, pred):.2f} (clean '
+              f'{macro_f1([t for t, i in zip(truth, val_ids) if i in clean], [p for p, i in zip(pred, val_ids) if i in clean]):.2f}; '
+              f'halves {macro_f1([t for t, a in zip(truth, in_a) if a], [p for p, a in zip(pred, in_a) if a]):.2f} / '
+              f'{macro_f1([t for t, a in zip(truth, in_a) if not a], [p for p, a in zip(pred, in_a) if not a]):.2f}) '
+              f'against the last epoch {history[-1][1]:.2f}', flush=True)
+        state, chosen = {k: v.detach().cpu().clone() for k, v in head.state_dict().items()}, f'swa{args.swa_from}-{args.epochs}'
+    np.save(args.output.with_suffix('.holdout_probs.npy'), probs_out)
     np.save(args.output.with_suffix('.holdout_probs_all_epochs.npy'), np.stack(probs_by_epoch))
     torch.save({'format': 'sar-branch-head-v1', 'split': args.split, 'init_from': str(args.init_from), 'epoch': chosen, 'all_data': args.all_data, 'views': args.views,
-                'detector': str(args.detector), 'state_dict': states[chosen - 1]}, args.output)
+                'detector': str(args.detector), 'state_dict': state}, args.output)
     print(f'saved the epoch-{chosen} branch to {args.output}', flush=True)
     args.output.with_suffix('.json').write_text(json.dumps({'history': history, 'val_ids': val_ids}))
 

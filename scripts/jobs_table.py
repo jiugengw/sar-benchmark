@@ -122,8 +122,9 @@ def main() -> None:
     parser.add_argument('--direct', action='store_true', help='log in directly (needs a working SSH key) when no '
                                                               'shared connection is open')
     args = parser.parse_args()
-    # Log in with the cluster's own key (~/.ssh/id_ed25519_smu, comment mac-to-smu); else reuse a shared connection the
-    # user opened (ssh -o ControlMaster=yes -o ControlPath=~/.ssh/cm-%r@%h:%p ...); else a key loaded in the agent.
+    # Reuse a shared connection when one is open (ssh -M -o ControlPath=~/.ssh/cm-%r@%h:%p ...): frequent fresh logins
+    # get this address refused for a while. Else log in with the cluster's own key (~/.ssh/id_ed25519_smu, comment
+    # mac-to-smu); else a key loaded in the agent.
     from pathlib import Path
     key = Path.home() / '.ssh' / 'id_ed25519_smu'
     shared = Path.home() / '.ssh' / f"cm-{args.host}:22"
@@ -133,10 +134,10 @@ def main() -> None:
         # refuses connections for a while.
         sys.exit(f'no SSH key ({key}) and no shared connection ({shared}); open one with: ssh -N -o ControlMaster=yes '
                  f'-o ControlPath=~/.ssh/cm-%r@%h:%p -o ControlPersist=24h {args.host}')
-    via = (['-i', str(key), '-o', 'IdentitiesOnly=yes'] if key.exists()
-           else ['-o', f'ControlPath={shared}'] if shared.exists() else [])
-    out = subprocess.run(['ssh', *via, '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15', args.host, REMOTE],
-                         capture_output=True, text=True)
+    via = (['-o', f'ControlPath={shared}', '-o', 'ControlMaster=no'] if shared.exists()
+           else ['-i', str(key), '-o', 'IdentitiesOnly=yes'] if key.exists() else [])
+    out = subprocess.run(['ssh', *via, '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15', '-o', 'ServerAliveInterval=10',
+                          '-o', 'ServerAliveCountMax=3', args.host, REMOTE], capture_output=True, text=True)
     lines = [l for l in out.stdout.splitlines() if l.startswith('{')]
     if not lines:
         sys.exit(f'cluster unreachable or no output (VPN?): {out.stderr.strip()[-300:]}')

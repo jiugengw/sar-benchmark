@@ -3,7 +3,13 @@
 By default every grayscale SAR image is copied into all 3 channels. A filter puts different, fixed views of the same
 image into them instead, still one image and one forward pass:
 
-    water    R = SAR image, G = despeckled image, B = water map (dark, smooth regions: rivers, lakes, sea)
+    water      R = SAR image, G = despeckled image, B = water map (dark, smooth regions: rivers, lakes, sea)
+    bilateral  all 3 = bilateral-filtered image (5 px, sigma 30 grey levels / 3 px): edge-preserving smoothing
+    gauss1     all 3 = Gaussian-blurred image (sigma 1 px)
+
+Holdout twins differ from their training copies mostly by smoothing; the same smoothing on every image brings a pair
+much closer (residual after a gain/offset fit 0.27 -> 0.12 of the image's spread for bilateral, 0.12 for gauss1),
+keeping 83% / 61% of the small-scale contrast (`twin_fixed_filter.py`).
 
 The water map is computed from the image alone, with no labels: SAR water reflects the radar away, so it is dark and
 smooth after despeckling. Bridges sit where roads cross it.
@@ -19,7 +25,7 @@ import os
 
 import numpy as np
 
-FILTERS = ('none', 'water')
+FILTERS = ('none', 'water', 'bilateral', 'gauss1')
 
 
 def active_filter() -> str:
@@ -49,6 +55,11 @@ def apply(name: str, gray: np.ndarray) -> np.ndarray:
         return np.dstack([gray, gray, gray])
     if name == 'water':
         return water(gray)
+    if name in ('bilateral', 'gauss1'):
+        import cv2
+
+        smooth = cv2.bilateralFilter(gray, 5, 30, 3) if name == 'bilateral' else cv2.GaussianBlur(gray, (0, 0), 1.0)
+        return np.dstack([smooth, smooth, smooth])
     raise ValueError(f'unknown filter {name!r}; choose from {FILTERS}')
 
 
