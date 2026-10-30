@@ -7,7 +7,7 @@ ran it are in [`sbatch/staging/`](../sbatch/staging/) (rebuilt from logs on 29 O
 the repository (`runs/` is git-ignored).
 
 Common to every stage: YOLO26m-P2 with the first convolution at stride 1 (`--stem-stride 1`), 512 px input, batch 16,
-MuSGD, one GPU (L40S or RTX PRO 6000 Blackwell; ~2.4 it/s). `--all-data` trains on the training split and the holdout
+MuSGD, one GPU (L40S or RTX PRO 6000 Blackwell). Times are the ones the runs recorded; about 85 GPU-hours in all. `--all-data` trains on the training split and the holdout
 together and keeps the last epoch. CLS below is `runs/memorise-lr2-332326-package/image_classifier.pt` (only used for the
 skipped evaluation).
 
@@ -15,11 +15,11 @@ skipped evaluation).
 
 | # | Stage | Starts from | Options (besides `--stem-stride 1 --classifier $CLS --skip-evaluation`) | Time |
 |---|---|---|---|---|
-| 1 | Base, 100 epochs (training split) | `pretrained/yolo26m-obb.pt` (Ultralytics, DOTA) | `train_yolo26s_p2.py --scale m --weights pretrained/yolo26m-obb.pt --epochs 100 --batch 16 --workers 4 --flipud 0.0 --close-mosaic 10 --stem-stride 1` | ~30 h (resumed past the 24 h limit) |
-| 2 | Plain, 40 epochs | 1, best.pt | `--all-data --lr0 0.002` | ~12 h |
-| 3 | Speckle, 40 epochs | 2, last.pt | `--all-data --lr0 0.001 --speckle-prob 0.5` | ~12 h |
-| 4 | Third, 40 epochs | 3, last.pt | `--all-data --lr0 0.001 --repeat-classes airport,harbor,oil_tank,wind_turbine,bridge:4,playground:4 --repeat-factor 2 --repeat-width 512` | ~18 h |
-| 5 | Flip soup: 6 memorise runs, 20 epochs each over the 4x flip list | 4, last.pt | `--all-data --no-augment --lr0 0.002 --epochs 20 --batch 16 --dataset-flips --dataset-flips-classes airport,bridge,harbor,oil_tank,playground,wind_turbine` with `--tal-beta` 8, 12, 10, 7, 9, 11 (one run each) | ~9 h each, in parallel |
+| 1 | Base, 100 epochs (training split) | `pretrained/yolo26m-obb.pt` (Ultralytics, DOTA) | `train_yolo26s_p2.py --scale m --weights pretrained/yolo26m-obb.pt --epochs 100 --batch 16 --workers 4 --flipud 0.0 --close-mosaic 10 --stem-stride 1` | 12.7 h |
+| 2 | Plain, 40 epochs | 1, best.pt | `--all-data --lr0 0.002` | 2.8 h |
+| 3 | Speckle, 40 epochs | 2, last.pt | `--all-data --lr0 0.001 --speckle-prob 0.5` | 2.8 h |
+| 4 | Third, 40 epochs | 3, last.pt | `--all-data --lr0 0.001 --repeat-classes airport,harbor,oil_tank,wind_turbine,bridge:4,playground:4 --repeat-factor 2 --repeat-width 512` | 5.5 h |
+| 5 | Flip soup: 6 memorise runs, 20 epochs each over the 4x flip list | 4, last.pt | `--all-data --no-augment --lr0 0.002 --epochs 20 --batch 16 --dataset-flips --dataset-flips-classes airport,bridge,harbor,oil_tank,playground,wind_turbine` with `--tal-beta` 8, 12, 10, 7, 9, 11 (one run each) | 5-11 h each (45 h in all) |
 | 6 | Average the six | 5 | `swa_study.average([...last.pt]) -> runs/soup-s1fs/alldata-s1fs-six.pt` (one model, not an ensemble) | minutes |
 | 7 | Refit 1, 9 epochs (stopped at 9 of 10) | 6 | `--all-data --no-augment --lr0 0.001 --epochs 10 --batch 16 --tal-beta 8 --dataset-flips --dataset-flips-classes <same six>` (job 340515) | ~5 h |
 | 8 | **Refit 2**, 10 more epochs | 7, last.pt | same as 7 (job 340754): `runs/ft40-s1adfsr2-340754/train/weights/last.pt` | ~5 h |

@@ -62,5 +62,6 @@ case "${1:-}" in
     ''|-h|--help) sed -n '2,10p' "$0"; exit 64 ;;
     *)
         ensure_shared
-        ssh -o ControlMaster=no -o BatchMode=yes "$HOST" "$*" 2>&1 | grep -v '^tput: ' ;;
+        ssh -o ControlMaster=no -o BatchMode=yes "$HOST" "$*" 2>&1 | grep -v '^tput: '
+        exit "${PIPESTATUS[0]}" ;;  # the command's own status (grep fails on empty output)
 esac

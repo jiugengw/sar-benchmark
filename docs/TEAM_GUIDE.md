@@ -34,7 +34,7 @@ mkdir -p pretrained && (cd pretrained && python -c "from ultralytics import YOLO
 - The cluster allows 100,000 files per user. The data, the YOLO copy and `.venv` together use about 50,000.
 - Limits per user: 2 running and 4 submitted jobs, 1 GPU, 4 CPUs and 32 GB per job, 24 h per job.
 
-## 2. Rebuild the best model (about 4-5 GPU-days)
+## 2. Rebuild the best model (about 85 GPU-hours, 2-3 days)
 
 Run every command from `~/scratchDirectory/sar-benchmark`. Each `sbatch` prints a job id; that stage's weights land
 in `runs/ft40-<name>-<job>/train/weights/` (stage 1: `runs/yolo26m-p2-dota-s1-<job>/train/weights/`). Start the next
@@ -60,9 +60,10 @@ FLIPS='--dataset-flips --dataset-flips-classes airport,bridge,harbor,oil_tank,pl
 | 10. Two-head classifier | `sbatch $G --export=ALL,DET=<stage 8>/train/weights/last.pt,Z=<the S1FSR_ZIP_READY zip> sbatch/staging/fliprefit_heads.sbatch`; it prints `S1FSR_TWOHEAD_ZIP <zip>` |
 | 11. Tail on the final ZIP | `python models/yolo/lowconf_tail.py <two-head zip> <same folder>/alldata-s1fsr2-lowconf.zip <two-head zip without .zip>-tail.zip` |
 
-The ZIP from step 11 is the one to upload. Run times: stage 1 about 30 h (resume it once past 24 h, see the script's
-header), stages 2-4 12-18 h each, each soup run about 10 h, each refit about 5 h, packaging 1.5 h, the heads about
-4 h. In all about 140 GPU-hours: roughly 4 days of wall-clock with six GPUs for the soup, 5 days with two.
+The ZIP from step 11 is the one to upload. Run times recorded by our runs: stage 1 12.7 h (on a 24 GB Blackwell
+slice), stages 2-4 2.8, 2.8 and 5.5 h, each soup run 5-11 h depending on the GPU (45 h for all six), each refit about
+5 h, packaging about 1.5 h, the heads about 4 h. In all about 85 GPU-hours: about 2 days of wall-clock with six GPUs
+for the soup, about 3 days with two.
 
 ### Settings behind the commands
 
@@ -73,12 +74,11 @@ Everything not on the command lines above comes from defaults in the repository'
 | Image size, batch | 512 px, 16 | 512 px, 16 |
 | Epochs | 100 | 40 unless `--epochs` is given (20 for soup runs, 10 for refits) |
 | Optimizer | MuSGD, picked by Ultralytics (`optimizer=auto`): lr 0.01, momentum 0.9 | MuSGD, `--lr0` as given, momentum 0.9, weight decay 0.0005 |
-| Learning-rate schedule | Ultralytics default | 1 warm-up epoch, cosine down to 10% of lr0 |
-| Augmentation | Ultralytics defaults, mosaic switched off for the last 10 epochs, no up-down flips | scale ±20%, shift ±5%, left-right and up-down flips 0.5, brightness 0.2, no mosaic; all off with `--no-augment` (soup runs, refits) |
+| Learning-rate schedule | 3 warm-up epochs, linear down to 1% of lr0 | 1 warm-up epoch, cosine down to 10% of lr0 |
+| Augmentation | mosaic (off for the last 10 epochs), scale ±50%, shift ±10%, left-right flips 0.5, no up-down flips, brightness 0.4 | scale ±20%, shift ±5%, left-right and up-down flips 0.5, brightness 0.2, no mosaic; all off with `--no-augment` (soup runs, refits) |
 | Other | seed 0, deterministic, AMP | seed 0, deterministic, AMP, box-loss gain 7.5, `--tal-beta` as given (YOLO26 default 6) |
 
-Two of the original soup runs used batch 8 because they ran on GPUs with less memory; Ultralytics accumulates gradients
-to a nominal batch of 64, so 8 trains almost exactly like 16. Runs are seeded but not bit-identical across GPU types:
+Every run used batch 16 (Ultralytics accumulates gradients to a nominal batch of 64). Runs are seeded but not bit-identical across GPU types:
 expect a rebuilt model within a few tenths of a mAP point of ours.
 
 ### The soup, step by step
@@ -90,11 +90,11 @@ stay close, and the plain average of the six weights is one network that is bett
 models and merge their outputs.
 
 **What it buys.** Measured on Codabench (stride 1, all data): single model mAP 55.17, soup of six 55.93, so about
-+0.75 mAP (+1.4 Δm). It costs about 60 GPU-hours, the biggest single item in the chain. Fewer runs (three) would
++0.75 mAP (+1.4 Δm). It costs about 45 GPU-hours, half of the whole chain. Fewer runs (three) would
 probably keep most of the gain, but that has not been tested.
 
 **Each run** is stage 4 plus 20 epochs of memorise (no augmentation) with the images of the six flip classes shown in
-all four orientations, so one epoch takes about 32 minutes and a run about 10 hours. Every run must start from the
+all four orientations, so a run takes 5-11 hours depending on the GPU. Every run must start from the
 **same** stage-4 `last.pt`.
 
 **1. Submit the six runs.** You can have 4 jobs submitted and 2 running at a time, so submit four, then the last two
