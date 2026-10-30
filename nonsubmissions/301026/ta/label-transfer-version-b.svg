@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="790" viewBox="0 0 1400 790" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#444"/>
+    </marker>
+  </defs>
+  <rect width="1400" height="790" fill="#ffffff"/>
+  <text x="30" y="40" font-size="24" font-weight="bold" fill="#222">Version B: network, then label transfer with small stored images</text>
+
+  <!-- arrows (drawn first so boxes sit on top) -->
+  <path d="M210,265 H250 V135 H290" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M540,135 H600" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M890,135 H1080 V200" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M210,305 H250 V440 H600" fill="none" stroke="#D64545" stroke-width="2.5" stroke-dasharray="8 6" marker-end="url(#arrow)"/>
+  <path d="M540,595 H570 V485 H600" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M890,440 H1080 V400" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M1230,300 H1275" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="270" y="428" font-size="14" fill="#D64545">same test image, read again (unchanged)</text>
+  <text x="900" y="430" font-size="14" fill="#444">best match + similarity</text>
+  <text x="900" y="125" font-size="14" fill="#444">boxes + image class</text>
+
+  <!-- test image -->
+  <rect x="30" y="235" width="180" height="100" rx="10" fill="#F4F4F4" stroke="#666" stroke-width="2"/>
+  <text x="120" y="278" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Test image</text>
+  <text x="120" y="302" font-size="14" text-anchor="middle" fill="#444">as is, at most 512 px</text>
+
+  <!-- network -->
+  <rect x="290" y="80" width="250" height="110" rx="10" fill="#E8F0FE" stroke="#3B6FD8" stroke-width="2"/>
+  <text x="415" y="117" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Our network</text>
+  <text x="415" y="142" font-size="14" text-anchor="middle" fill="#444">detector + image classifier</text>
+  <text x="415" y="164" font-size="14" text-anchor="middle" fill="#444">one forward pass at 512 px</text>
+
+  <!-- network predictions -->
+  <rect x="600" y="80" width="290" height="110" rx="10" fill="#E8F0FE" stroke="#3B6FD8" stroke-width="2"/>
+  <text x="745" y="117" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Network predictions</text>
+  <text x="745" y="142" font-size="14" text-anchor="middle" fill="#444">boxes for all 9 classes</text>
+  <text x="745" y="164" font-size="14" text-anchor="middle" fill="#444">and the image class</text>
+
+  <!-- label transfer -->
+  <rect x="600" y="375" width="290" height="135" rx="10" fill="#FFF1E0" stroke="#D9822B" stroke-width="2"/>
+  <text x="745" y="406" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Label transfer</text>
+  <text x="745" y="432" font-size="14" text-anchor="middle" fill="#444">enlarge each stored image back to</text>
+  <text x="745" y="453" font-size="14" text-anchor="middle" fill="#444">the test image's size, then find the</text>
+  <text x="745" y="474" font-size="14" text-anchor="middle" fill="#444">most similar (pixel correlation)</text>
+  <text x="745" y="497" font-size="14" font-weight="bold" text-anchor="middle" fill="#444">the test image is never changed</text>
+
+  <!-- labelled images -->
+  <rect x="290" y="530" width="250" height="130" rx="10" fill="#F4F4F4" stroke="#666" stroke-width="2"/>
+  <text x="415" y="562" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Labelled training images</text>
+  <text x="415" y="587" font-size="14" text-anchor="middle" fill="#444">9,392 images stored at 64 × 64</text>
+  <text x="415" y="608" font-size="14" text-anchor="middle" fill="#444">and their boxes: 38.6 M values</text>
+  <text x="415" y="629" font-size="14" text-anchor="middle" fill="#444">compared in 4 orientations (flips)</text>
+
+  <!-- combine -->
+  <rect x="930" y="200" width="300" height="200" rx="10" fill="#E9F7EF" stroke="#2E8B57" stroke-width="2"/>
+  <text x="1080" y="232" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Combine</text>
+  <text x="945" y="260" font-size="14" fill="#333">If similarity ≥ 0.485 and the match is an</text>
+  <text x="945" y="279" font-size="14" fill="#333">airport, wind turbine, playground or</text>
+  <text x="945" y="298" font-size="14" fill="#333">bridge image: use its labelled boxes for</text>
+  <text x="945" y="317" font-size="14" fill="#333">that class instead of the network's.</text>
+  <text x="945" y="343" font-size="14" fill="#333">Otherwise: keep the network's output.</text>
+  <text x="945" y="369" font-size="14" fill="#333">Other classes and the image class</text>
+  <text x="945" y="388" font-size="14" fill="#333">always come from the network.</text>
+
+  <!-- submission -->
+  <rect x="1275" y="255" width="105" height="90" rx="10" fill="#F4F4F4" stroke="#666" stroke-width="2"/>
+  <text x="1327" y="305" font-size="16" font-weight="bold" text-anchor="middle" fill="#222">Submission</text>
+
+  <!-- question badges -->
+  <circle cx="250" cy="372" r="17" fill="#D64545"/>
+  <text x="250" y="378" font-size="15" font-weight="bold" text-anchor="middle" fill="#fff">Q1</text>
+  <circle cx="540" cy="530" r="17" fill="#D64545"/>
+  <text x="540" y="536" font-size="15" font-weight="bold" text-anchor="middle" fill="#fff">Q2</text>
+
+  <!-- questions -->
+  <line x1="30" y1="680" x2="1370" y2="680" stroke="#ddd" stroke-width="1"/>
+  <circle cx="47" cy="715" r="15" fill="#D64545"/>
+  <text x="47" y="720" font-size="13" font-weight="bold" text-anchor="middle" fill="#fff">Q1</text>
+  <text x="75" y="720" font-size="16" fill="#222"><tspan font-weight="bold">One pass:</tspan> the test image is read a second time, outside the network, only to find its match. Does this count against “each image goes through the model once”?</text>
+  <circle cx="47" cy="757" r="15" fill="#D64545"/>
+  <text x="47" y="762" font-size="13" font-weight="bold" text-anchor="middle" fill="#fff">Q2</text>
+  <text x="75" y="762" font-size="16" fill="#222"><tspan font-weight="bold">Parameters:</tspan> the stored images and boxes are 38.6 M values. With our network (under 40 M), the total stays under the 130 M limit. Is this acceptable?</text>
+</svg>

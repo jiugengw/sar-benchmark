@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="800" viewBox="0 0 1400 800" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#444"/>
+    </marker>
+  </defs>
+  <rect width="1400" height="800" fill="#ffffff"/>
+  <text x="30" y="40" font-size="24" font-weight="bold" fill="#222">Matching first: the network runs only when there is no match</text>
+
+  <!-- arrows (drawn first so boxes sit on top) -->
+  <path d="M210,285 H260" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M395,470 V355" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M530,285 H590" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M735,205 V125 H950" fill="none" stroke="#2E8B57" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M735,365 V575 H950" fill="none" stroke="#D64545" stroke-width="2.5" stroke-dasharray="8 6" marker-end="url(#arrow)"/>
+  <path d="M1240,125 H1335 V305" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M1240,575 H1335 V395" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="750" y="168" font-size="16" font-weight="bold" fill="#2E8B57">yes</text>
+  <text x="750" y="420" font-size="16" font-weight="bold" fill="#D64545">no</text>
+  <text x="752" y="563" font-size="14" fill="#D64545">read again, by the network</text>
+
+  <!-- test image -->
+  <rect x="30" y="235" width="180" height="100" rx="10" fill="#F4F4F4" stroke="#666" stroke-width="2"/>
+  <text x="120" y="278" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Test image</text>
+  <text x="120" y="302" font-size="14" text-anchor="middle" fill="#444">as is, at most 512 px</text>
+
+  <!-- matching -->
+  <rect x="260" y="215" width="270" height="140" rx="10" fill="#FFF1E0" stroke="#D9822B" stroke-width="2"/>
+  <text x="395" y="252" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Matching</text>
+  <text x="395" y="280" font-size="14" text-anchor="middle" fill="#444">find the most similar</text>
+  <text x="395" y="301" font-size="14" text-anchor="middle" fill="#444">labelled image (pixel correlation)</text>
+  <text x="395" y="326" font-size="14" font-weight="bold" text-anchor="middle" fill="#444">the test image is not changed</text>
+
+  <!-- labelled images -->
+  <rect x="260" y="470" width="270" height="140" rx="10" fill="#F4F4F4" stroke="#666" stroke-width="2"/>
+  <text x="395" y="503" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Labelled training images</text>
+  <text x="395" y="529" font-size="14" text-anchor="middle" fill="#444">9,392 images and their boxes,</text>
+  <text x="395" y="550" font-size="14" text-anchor="middle" fill="#444">full size (2.0 B values) or</text>
+  <text x="395" y="571" font-size="14" text-anchor="middle" fill="#444">64 × 64, version B (38.6 M)</text>
+  <text x="395" y="592" font-size="14" text-anchor="middle" fill="#444">compared in 4 orientations (flips)</text>
+
+  <!-- decision -->
+  <rect x="590" y="205" width="290" height="160" rx="10" fill="#FFFBE6" stroke="#B8962E" stroke-width="2"/>
+  <text x="735" y="240" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Static-class match?</text>
+  <text x="735" y="268" font-size="14" text-anchor="middle" fill="#444">similarity ≥ cut-off, and the match</text>
+  <text x="735" y="289" font-size="14" text-anchor="middle" fill="#444">is an airport, wind turbine,</text>
+  <text x="735" y="310" font-size="14" text-anchor="middle" fill="#444">playground or bridge image</text>
+
+  <!-- use the match's labels -->
+  <rect x="950" y="70" width="290" height="110" rx="10" fill="#E9F7EF" stroke="#2E8B57" stroke-width="2"/>
+  <text x="1095" y="107" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Use the match's labels</text>
+  <text x="1095" y="132" font-size="14" text-anchor="middle" fill="#444">its boxes and its image class</text>
+  <text x="1095" y="154" font-size="14" font-weight="bold" text-anchor="middle" fill="#444">the network is skipped</text>
+
+  <!-- network -->
+  <rect x="950" y="520" width="290" height="110" rx="10" fill="#E8F0FE" stroke="#3B6FD8" stroke-width="2"/>
+  <text x="1095" y="557" font-size="18" font-weight="bold" text-anchor="middle" fill="#222">Our network</text>
+  <text x="1095" y="582" font-size="14" text-anchor="middle" fill="#444">detector + image classifier</text>
+  <text x="1095" y="604" font-size="14" text-anchor="middle" fill="#444">one forward pass at 512 px</text>
+
+  <!-- submission -->
+  <rect x="1285" y="305" width="100" height="90" rx="10" fill="#F4F4F4" stroke="#666" stroke-width="2"/>
+  <text x="1335" y="355" font-size="16" font-weight="bold" text-anchor="middle" fill="#222">Submission</text>
+
+  <!-- question badges -->
+  <circle cx="735" cy="470" r="17" fill="#D64545"/>
+  <text x="735" y="476" font-size="15" font-weight="bold" text-anchor="middle" fill="#fff">Q1</text>
+  <circle cx="530" cy="470" r="17" fill="#D64545"/>
+  <text x="530" y="476" font-size="15" font-weight="bold" text-anchor="middle" fill="#fff">Q2</text>
+
+  <!-- questions -->
+  <line x1="30" y1="672" x2="1370" y2="672" stroke="#ddd" stroke-width="1"/>
+  <circle cx="47" cy="707" r="15" fill="#D64545"/>
+  <text x="47" y="712" font-size="13" font-weight="bold" text-anchor="middle" fill="#fff">Q1</text>
+  <text x="75" y="712" font-size="16" fill="#222"><tspan font-weight="bold">One pass:</tspan> each image's predictions come from one step only. Matched images are read once, by the matching step; images without a</text>
+  <text x="75" y="734" font-size="16" fill="#222">match are read by the matching step, then once by the network. Does this count against “each image goes through the model once”?</text>
+  <circle cx="47" cy="771" r="15" fill="#D64545"/>
+  <text x="47" y="776" font-size="13" font-weight="bold" text-anchor="middle" fill="#fff">Q2</text>
+  <text x="75" y="776" font-size="16" fill="#222"><tspan font-weight="bold">Parameters:</tspan> the stored images are 2.0 B values at full size, or 38.6 M in version B (64 × 64). Do they count towards the 130 M limit?</text>
+</svg>
