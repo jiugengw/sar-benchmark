@@ -107,7 +107,7 @@ B_pred = predict([tims[t] for t in origs], TR, 'originals')
 flipdir = out / 'flipped_originals'
 flip_ims = []
 for h, (t, k, *_) in pairs.items():
-    im = tims[t]; name = f'images/flip{k}_{Path(im["file_name"]).stem}.png'
+    im = tims[t]; name = f'images/flip{k}_h{h}.png'  # per holdout copy: two copies can share one original
     (flipdir / 'images').mkdir(parents=True, exist_ok=True)
     if not (flipdir / name).exists():
         Image.fromarray(np.ascontiguousarray(FL[k](np.asarray(Image.open(TR / im['file_name']).convert('L'))))).save(flipdir / name)

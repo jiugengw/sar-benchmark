@@ -34,11 +34,23 @@ until [ -n "$A" ]; do slot; A=$(LIST="s1adfj-b8:8 s1adfj-b10:10" sbatch --parsab
 until [ -n "$B" ]; do slot; B=$(LIST="s1adfj-b9:9 s1adfj-b12:12" sbatch --parsable --export=ALL $CHAIN); [ -z "$B" ] && sleep 60; done
 log "chain jobs: $A (b8 -> b10), $B (b9 -> b12); any L40S / A40 / Blackwell card"
 names="s1adfj-b8 s1adfj-b9 s1adfj-b10 s1adfj-b12"
-find_run() { ls -d runs/ft40-$1-[0-9]* 2>/dev/null | head -1; }
+find_run() {  # the finished run of this ingredient if there is one, else the newest
+  for d in $(ls -d runs/ft40-$1-[0-9]* 2>/dev/null); do [ -f $d/compute.json ] && { echo $d; return; }; done
+  ls -d runs/ft40-$1-[0-9]* 2>/dev/null | tail -1
+}
+JOBS="$A,$B"; resub=0
 while :; do
-  n=0; for x in $names; do r=$(find_run $x); [ -n "$r" ] && [ -f $r/compute.json ] && n=$((n+1)); done
+  n=0; missing=""
+  for x in $names; do r=$(find_run $x); if [ -n "$r" ] && [ -f $r/compute.json ]; then n=$((n+1)); else missing="$missing $x"; fi; done
   [ $n -eq 4 ] && break
-  if ! squeue -j $A,$B -h 2>/dev/null | grep -q .; then log "both chain jobs ended with only $n of 4 ingredients: stopped"; exit 1; fi
+  if ! squeue -j $JOBS -h 2>/dev/null | grep -q .; then
+    [ $resub -eq 1 ] && { log "still missing after resubmitting:$missing; stopped"; exit 1; }
+    resub=1; JOBS=""
+    for x in $missing; do
+      J=""; until [ -n "$J" ]; do slot; J=$(LIST="$x:${x##*-b}" sbatch --parsable --export=ALL --time=14:00:00 $CHAIN); [ -z "$J" ] && sleep 60; done
+      JOBS="$JOBS${JOBS:+,}$J"; log "$x missing after the chains: resubmitted alone as job $J"
+    done
+  fi
   sleep 300
 done
 P=""; for x in $names; do P="$P $(find_run $x)/train/weights/last.pt"; done

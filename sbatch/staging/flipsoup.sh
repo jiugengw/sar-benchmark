@@ -52,7 +52,7 @@ from swa_study import average
 average([Path(p) for p in sys.argv[1:]], Path('runs/soup-s1f/alldata-s1f-six.pt')); print('averaged', len(sys.argv) - 1)
 PY
 sed -e 's/sar-s1soup-pkg/sar-s1fsoup-pkg/' -e 's#runs/soup-s1/alldata-s1-six.pt#runs/soup-s1f/alldata-s1f-six.pt#' \
-    -e 's/alldata-s1-soup6/alldata-s1f-soup6/g' -e "s#\$(find_run s1ad-memorise)#$(find_run s1adf-memorise)#" \
+    -e 's/alldata-s1-soup6/alldata-s1f-soup6/g' -e "s#runs/ft40-s1ad-memorise-[0-9]*#$(find_run s1adf-memorise)#" \
     -e 's/S1_SOUP_ZIP_READY/S1F_SOUP_ZIP_READY/' /tmp/s1soup_package.sbatch > /tmp/s1fsoup_package.sbatch
 grep -q "alldata-s1f-six.pt" /tmp/s1fsoup_package.sbatch || { log "package script rewrite failed"; exit 1; }
 slot; PKG=$(sbatch --parsable /tmp/s1fsoup_package.sbatch); log "packaging: $PKG"

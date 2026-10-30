@@ -10,6 +10,7 @@
 #SBATCH --constraint=l40s|rtx_pro_6000_blackwell_max
 #SBATCH --prefer=l40s
 #SBATCH --time=08:00:00
+#SBATCH --output=runs/%x-%j.out
 set -uo pipefail
 cd ~/scratchDirectory/sar-benchmark
 source /opt/apps/lmod/lmod/init/bash; module load Python/3.12.8-GCCcore-13.3.0; source .venv/bin/activate

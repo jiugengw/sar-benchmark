@@ -33,13 +33,13 @@ source /opt/apps/lmod/lmod/init/bash; module load Python/3.12.8-GCCcore-13.3.0; 
 export PYTHONPATH=$PWD:$PWD/models/yolo
 P=""; for x in $names; do P="$P $(find_run $x)/train/weights/last.pt"; done
 log "averaging:$P"
+mkdir -p runs/soup-s1
 python - $P <<PY
 import sys
 from pathlib import Path
 from swa_study import average
 average([Path(p) for p in sys.argv[1:]], Path('runs/soup-s1/alldata-s1-six.pt')); print('averaged', len(sys.argv) - 1)
 PY
-mkdir -p runs/soup-s1
 cat > /tmp/s1soup_package.sbatch <<SB
 #!/bin/bash
 #SBATCH --job-name=sar-s1soup-pkg

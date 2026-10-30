@@ -9,6 +9,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=08:00:00
+#SBATCH --output=runs/%x-%j.out
 set -euo pipefail
 cd ~/scratchDirectory/sar-benchmark
 source /opt/apps/lmod/lmod/init/bash; module load Python/3.12.8-GCCcore-13.3.0; source .venv/bin/activate

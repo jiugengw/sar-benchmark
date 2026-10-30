@@ -8,6 +8,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=03:00:00
+#SBATCH --output=runs/%x-%j.out
 set -euo pipefail
 TAG=${TAG:-alldata-s1fsr}
 cd ~/scratchDirectory/sar-benchmark

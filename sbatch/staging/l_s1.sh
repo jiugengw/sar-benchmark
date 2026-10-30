@@ -1,7 +1,6 @@
 #!/bin/bash
-# YOLO26l at stride 1, unattended (training split, measured on the holdout): 100 epochs from DOTA l weights, then
-# plain -> speckle -> third (x4) -> memorise, all at stride 1; then packaging trains an l classifier and scores the
-# holdout. Starts after the all-data soup's two-head ZIP so it does not delay that.
+# YOLO26l at stride 1, 100-epoch stage only (training split): compared with m at stride 1 at the same stage, to see
+# whether a bigger model helps once resolution is not the limit. Starts after the all-data soup's two-head ZIP.
 cd ~/scratchDirectory/sar-benchmark
 LOG=~/sbatch-staging/l_s1.log
 log() { echo "$(date '+%m-%d %H:%M') $*" >> $LOG; }
@@ -35,16 +34,4 @@ while [ "$STATE" = "TIMEOUT" ]; do
   STATE=$(wait_job $J); log "resume ended: $STATE"
 done
 [ -f $R1/train/weights/best.pt ] || { log "no best.pt, stopping"; exit 1; }
-CLS=runs/yolo26m-p2-dota-verified-330705/image_classifier.pt  # required argument only; every stage skips evaluation
-run() {
-  local name=$1; shift; slot
-  local j=$(sbatch --parsable --time=$TIME sbatch/finetune_detector.sbatch $name "$@"); log "$name: job $j"
-  local st=$(wait_job $j); log "$name ended: $st"; LAST=runs/ft40-$name-$j
-  [ -f $LAST/train/weights/best.pt ] && [ -f $LAST/compute.json ] || { log "$name incomplete, stopping"; exit 1; }
-}
-TIME=16:00:00 run ls1-plain --source $R1/train/weights/best.pt --classifier $CLS --lr0 0.002 --stem-stride 1 --skip-evaluation
-TIME=16:00:00 run ls1-speckle --source $LAST/train/weights/best.pt --classifier $CLS --lr0 0.001 --speckle-prob 0.5 --stem-stride 1 --skip-evaluation
-TIME=24:00:00 run ls1-third --source $LAST/train/weights/best.pt --classifier $CLS --lr0 0.001 --stem-stride 1 --repeat-classes airport,harbor,oil_tank,wind_turbine,bridge:4,playground:4 --repeat-factor 2 --repeat-width 512 --skip-evaluation
-TIME=16:00:00 run ls1-memorise --source $LAST/train/weights/best.pt --classifier $CLS --no-augment --lr0 0.002 --tal-beta 8 --stem-stride 1 --skip-evaluation
-slot; J=$(sbatch --parsable --time=04:00:00 sbatch/package_candidate.sbatch ls1-memorise $LAST/train/weights/best.pt $LAST/train/results.csv); log "packaging (l classifier + holdout scores): job $J -> results/ls1-memorise"
-wait_job $J >/dev/null; log "L_S1_COMPLETE"
+log "L_S1_STAGE1_COMPLETE $R1 (100-epoch stage only, by plan: compared with m stride 1 at the same stage)"

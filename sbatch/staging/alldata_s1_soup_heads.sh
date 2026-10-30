@@ -26,7 +26,7 @@ source /opt/apps/lmod/lmod/init/bash; module load Python/3.12.8-GCCcore-13.3.0; 
 export PYTHONPATH=\$PWD:\$PWD/models/yolo MPLCONFIGDIR=/tmp/s1sh-\$SLURM_JOB_ID PYTHONUNBUFFERED=1 OMP_NUM_THREADS=4
 DET=runs/soup-s1/alldata-s1-six.pt; H=runs/soup-s1/heads-\$SLURM_JOB_ID
 python -u models/yolo/branch_head_study.py --detector \$DET --output \$H/branch_head.pt --epochs 20 --batch 16 --all-data
-python -u models/yolo/conv_head_study.py --detector \$DET --output \$H/conv_head.pt --batch 16 --all-data
+python -u models/yolo/conv_head_study.py --detector \$DET --output \$H/conv_head.pt --batch 16 --epochs 50 --all-data
 python -u models/yolo/branch_head_predict.py --detector \$DET --branch \$H/branch_head.pt --images data/course-data/val/images.json --split-root data/course-data/val --out \$H/val_probs_branch.json
 python -u models/yolo/conv_head_predict.py --detector \$DET --branch \$H/conv_head.pt --images data/course-data/val/images.json --split-root data/course-data/val --out \$H/val_probs_conv.json
 python - <<PY

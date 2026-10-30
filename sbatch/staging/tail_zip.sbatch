@@ -8,6 +8,7 @@
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=l40s|rtx_pro_6000_blackwell_max
+#SBATCH --prefer=l40s
 #SBATCH --time=01:00:00
 #SBATCH --output=runs/%x-%j.out
 set -euo pipefail

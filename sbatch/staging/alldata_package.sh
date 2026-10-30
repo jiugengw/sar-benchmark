@@ -8,7 +8,7 @@ until grep -q ALLDATA_SOUP_SUBMITTED $LOG; do sleep 300; done
 names="ad-b12 ad-spk ad-m4spk5 ad-m4spk8 ad-polviews"
 find_run() { ls -d runs/ft40-$1-[0-9]* 2>/dev/null | head -1; }
 while :; do
-  n=0; for x in $names; do r=$(find_run $x); [ -n "$r" ] && [ -f $r/train/weights/last.pt ] && ! squeue -u $USER -h -o %j | grep -q sar-ad && n=$((n+1)); done
+  n=0; for x in $names; do r=$(find_run $x); [ -n "$r" ] && [ -f $r/compute.json ] && n=$((n+1)); done  # compute.json: written only after training ends
   [ $n -eq 5 ] && break; sleep 300
 done
 source /opt/apps/lmod/lmod/init/bash; module load Python/3.12.8-GCCcore-13.3.0; source .venv/bin/activate

@@ -28,7 +28,7 @@ python - "$CLS" <<'PY'
 import sys
 from pathlib import Path
 from swa_study import average
-from deadline_recovery import evaluate_export
+from models.yolo.deadline_recovery import evaluate_export
 runs = {'flip': 'ft40-s1r-flipmem-338727', 'spk': 'ft40-s1r-flipspk-338730', 'anneal': 'ft40-s1r-flipanneal-338803'}
 soups = {'soup-s1r-flip-spk': ['flip', 'spk'], 'soup-s1r-2flip-spk': ['flip', 'flip', 'spk'],
          'soup-s1r-flip-anneal': ['flip', 'anneal'], 'soup-s1r-flip-spk-anneal': ['flip', 'spk', 'anneal']}
