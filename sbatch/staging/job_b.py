@@ -1,4 +1,4 @@
-# Label transfer, version B (30 Oct; EXPERIMENT pending the TA's approval). The labelled images are stored at 64 x 64
+# Label transfer, version B (30 Oct; NOT ALLOWED, kept as a record). The labelled images are stored at 64 x 64
 # (9,392 x 4,096 = 38.5 M values, inside the 130 M parameter limit with the network); when comparing, each stored image
 # is enlarged back to its own size (bilinear) and correlated with the test image as it is: the test image is never
 # resized or flipped. A blurred enlargement correlates lower with a full-detail image than the full-size image does, so

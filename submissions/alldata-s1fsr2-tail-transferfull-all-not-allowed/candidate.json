@@ -3,7 +3,7 @@
   "detector": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/ft40-s1adfsr2-340754/train/weights/last.pt (refit 2)",
   "classifier": "two-head classifier runs/soup-s1fs/fliprefit-heads-341248 (unchanged from the base ZIP)",
   "label_transfer": "boxes of airport, wind turbine, playground and bridge replaced by the ground-truth boxes of the most similar labelled image; full-size match (test image as-is, training images in 4 orientations), similarity 0.45-1.0: near-copies and exact/flipped copies (683 test images); code ~/sbatch-staging/transfer.py / transfer_full.py (30 Oct)",
-  "status": "PENDING TA APPROVAL: label transfer from training images is not covered by the rules; not posted",
+  "status": "NOT ALLOWED: a trick we thought of (label transfer from training images), not part of our method; not posted. See docs/NOT_ALLOWED_TRICKS.md",
   "no_ensemble": true,
   "image_size": 512
 }

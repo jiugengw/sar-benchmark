@@ -20,6 +20,8 @@ rebuild the best model, the rules) and [docs/BEST_MODEL_RECIPE.md](docs/BEST_MOD
   mAP is lost, ranked ideas to go further, and a one-change-at-a-time experiment plan.
 - **[submissions/README.md](submissions/README.md): official scores.** Every ZIP uploaded to Codabench, with its Δm.
   Packaged ZIPs that were never uploaded are in [nonsubmissions/](nonsubmissions/).
+- **[docs/NOT_ALLOWED_TRICKS.md](docs/NOT_ALLOWED_TRICKS.md): tricks we thought of that aren't allowed** (label
+  transfer from training images), with their probe scores. Not part of our method.
 - **[reports/holdout-viewer/index.html](reports/holdout-viewer/index.html): compare runs image by image.** All 939
   holdout images with ground truth and up to three runs' boxes, filters (class, size, clean/twin, missed, false
   positives, A vs B), a live score threshold and zoom. Build its data first with `python tools/build_holdout_viewer.py`

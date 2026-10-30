@@ -1,7 +1,7 @@
 {
   "base_zip": "submissions/alldata-s1fsr2-rounded-hedged-s1two-tail/ (refit 2 + two-head classifier + low-score tail, \u0394m +65.92)",
   "detector": "/common/scratch/users/j/jgwong.2023/sar-benchmark/runs/ft40-s1adfsr2-340754/train/weights/last.pt (refit 2)",
-  "status": "PENDING TA APPROVAL: label transfer from training images is not covered by the rules; not posted",
+  "status": "NOT ALLOWED: a trick we thought of (label transfer from training images), not part of our method; not posted. See docs/NOT_ALLOWED_TRICKS.md",
   "no_ensemble": true,
   "image_size": 512,
   "label_transfer": "version B: labelled images stored at 64 x 64 (38.6 M values with their boxes), each enlarged back to the test image's size when comparing; the test image is never changed; cut-off 0.485 set so 683 test images match, as at full size; matching first: test images matched to a static-class image (airport, wind turbine, playground, bridge) take only that image's boxes and class and skip the network; all other images keep the network's output unchanged (416 test images; 10 class labels changed); code sbatch/staging/transfer_cascade.py on the version B ZIP (30 Oct)"

@@ -1,4 +1,4 @@
-# Cascade form of label transfer (30 Oct; EXPERIMENT pending the TA's approval). Matcher first: a test image whose
+# Cascade form of label transfer (30 Oct; NOT ALLOWED, kept as a record). Matcher first: a test image whose
 # best full-size match (similarity 0.45-1.0) is a labelled image of a static class (airport, wind turbine, playground,
 # bridge) gets only that image's boxes and its class; every other image keeps the detector + classifier output. So
 # each image's predictions come from one predictor, never merged. Built from transfer_full.py's ZIP, whose copied

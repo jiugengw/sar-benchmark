@@ -1,5 +1,5 @@
-# Label transfer from the most similar labelled image (30 Oct; EXPERIMENT pending the TA's approval, see
-# no-twin-label-copying). For each target image: find the most similar labelled image (64 px correlation, as-is and in
+# Label transfer from the most similar labelled image (30 Oct; NOT ALLOWED, kept as a record; see
+# docs/NOT_ALLOWED_TRICKS.md). For each target image: find the most similar labelled image (64 px correlation, as-is and in
 # the three flips), and if the similarity falls in a chosen range, copy that image's labels of the chosen classes
 # (flipped with the dataset's convention) into the predictions at score 1.0, so they rank above every model box.
 #   holdout study: python transfer.py study                 (340514's holdout predictions, rounded + hedged + tail)

@@ -1,4 +1,4 @@
-# Label transfer with FULL-SIZE matching (30 Oct; EXPERIMENT pending the TA's approval). Same as transfer.py, but the
+# Label transfer with FULL-SIZE matching (30 Oct; NOT ALLOWED, kept as a record). Same as transfer.py, but the
 # similarity is the correlation of the images at their own size (no thumbnail), and the test (target) image is used
 # as it is: the labelled images are compared in their four orientations instead. Chunked to keep memory small.
 #   python transfer_full.py study                        holdout: similarity distribution and official-mix per cut-off
