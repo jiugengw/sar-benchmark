@@ -64,6 +64,23 @@ The ZIP from step 11 is the one to upload. Run times: stage 1 about 30 h (resume
 header), stages 2-4 12-18 h each, each soup run about 10 h, each refit about 5 h, packaging 1.5 h, the heads about
 4 h. In all about 140 GPU-hours: roughly 4 days of wall-clock with six GPUs for the soup, 5 days with two.
 
+### Settings behind the commands
+
+Everything not on the command lines above comes from defaults in the repository's code, so the commands reproduce it:
+
+| | Stage 1 (`train_yolo26s_p2.py`) | Stages 2-8 (`finetune_detector.py`) |
+|---|---|---|
+| Image size, batch | 512 px, 16 | 512 px, 16 |
+| Epochs | 100 | 40 unless `--epochs` is given (20 for soup runs, 10 for refits) |
+| Optimizer | MuSGD, picked by Ultralytics (`optimizer=auto`): lr 0.01, momentum 0.9 | MuSGD, `--lr0` as given, momentum 0.9, weight decay 0.0005 |
+| Learning-rate schedule | Ultralytics default | 1 warm-up epoch, cosine down to 10% of lr0 |
+| Augmentation | Ultralytics defaults, mosaic switched off for the last 10 epochs, no up-down flips | scale ±20%, shift ±5%, left-right and up-down flips 0.5, brightness 0.2, no mosaic; all off with `--no-augment` (soup runs, refits) |
+| Other | seed 0, deterministic, AMP | seed 0, deterministic, AMP, box-loss gain 7.5, `--tal-beta` as given (YOLO26 default 6) |
+
+Two of the original soup runs used batch 8 because they ran on GPUs with less memory; Ultralytics accumulates gradients
+to a nominal batch of 64, so 8 trains almost exactly like 16. Runs are seeded but not bit-identical across GPU types:
+expect a rebuilt model within a few tenths of a mAP point of ours.
+
 ### The soup, step by step
 
 **What it is.** Six copies of the same model are trained from the same stage-4 checkpoint, each with a slightly
