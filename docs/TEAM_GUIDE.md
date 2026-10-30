@@ -52,8 +52,8 @@ FLIPS='--dataset-flips --dataset-flips-classes airport,bridge,harbor,oil_tank,pl
 | 2. Plain | `sbatch $G --time=12:00:00 sbatch/finetune_detector.sbatch s1ad-plain --source <stage 1>/train/weights/best.pt --classifier $CLS --all-data --skip-evaluation --lr0 0.002 --stem-stride 1 --batch 16` |
 | 3. Speckle | `sbatch $G --time=12:00:00 sbatch/finetune_detector.sbatch s1ad-speckle --source <stage 2>/train/weights/last.pt --classifier $CLS --all-data --skip-evaluation --lr0 0.001 --speckle-prob 0.5 --stem-stride 1 --batch 16` |
 | 4. Third | `sbatch $G --time=18:00:00 sbatch/finetune_detector.sbatch s1ad-third --source <stage 3>/train/weights/last.pt --classifier $CLS --all-data --skip-evaluation --lr0 0.001 --stem-stride 1 --batch 16 --repeat-classes airport,harbor,oil_tank,wind_turbine,bridge:4,playground:4 --repeat-factor 2 --repeat-width 512` |
-| 5. Flip soup ingredients (six runs, in parallel if you have slots) | for B in 8 12 10 7 9 11: `sbatch $G --time=12:00:00 sbatch/finetune_detector.sbatch s1adfs-b$B --source <stage 4>/train/weights/last.pt --classifier $CLS --all-data --skip-evaluation --no-augment --lr0 0.002 --epochs 20 --stem-stride 1 --batch 16 --tal-beta $B $FLIPS` |
-| 6. Average them into one model | `python -c "import sys; sys.path.insert(0, 'models/yolo'); from pathlib import Path; from swa_study import average; average([Path(p) for p in sys.argv[1:]], Path('runs/soup-s1fs/alldata-s1fs-six.pt'))" runs/ft40-s1adfs-b*-*/train/weights/last.pt` (after `mkdir -p runs/soup-s1fs`) |
+| 5. Flip soup: six memorise runs | see [The soup, step by step](#the-soup-step-by-step) below |
+| 6. Average them into one model | see [The soup, step by step](#the-soup-step-by-step) below |
 | 7. Refit 1, 10 epochs | `sbatch $G --time=08:00:00 sbatch/finetune_detector.sbatch s1adfsr1 --source runs/soup-s1fs/alldata-s1fs-six.pt --classifier $CLS --all-data --skip-evaluation --no-augment --lr0 0.001 --epochs 10 --stem-stride 1 --batch 16 --tal-beta 8 $FLIPS` |
 | 8. Refit 2, 10 more | the same with `s1adfsr2 --source <stage 7>/train/weights/last.pt` |
 | 9. Package (quick classifier, rounding, hedging, low-score tail) | `sbatch $G --export=ALL,TAG=alldata-s1fsr2,DET=<stage 8>/train/weights/last.pt,RUN=<stage 8> sbatch/staging/fliprefit_package.sbatch`; its log (`slurm-<job>.out`) prints `S1FSR_ZIP_READY <zip>` and `S1FSR_TAIL_READY <zip>` |
@@ -61,7 +61,57 @@ FLIPS='--dataset-flips --dataset-flips-classes airport,bridge,harbor,oil_tank,pl
 | 11. Tail on the final ZIP | `python models/yolo/lowconf_tail.py <two-head zip> <same folder>/alldata-s1fsr2-lowconf.zip <two-head zip without .zip>-tail.zip` |
 
 The ZIP from step 11 is the one to upload. Run times: stage 1 about 30 h (resume it once past 24 h, see the script's
-header), stages 2-4 12-18 h each, each soup run and each refit about 5-9 h, packaging 1.5 h, the heads about 4 h.
+header), stages 2-4 12-18 h each, each soup run about 10 h, each refit about 5 h, packaging 1.5 h, the heads about
+4 h. In all about 140 GPU-hours: roughly 4 days of wall-clock with six GPUs for the soup, 5 days with two.
+
+### The soup, step by step
+
+**What it is.** Six copies of the same model are trained from the same stage-4 checkpoint, each with a slightly
+different setting (the assigner's `--tal-beta`: 8, 12, 10, 7, 9, 11). Because they start from one point, their weights
+stay close, and the plain average of the six weights is one network that is better than each of them. It is still
+**one model** (one set of weights, one forward pass), so it is allowed; it is not an ensemble, which would run several
+models and merge their outputs.
+
+**What it buys.** Measured on Codabench (stride 1, all data): single model mAP 55.17, soup of six 55.93, so about
++0.75 mAP (+1.4 Δm). It costs about 60 GPU-hours, the biggest single item in the chain. Fewer runs (three) would
+probably keep most of the gain, but that has not been tested.
+
+**Each run** is stage 4 plus 20 epochs of memorise (no augmentation) with the images of the six flip classes shown in
+all four orientations, so one epoch takes about 32 minutes and a run about 10 hours. Every run must start from the
+**same** stage-4 `last.pt`.
+
+**1. Submit the six runs.** You can have 4 jobs submitted and 2 running at a time, so submit four, then the last two
+when two have finished:
+
+```bash
+T=<stage 4 folder>/train/weights/last.pt
+for B in 8 12 10 7; do
+  sbatch $G --time=12:00:00 sbatch/finetune_detector.sbatch s1adfs-b$B --source $T --classifier $CLS --all-data \
+      --skip-evaluation --no-augment --lr0 0.002 --epochs 20 --stem-stride 1 --batch 16 --tal-beta $B $FLIPS
+done
+# later, when squeue shows fewer than 4 of your jobs: the same command with B in 9 11
+```
+
+**2. Check all six finished.** Each `runs/ft40-s1adfs-b<B>-<job>/` needs `train/weights/last.pt` and `compute.json`
+(written at the end of training):
+
+```bash
+ls runs/ft40-s1adfs-b*-*/compute.json | wc -l      # must print 6
+```
+
+**3. Average them** (a minute on the login node). `swa_study.average` averages every weight and batch-norm statistic
+and saves one checkpoint:
+
+```bash
+mkdir -p runs/soup-s1fs
+python -c "import sys; sys.path.insert(0, 'models/yolo'); from pathlib import Path; from swa_study import average; average([Path(p) for p in sys.argv[1:]], Path('runs/soup-s1fs/alldata-s1fs-six.pt')); print('averaged', len(sys.argv) - 1)" runs/ft40-s1adfs-b*-*/train/weights/last.pt
+```
+
+It should print `averaged 6`. `runs/soup-s1fs/alldata-s1fs-six.pt` is the input of stage 7 (refit 1).
+
+**What did not work:** averaging checkpoints of one run, or a run with its own continuation (no gain), and mixing
+different recipes in one soup (flip runs averaged with strong-speckle runs lost the flip runs' gain). Average siblings
+of one parent trained with the same recipe, changing only a small setting such as beta.
 
 ## 3. Rules to keep
 
