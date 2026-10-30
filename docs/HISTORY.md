@@ -32,7 +32,9 @@ images (18%) repeat labelled scenes only in flipped form, with labels flipped on
 of memorise runs that also see those classes' images flipped, with its two-head classifier, reached **Δm +65.55**
 (95.40 F1, 59.80 mAP) on 27 October; see
 [20–26 October](#rounding-hedging-soup-stride-1-and-repeated-scenes--2026-october-2026). On 28 October 19 more flip epochs (refit 2), its two-head classifier and a low-score tail gave **Δm +65.92** (95.24 F1,
-60.04 mAP); [BEST_MODEL_RECIPE.md](BEST_MODEL_RECIPE.md) lists the whole chain.
+60.04 mAP). On 30 October the flip soup with the same tail scored **+65.80** (95.40 F1, 59.94 mAP): the refits added
+only +0.12, within run-to-run noise, so the final model (Phase 1 and Phase 2) is the flip soup without refits;
+[BEST_MODEL_RECIPE.md](BEST_MODEL_RECIPE.md) lists the whole chain.
 
 | Date (2026) | Approach | Official F1 | Official mAP | Official Δm |
 |---|---|---:|---:|---:|

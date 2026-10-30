@@ -1,0 +1,9 @@
+{
+  "detector": "runs/soup-s1fs/alldata-s1fs-six.pt, the flip soup without refits (same boxes as alldata-s1fs-soup6-rounded-hedged-s1two, +65.55, then a low-score tail)",
+  "classifier": "stride-1 two-head on the flip soup (job 339995); classification.csv byte-for-byte that of alldata-s1fs-soup6-rounded-hedged-s1two",
+  "post": "rounded + two-tier hedging, then the detector's own boxes under score 0.001 (conf 1e-5, max-det 1000) ranked below every box, at most 100 per image and class (models/yolo/lowconf_tail.py, job 344180, Blackwell like the original packaging)",
+  "purpose": "probe: the final recipe without the refits, to measure what refit 1 + 2 added (+65.92 with them)",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512
+}

@@ -1,17 +1,18 @@
 # CS701 SAR benchmark
 
-Our work on the CS701 SAR multi-task benchmark: classify each SAR image (9 classes) and detect its objects. Our best
-official result is **Δm +65.92** (macro-F1 95.24, mAP 60.04), from `alldata-s1fsr2-rounded-hedged-s1two-tail.zip`:
+Our work on the CS701 SAR multi-task benchmark: classify each SAR image (9 classes) and detect its objects. Our final
+model scores **Δm +65.80** (macro-F1 95.40, mAP 59.94), from `alldata-s1fs-soup6-rounded-hedged-s1two-tail.zip`:
 one YOLO26m-P2 detector with a stride-1 first layer: the weight average of six all-data memorise runs that also see
-the images of six classes flipped (as the test set repeats them), refitted for 19 more flip epochs, with rounded and
-hedged boxes, the detector's own low-score boxes ranked last, and a two-head image classifier on its frozen features.
+the images of six classes flipped (as the test set repeats them), with rounded and hedged boxes, the detector's own
+low-score boxes ranked last, and a two-head image classifier on its frozen features. Our best score, +65.92, added 19
+refit epochs; that +0.12 is within run-to-run noise, so the final model (Phase 1 and Phase 2) leaves them out.
 
 **Teammates: start with [docs/TEAM_GUIDE.md](docs/TEAM_GUIDE.md)** (setup on the cluster, the exact commands to
 rebuild the best model, the rules) and [docs/BEST_MODEL_RECIPE.md](docs/BEST_MODEL_RECIPE.md) (what each stage does).
 
 ## What to read
 
-- **[How we got here](docs/HISTORY.md#summary): the path from Δm −1.47 to +65.92**, one table row per step, and
+- **[How we got here](docs/HISTORY.md#summary): the path from Δm −1.47 to +65.92** (final model +65.80), one table row per step, and
   [the last week in detail](docs/HISTORY.md#rounding-hedging-soup-stride-1-and-repeated-scenes--2026-october-2026)
   (rounding, hedging, soup, stride 1, the classifier, per-class probes and the flipped copies in the test set).
 - **[docs/HISTORY.md](docs/HISTORY.md): the full record.** Every attempt, part by part: why we tried it, what we

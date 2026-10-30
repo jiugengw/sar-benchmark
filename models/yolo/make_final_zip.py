@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Make the submission ZIP from the saved final model, training nothing.
 
-The same five steps that produced submissions/alldata-s1fsr2-rounded-hedged-s1two-tail/ (Δm +65.92), in one command:
+The same five steps that produced our final submission, submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/
+(Δm +65.80, the flip soup without refits), in one command:
   1. detector boxes: make_submission.py, one2many branch, boxes >= 0.001, at most 300 per image
   2. rounding to whole pixels: round_boxes.py (whole-pixel-classes)
   3. hedging: resized and shifted copies of each box at lower scores (hedge_study.py)
@@ -15,7 +16,7 @@ Run from the repository root on a CUDA GPU, after the setup in docs/TEAM_GUIDE.m
 final_model/ (final_model/README.md says where to download them):
     python models/yolo/make_final_zip.py --out final.zip                         # Phase 1 images (data/course-data/val)
     python models/yolo/make_final_zip.py --images NEW_DIR --out phase2.zip       # NEW_DIR: images.json + the images
-    python models/yolo/make_final_zip.py --out final.zip --compare submissions/alldata-s1fsr2-rounded-hedged-s1two-tail/alldata-s1fsr2-rounded-hedged-s1two-tail.zip
+    python models/yolo/make_final_zip.py --out final.zip --compare submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/alldata-s1fs-soup6-rounded-hedged-s1two-tail.zip
 NEW_DIR is laid out like data/course-data/val: an images.json whose "images" list id, file_name, width and height,
 and the image files at NEW_DIR/<file_name>. Intermediate ZIPs and probabilities are kept in <out>-work/.
 """

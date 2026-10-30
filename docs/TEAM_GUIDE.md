@@ -1,46 +1,48 @@
 # Team guide: set up, rebuild and extend our best model
 
-**Best result so far: Δm +65.92** (mAP 60.04, macro-F1 95.24),
-[`submissions/alldata-s1fsr2-rounded-hedged-s1two-tail/`](../submissions/alldata-s1fsr2-rounded-hedged-s1two-tail/).
+**Our final model: Δm +65.80** (mAP 59.94, macro-F1 95.40), the flip soup without refits,
+[`submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/`](../submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/).
+It is the model we submit for Phase 1 and Phase 2. Our best score, +65.92, came from the same model plus 19 refit
+epochs (refit 2); that gain (+0.12) is within run-to-run noise, so we dropped the refits on 30 Oct.
 
 - **What the model is and why:** [BEST_MODEL_RECIPE.md](BEST_MODEL_RECIPE.md) (the stage-by-stage chain, options,
   times and scores) and [HISTORY.md](HISTORY.md) (every experiment and its lesson).
 - **Job scripts:** [`sbatch/finetune_detector.sbatch`](../sbatch/finetune_detector.sbatch) runs any one stage;
   [`sbatch/staging/`](../sbatch/staging/) has every job and driver script used from 21 to 29 Oct.
 - **The final model's weights** are attached to the GitHub release
-  [`model-refit2-twohead`](https://github.com/jiugengw/sar-benchmark/releases/tag/model-refit2-twohead)
+  [`model-flipsoup-twohead`](https://github.com/jiugengw/sar-benchmark/releases/tag/model-flipsoup-twohead)
   ([final_model/README.md](../final_model/README.md)). Other checkpoints are not in the repository (`runs/` is
   git-ignored); ask Jiugeng for the ones listed at the end of the recipe if you want to continue from them.
 
 ## 0. Replicate our submission (no training)
 
-This rebuilds the +65.92 ZIP from the saved weights in one command. It trains nothing, so it gives the same model
+This rebuilds our final ZIP (+65.80) from the saved weights in one command. It trains nothing, so it gives the same model
 every time. Use the same command for new test images.
 
 1. Do the one-time setup in [section 1](#1-one-time-setup-on-the-smu-cluster-about-an-hour). The command needs the
    data, the virtual environment, `prepare_dataset.py`'s class list and the copied `split.json`.
 2. Download the weights and check them:
-   `gh release download model-refit2-twohead --pattern '*.pt' --dir final_model && (cd final_model && shasum -a 256 -c SHA256SUMS)`
+   `gh release download model-flipsoup-twohead --pattern '*.pt' --dir final_model && (cd final_model && shasum -a 256 -c SHA256SUMS)`
 3. On a GPU node, from the repository root:
 
    ```bash
    python models/yolo/make_final_zip.py --out final.zip \
-     --compare submissions/alldata-s1fsr2-rounded-hedged-s1two-tail/alldata-s1fsr2-rounded-hedged-s1two-tail.zip
+     --compare submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/alldata-s1fs-soup6-rounded-hedged-s1two-tail.zip
    ```
 
    It takes about 5 minutes. As a Slurm job: [`sbatch/staging/job_z.sbatch`](../sbatch/staging/job_z.sbatch). It
    ends with one of three verdicts:
    - `MATCH`: byte-for-byte the ZIP we uploaded. Expect this on the cluster's Blackwell slices
-     (`rtx_pro_6000_blackwell_max`), the GPU type that made it (checked on 30 Oct: job 344078, 4 minutes).
+     (`rtx_pro_6000_blackwell_max`), the GPU type that made it (checked on 30 Oct: job 344324, 4 minutes).
    - `CLOSE MATCH`: the same labels, and boxes that differ only by another GPU type's floating-point rounding. On
-     an A40, 68,762 of 68,909 boxes were within 1 px (median 0.001 px) and the other 157 sat at the score
-     cut-offs. Same model, same result for practical purposes.
+     an A40 (tested on refit 2), 68,762 of 68,909 boxes were within 1 px (median 0.001 px) and the other 157 sat
+     at the score cut-offs. Same model, same result for practical purposes.
    - `DIFFERENT`: something else changed (weights, data or code); check step 2 and the setup.
 4. **New images** (e.g. Phase 2): put them in a folder laid out like `data/course-data/val`, that is an
    `images.json` listing each image's `id`, `file_name`, `width` and `height`, plus the image files. Then run
    `python models/yolo/make_final_zip.py --images <folder> --out phase2.zip` and upload `phase2.zip`.
 
-**What the command does.** These are the five steps that built the +65.92 ZIP, with the saved weights:
+**What the command does.** These are the five steps that built our final ZIP, with the saved weights:
 1. Detector boxes, score ≥ 0.001.
 2. Rounding to whole pixels.
 3. Hedging: shifted and resized copies of each box at lower scores.
@@ -73,7 +75,7 @@ mkdir -p pretrained && (cd pretrained && python -c "from ultralytics import YOLO
 - The cluster allows 100,000 files per user. The data, the YOLO copy and `.venv` together use about 50,000.
 - Limits per user: 2 running and 4 submitted jobs, 1 GPU, 4 CPUs and 32 GB per job, 24 h per job.
 
-## 2. Rebuild the best model (about 85 GPU-hours, 2-3 days)
+## 2. Rebuild the final model (about 75 GPU-hours, 2-3 days)
 
 Run every command from `~/scratchDirectory/sar-benchmark`. Each `sbatch` prints a job id; that stage's weights land
 in `runs/ft40-<name>-<job>/train/weights/` (stage 1: `runs/yolo26m-p2-dota-s1-<job>/train/weights/`). Start the next
@@ -93,22 +95,29 @@ FLIPS='--dataset-flips --dataset-flips-classes airport,bridge,harbor,oil_tank,pl
 | 4. Third | `sbatch $G --time=18:00:00 sbatch/finetune_detector.sbatch s1ad-third --source <stage 3>/train/weights/last.pt --classifier $CLS --all-data --skip-evaluation --lr0 0.001 --stem-stride 1 --batch 16 --repeat-classes airport,harbor,oil_tank,wind_turbine,bridge:4,playground:4 --repeat-factor 2 --repeat-width 512` |
 | 5. Flip soup: six memorise runs | see [The soup, step by step](#the-soup-step-by-step) below |
 | 6. Average them into one model | see [The soup, step by step](#the-soup-step-by-step) below |
-| 7. Refit 1, 10 epochs | `sbatch $G --time=08:00:00 sbatch/finetune_detector.sbatch s1adfsr1 --source runs/soup-s1fs/alldata-s1fs-six.pt --classifier $CLS --all-data --skip-evaluation --no-augment --lr0 0.001 --epochs 10 --stem-stride 1 --batch 16 --tal-beta 8 $FLIPS` |
-| 8. Refit 2, 10 more | the same with `s1adfsr2 --source <stage 7>/train/weights/last.pt` |
-| 9. Package (quick classifier, rounding, hedging, low-score tail) | `sbatch $G --export=ALL,TAG=alldata-s1fsr2,DET=<stage 8>/train/weights/last.pt,RUN=<stage 8> sbatch/staging/fliprefit_package.sbatch`; its log (`slurm-<job>.out`) prints `S1FSR_ZIP_READY <zip>` and `S1FSR_TAIL_READY <zip>` |
-| 10. Two-head classifier | `sbatch $G --export=ALL,DET=<stage 8>/train/weights/last.pt,Z=<the S1FSR_ZIP_READY zip> sbatch/staging/fliprefit_heads.sbatch`; it prints `S1FSR_TWOHEAD_ZIP <zip>` |
-| 11. Tail on the final ZIP | `python models/yolo/lowconf_tail.py <two-head zip> <same folder>/alldata-s1fsr2-lowconf.zip <two-head zip without .zip>-tail.zip` |
+| 7. Package (quick classifier, rounding, hedging, low-score tail) | `sbatch $G --export=ALL,TAG=alldata-s1fs-soup6,DET=runs/soup-s1fs/alldata-s1fs-six.pt,RUN=runs/soup-s1fs sbatch/staging/fliprefit_package.sbatch`; its log `runs/sar-s1fsr-pkg-<job>.out` prints `S1FSR_ZIP_READY <zip>` and `S1FSR_TAIL_READY <zip>` |
+| 8. Two-head classifier | `sbatch $G --export=ALL,DET=runs/soup-s1fs/alldata-s1fs-six.pt,Z=<the S1FSR_ZIP_READY zip> sbatch/staging/fliprefit_heads.sbatch`; its log `runs/sar-s1fsr-heads-<job>.out` prints `S1FSR_TWOHEAD_ZIP <zip>` |
+| 9. Tail on the final ZIP | `python models/yolo/lowconf_tail.py <two-head zip> <same folder>/alldata-s1fs-soup6-lowconf.zip <two-head zip without .zip>-tail.zip` |
 
-The ZIP from step 11 is the one to upload. Run times recorded by our runs: stage 1 12.7 h (on a 24 GB Blackwell
-slice), stages 2-4 2.8, 2.8 and 5.5 h, each soup run 5-11 h depending on the GPU (45 h for all six), each refit about
-5 h, packaging about 1.5 h, the heads about 4 h. In all about 85 GPU-hours: about 2 days of wall-clock with six GPUs
-for the soup, about 3 days with two.
+The ZIP from step 9 is the one to upload. Run times recorded by our runs: stage 1 12.7 h (on a 24 GB Blackwell
+slice), stages 2-4 2.8, 2.8 and 5.5 h, each soup run 5-11 h depending on the GPU (45 h for all six), packaging about
+1.5 h, the heads about 4 h. In all about 75 GPU-hours: about 2 days of wall-clock with six GPUs for the soup, about
+2.5 days with two.
+
+**Not in the final model: the refits.** Refit 1 and 2 trained the soup 19 more epochs with the same flips (lr 0.001,
+β 8, no augmentation; refit 1 was cancelled after 9 of 10 epochs, refit 2 ran 10 more from it). They scored +65.92
+against +65.80 without them, within run-to-run noise, and only target the test's flipped copies of training images,
+so from 30 Oct we submit the soup without them. To rebuild refit 2 anyway: `sbatch $G --time=08:00:00
+sbatch/finetune_detector.sbatch s1adfsr1 --source runs/soup-s1fs/alldata-s1fs-six.pt --classifier $CLS --all-data
+--skip-evaluation --no-augment --lr0 0.001 --epochs 10 --stem-stride 1 --batch 16 --tal-beta 8 $FLIPS`, cancel it once
+epoch 9 is saved, run the same command with `s1adfsr2 --source <refit 1>/train/weights/last.pt`, then steps 7-9 with
+its `last.pt` in place of the soup (about 10 more GPU-hours).
 
 ### Settings behind the commands
 
 Everything not on the command lines above comes from defaults in the repository's code, so the commands reproduce it:
 
-| | Stage 1 (`train_yolo26s_p2.py`) | Stages 2-8 (`finetune_detector.py`) |
+| | Stage 1 (`train_yolo26s_p2.py`) | Stages 2-5 and the refits (`finetune_detector.py`) |
 |---|---|---|
 | Image size, batch | 512 px, 16 | 512 px, 16 |
 | Epochs | 100 | 40 unless `--epochs` is given (20 for soup runs, 10 for refits) |
@@ -163,7 +172,7 @@ mkdir -p runs/soup-s1fs
 python -c "import sys; sys.path.insert(0, 'models/yolo'); from pathlib import Path; from swa_study import average; average([Path(p) for p in sys.argv[1:]], Path('runs/soup-s1fs/alldata-s1fs-six.pt')); print('averaged', len(sys.argv) - 1)" runs/ft40-s1adfs-b*-*/train/weights/last.pt
 ```
 
-It should print `averaged 6`. `runs/soup-s1fs/alldata-s1fs-six.pt` is the input of stage 7 (refit 1).
+It should print `averaged 6`. `runs/soup-s1fs/alldata-s1fs-six.pt` is the final detector, the input of stage 7 (packaging).
 
 **What did not work:** averaging checkpoints of one run, or a run with its own continuation (no gain), and mixing
 different recipes in one soup (flip runs averaged with strong-speckle runs lost the flip runs' gain). Average siblings
@@ -192,7 +201,7 @@ ZIP. Retrain both heads for every new detector: heads trained on one detector's 
   (`ft40-s1r-fliprefit-340514`): the studies print holdout macro-F1, clean F1 and a cross-fitted half-split F1. The
   current two-head baseline there is 96.32 (half-split). Codabench F1 runs about 1 point below the holdout.
 - **Where F1 came from** (official): 89.75 simple head, 92.56 joint training (cost mAP), 93.33 head on a frozen
-  longer-trained detector, 94.69 wider head, 95.13 two heads at stride 1, 95.24 final. The remaining errors are mostly
+  longer-trained detector, 94.69 wider head, 95.13 two heads at stride 1, 95.40 final (the flip soup; 95.24 on refit 2). The remaining errors are mostly
   bridge vs playground scenes in new images.
 
 ## 3. Rules to keep
