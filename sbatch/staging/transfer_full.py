@@ -23,8 +23,10 @@ def load(root, im):
     return np.asarray(Image.open(Path(root) / im['file_name']).convert('L'), dtype=np.float32)
 
 
-def match_full(targets, troot, pool, chunk=384):
-    """target id -> (similarity, flip kind, labelled image id); the target is never transformed."""
+def match_full(targets, troot, pool, chunk=384, pool_loader=None):
+    """target id -> (similarity, flip kind, labelled image id); the target is never transformed. pool_loader(im) gives
+    the labelled image as compared (default: the image itself at full size)."""
+    pool_loader = pool_loader or (lambda im: load(TR, im))
     best = {}
     for shape in sorted({(im['height'], im['width']) for im in targets}):
         tg = [im for im in targets if (im['height'], im['width']) == shape]
@@ -33,7 +35,7 @@ def match_full(targets, troot, pool, chunk=384):
             continue
         T, ts = zip(*(vec(load(troot, im)) for im in tg)); T = np.stack(T); ts = np.array(ts)
         for c in range(0, len(pl), chunk):
-            part = pl[c:c + chunk]; raw = [load(TR, im) for im in part]
+            part = pl[c:c + chunk]; raw = [pool_loader(im) for im in part]
             for k, f in enumerate(FLIPS):
                 P, ps = zip(*(vec(np.ascontiguousarray(f(r))) for r in raw)); P = np.stack(P); ps = np.array(ps)
                 C = T @ P.T; C[ts < 4] = 0; C[:, ps < 4] = 0
