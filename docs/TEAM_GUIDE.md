@@ -130,6 +130,32 @@ It should print `averaged 6`. `runs/soup-s1fs/alldata-s1fs-six.pt` is the input 
 different recipes in one soup (flip runs averaged with strong-speckle runs lost the flip runs' gain). Average siblings
 of one parent trained with the same recipe, changing only a small setting such as beta.
 
+### The image classifier (stage 10)
+
+The image class comes from two small heads on top of the **frozen** detector; the detector is trained on boxes only.
+Training boxes and class together raised F1 by 2.8 but cost 0.5 mAP (17 Oct), and a mAP point is worth 3.6 F1
+points, so the tasks stay apart.
+
+| Head | Code | What it reads | Training |
+|---|---|---|---|
+| Branch head | `models/yolo/branch_head_study.py`, `branch_head_predict.py` | The frozen detector runs backbone layers 0-4; the head has its **own trainable copy of layers 5-10** (including SPPF and the C2PSA attention block, at lr / 10) and pools (max + mean) the outputs of layers 6 and 10 into an MLP | 20 epochs, random flips and quarter turns |
+| Conv head | `models/yolo/conv_head_study.py`, `conv_head_predict.py` | The four maps the detection head receives (P2-P5, after the neck): one small conv block per level, max + mean pooling, MLP | 30 epochs, random flips |
+
+The two heads' probabilities are averaged 50/50, then the **size rule** (`classifier_combo_study.py`) sets to 0 the
+classes never seen at an image's original size in training (e.g. 256 px images only hold bridge, ship, harbour, oil
+tank or aircraft). `sbatch/staging/fliprefit_heads.sbatch` does all of it and writes `classification.csv` into the
+ZIP. Retrain both heads for every new detector: heads trained on one detector's features do not carry over.
+
+- **Quick classifier** (for fast probe ZIPs): `package_candidate.py --classifier-all-data` pools each P2-P5 map and
+  trains an MLP. It is about 1 F1 point below the two heads, but mAP is the same, so a quick ZIP is enough to judge
+  a new detector.
+- **To test a classifier change:** train the heads without `--all-data` on the training-split detector
+  (`ft40-s1r-fliprefit-340514`): the studies print holdout macro-F1, clean F1 and a cross-fitted half-split F1. The
+  current two-head baseline there is 96.32 (half-split). Codabench F1 runs about 1 point below the holdout.
+- **Where F1 came from** (official): 89.75 simple head, 92.56 joint training (cost mAP), 93.33 head on a frozen
+  longer-trained detector, 94.69 wider head, 95.13 two heads at stride 1, 95.24 final. The remaining errors are mostly
+  bridge vs playground scenes in new images.
+
 ## 3. Rules to keep
 
 - One model: no ensembles, no test-time augmentation. Averaging the weights of runs from one start point (a soup) is
