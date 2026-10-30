@@ -7,8 +7,47 @@
   times and scores) and [HISTORY.md](HISTORY.md) (every experiment and its lesson).
 - **Job scripts:** [`sbatch/finetune_detector.sbatch`](../sbatch/finetune_detector.sbatch) runs any one stage;
   [`sbatch/staging/`](../sbatch/staging/) has every job and driver script used from 21 to 29 Oct.
-- **Trained weights are not in the repository** (`runs/` is git-ignored). Ask Jiugeng for the checkpoints listed at
-  the end of the recipe if you want to continue from them instead of retraining.
+- **The final model's weights** are attached to the GitHub release
+  [`model-refit2-twohead`](https://github.com/jiugengw/sar-benchmark/releases/tag/model-refit2-twohead)
+  ([final_model/README.md](../final_model/README.md)). Other checkpoints are not in the repository (`runs/` is
+  git-ignored); ask Jiugeng for the ones listed at the end of the recipe if you want to continue from them.
+
+## 0. Replicate our submission (no training)
+
+This rebuilds the +65.92 ZIP from the saved weights in one command. It trains nothing, so it gives the same model
+every time. Use the same command for new test images.
+
+1. Do the one-time setup in [section 1](#1-one-time-setup-on-the-smu-cluster-about-an-hour). The command needs the
+   data, the virtual environment, `prepare_dataset.py`'s class list and the copied `split.json`.
+2. Download the weights and check them:
+   `gh release download model-refit2-twohead --pattern '*.pt' --dir final_model && (cd final_model && shasum -a 256 -c SHA256SUMS)`
+3. On a GPU node, from the repository root:
+
+   ```bash
+   python models/yolo/make_final_zip.py --out final.zip \
+     --compare submissions/alldata-s1fsr2-rounded-hedged-s1two-tail/alldata-s1fsr2-rounded-hedged-s1two-tail.zip
+   ```
+
+   It takes about 5 minutes. As a Slurm job: [`sbatch/staging/job_z.sbatch`](../sbatch/staging/job_z.sbatch). It
+   ends with one of three verdicts:
+   - `MATCH`: byte-for-byte the ZIP we uploaded. Expect this on the cluster's Blackwell slices
+     (`rtx_pro_6000_blackwell_max`), the GPU type that made it (checked on 30 Oct: job 344078, 4 minutes).
+   - `CLOSE MATCH`: the same labels, and boxes that differ only by another GPU type's floating-point rounding. On
+     an A40, 68,762 of 68,909 boxes were within 1 px (median 0.001 px) and the other 157 sat at the score
+     cut-offs. Same model, same result for practical purposes.
+   - `DIFFERENT`: something else changed (weights, data or code); check step 2 and the setup.
+4. **New images** (e.g. Phase 2): put them in a folder laid out like `data/course-data/val`, that is an
+   `images.json` listing each image's `id`, `file_name`, `width` and `height`, plus the image files. Then run
+   `python models/yolo/make_final_zip.py --images <folder> --out phase2.zip` and upload `phase2.zip`.
+
+**What the command does.** These are the five steps that built the +65.92 ZIP, with the saved weights:
+1. Detector boxes, score ≥ 0.001.
+2. Rounding to whole pixels.
+3. Hedging: shifted and resized copies of each box at lower scores.
+4. A low-score tail: the same detector's boxes below 0.001, ranked last.
+5. Image labels from the two-head classifier.
+
+The ZIP holds `detection.json` (steps 1–4) and `classification.csv` (step 5).
 
 ## 1. One-time setup on the SMU cluster (about an hour)
 

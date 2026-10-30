@@ -21,3 +21,6 @@ __pycache__/
 /results/deadline-yolo26m-329644
 /results/training-curves/deadline-yolo26m-329644
 /reports/holdout-viewer/data/
+
+# Final-model weights: downloaded from the GitHub release (final_model/README.md), not committed
+/final_model/*.pt

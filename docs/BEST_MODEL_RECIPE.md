@@ -50,6 +50,9 @@ come from `group_runs.py`; official-mix is the clean holdout weighted like the t
 
 - `ft40-s1adfsr2-340754/train/weights/last.pt`: refit 2, the detector behind the best ZIP
 - `soup-s1fs/fliprefit-heads-341248/{branch_head,conv_head}.pt`: its two classifier heads
+
+  These two are also on the GitHub release `model-refit2-twohead`
+  ([final_model/README.md](../final_model/README.md)). `models/yolo/make_final_zip.py` rebuilds the ZIP from them.
 - `soup-s1fs/alldata-s1fs-six.pt`: the flip soup (start of refits)
 - `ft40-s1ad-third-*/train/weights/last.pt`: the all-data third stage (start of new soups or reruns)
 - `ft40-s1r-fliprefit-340514/train/weights/best.pt` and `results/ft40-s1r-fliprefit-340514/`: the holdout twin
