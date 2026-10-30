@@ -8,8 +8,9 @@ The same five steps that produced our final submission, submissions/alldata-s1fs
   3. hedging: resized and shifted copies of each box at lower scores (hedge_study.py)
   4. low-score tail: the detector's boxes below 0.001, ranked last (make_submission.py --conf 1e-5 --max-det 1000,
      then lowconf_tail.py, which checks that the boxes >= 0.001 are the ones of step 1)
-  5. image labels: the saved two-head classifier (branch head + conv head, probabilities averaged 50/50, then the
-     size rule of classifier_combo_study.py)
+  5. image labels: the saved two-head classifier (branch head + conv head, probabilities averaged 50/50, highest class).
+     The size rule of classifier_combo_study.py is left out (30 Oct): it changed 0 of 939 holdout and 0 of 1,426 test
+     labels, and on images from new sources it could force a wrong label.
 The ZIP holds detection.json (steps 1-4) and classification.csv (step 5).
 
 Run from the repository root on a CUDA GPU, after the setup in docs/TEAM_GUIDE.md section 1, with the weights in
@@ -118,7 +119,6 @@ def main() -> None:
     parser.add_argument('--conv', type=Path, default=WEIGHTS / 'conv_head.pt')
     parser.add_argument('--compare', type=Path, help='reference ZIP to compare the result with')
     args = parser.parse_args()
-    from classifier_combo_study import apply_size_rule, size_allowed
     from hedge_study import rewrite_zip as hedge_zip
     from lowconf_tail import main as add_tail
     from round_boxes import rewrite_zip as round_zip
@@ -174,7 +174,7 @@ def main() -> None:
     b, c = (json.loads(probs[name].read_text()) for name in ('branch', 'conv'))
     ids = [im['id'] for im in images]
     mean = 0.5 * np.array([b[str(i)] for i in ids]) + 0.5 * np.array([c[str(i)] for i in ids])
-    labels = apply_size_rule(mean, [(im['width'], im['height']) for im in images], size_allowed()).argmax(1)
+    labels = mean.argmax(1)
 
     with zipfile.ZipFile(tailed) as archive:
         detection = archive.read('detection.json')

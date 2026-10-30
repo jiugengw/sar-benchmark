@@ -20,7 +20,7 @@ This rebuilds our final ZIP (+65.80) from the saved weights in one command. It t
 every time. Use the same command for new test images.
 
 1. Do the one-time setup in [section 1](#1-one-time-setup-on-the-smu-cluster-about-an-hour). The command needs the
-   data, the virtual environment, `prepare_dataset.py`'s class list and the copied `split.json`.
+   data, the virtual environment and `prepare_dataset.py`'s class list (the `cp` lines are only for retraining).
 2. Download the weights and check them:
    `gh release download model-flipsoup-twohead --pattern '*.pt' --dir final_model && (cd final_model && shasum -a 256 -c SHA256SUMS)`
 3. On a GPU node, from the repository root:
@@ -33,7 +33,7 @@ every time. Use the same command for new test images.
    It takes about 5 minutes. As a Slurm job: [`sbatch/staging/job_z.sbatch`](../sbatch/staging/job_z.sbatch). It
    ends with one of three verdicts:
    - `MATCH`: byte-for-byte the ZIP we uploaded. Expect this on the cluster's Blackwell slices
-     (`rtx_pro_6000_blackwell_max`), the GPU type that made it (checked on 30 Oct: job 344324, 4 minutes).
+     (`rtx_pro_6000_blackwell_max`), the GPU type that made it (checked on 30 Oct: job 344390, 4 minutes).
    - `CLOSE MATCH`: the same labels, and boxes that differ only by another GPU type's floating-point rounding. On
      an A40 (tested on refit 2), 68,762 of 68,909 boxes were within 1 px (median 0.001 px) and the other 157 sat
      at the score cut-offs. Same model, same result for practical purposes.
@@ -47,7 +47,7 @@ every time. Use the same command for new test images.
 2. Rounding to whole pixels.
 3. Hedging: shifted and resized copies of each box at lower scores.
 4. A low-score tail: the same detector's boxes below 0.001, ranked last.
-5. Image labels from the two-head classifier.
+5. Image labels from the two-head classifier (the 50/50 average of its two heads; no size rule, see section 2).
 
 The ZIP holds `detection.json` (steps 1–4) and `classification.csv` (step 5).
 
@@ -189,10 +189,12 @@ points, so the tasks stay apart.
 | Branch head | `models/yolo/branch_head_study.py`, `branch_head_predict.py` | The frozen detector runs backbone layers 0-4; the head has its **own trainable copy of layers 5-10** (including SPPF and the C2PSA attention block, at lr / 10) and pools (max + mean) the outputs of layers 6 and 10 into an MLP | 20 epochs, random flips and quarter turns |
 | Conv head | `models/yolo/conv_head_study.py`, `conv_head_predict.py` | The four maps the detection head receives (P2-P5, after the neck): one small conv block per level, max + mean pooling, MLP | 30 epochs, random flips |
 
-The two heads' probabilities are averaged 50/50, then the **size rule** (`classifier_combo_study.py`) sets to 0 the
-classes never seen at an image's original size in training (e.g. 256 px images only hold bridge, ship, harbour, oil
-tank or aircraft). `sbatch/staging/fliprefit_heads.sbatch` does all of it and writes `classification.csv` into the
-ZIP. Retrain both heads for every new detector: heads trained on one detector's features do not carry over.
+The two heads' probabilities are averaged 50/50 and the highest class is the label.
+`sbatch/staging/fliprefit_heads.sbatch` does all of it and writes `classification.csv` into the ZIP. That job also
+applies a **size rule** (`classifier_combo_study.py`: classes never seen at an image's original size in training are
+set to 0, e.g. 256 px images only hold aircraft, bridge, harbour, oil tank or ship). The final pipeline
+(`make_final_zip.py`) leaves it out from 30 Oct: it changed 0 of 939 holdout and 0 of 1,426 test labels, so the ZIP
+is the same, and on images from new sources it could force a wrong label. Retrain both heads for every new detector: heads trained on one detector's features do not carry over.
 
 - **Quick classifier** (for fast probe ZIPs): `package_candidate.py --classifier-all-data` pools each P2-P5 map and
   trains an MLP. It is about 1 F1 point below the two heads, but mAP is the same, so a quick ZIP is enough to judge

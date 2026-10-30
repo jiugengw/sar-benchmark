@@ -26,7 +26,7 @@ skipped evaluation).
 | 7 | *Not in the final model:* refit 1, 9 epochs (stopped at 9 of 10) | 6 | `--all-data --no-augment --lr0 0.001 --epochs 10 --batch 16 --tal-beta 8 --dataset-flips --dataset-flips-classes <same six>` (job 340515) | ~5 h |
 | 8 | *Not in the final model:* refit 2, 10 more epochs | 7, last.pt | same as 7 (job 340754): `runs/ft40-s1adfsr2-340754/train/weights/last.pt` | ~5 h |
 | 9 | Package: quick classifier, whole-pixel rounding, two-tier hedging, low-score tail | **6** (8 for refit 2) | `sbatch/staging/fliprefit_package.sbatch` (`package_candidate.py --classifier-all-data`, `round_boxes.py zip`, `hedge_study.py zip`, `make_submission.py --conf 1e-5 --max-det 1000` + `lowconf_tail.py`) | ~1.5 h |
-| 10 | Two-head image classifier, then the tail again | **6** + the ZIP of 9 | `sbatch/staging/fliprefit_heads.sbatch` (`branch_head_study.py --epochs 20 --all-data`, `conv_head_study.py --epochs 30 --all-data`, both predictors, 0.5/0.5 average + size rule), then `lowconf_tail.py` | ~4 h |
+| 10 | Two-head image classifier, then the tail again | **6** + the ZIP of 9 | `sbatch/staging/fliprefit_heads.sbatch` (`branch_head_study.py --epochs 20 --all-data`, `conv_head_study.py --epochs 30 --all-data`, both predictors, 0.5/0.5 average + size rule, which changes no label and is left out of `make_final_zip.py`), then `lowconf_tail.py` | ~4 h |
 
 Stages 9 and 10 run unattended with `sbatch/staging/refit_ship.sh <refit job> <N>`.
 
