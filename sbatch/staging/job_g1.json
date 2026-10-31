@@ -1,0 +1,24 @@
+{
+  "build": {
+    "g-plain-last": [["runs/ft40-s1r-memorise-337666/train/weights/last.pt", 1]],
+    "g-flip-last": [["runs/ft40-s1r-flipmem-338727/train/weights/last.pt", 1]],
+    "g-third": [["runs/ft40-s1r-third-337119/train/weights/best.pt", 1]],
+    "g-plain+flip": [["runs/ft40-s1r-memorise-337666/train/weights/last.pt", 1],
+                     ["runs/ft40-s1r-flipmem-338727/train/weights/last.pt", 1]],
+    "g-plain+flip+spk+anneal": [["runs/ft40-s1r-memorise-337666/train/weights/last.pt", 1],
+                                ["runs/ft40-s1r-flipmem-338727/train/weights/last.pt", 1],
+                                ["runs/ft40-s1r-flipspk-338730/train/weights/last.pt", 1],
+                                ["runs/ft40-s1r-flipanneal-338803/train/weights/last.pt", 1]],
+    "g-plain+refit": [["runs/ft40-s1r-memorise-337666/train/weights/last.pt", 1],
+                      ["runs/ft40-s1r-fliprefit-340514/train/weights/last.pt", 1]],
+    "g-plain75+third25": [["runs/ft40-s1r-memorise-337666/train/weights/last.pt", 3],
+                          ["runs/ft40-s1r-third-337119/train/weights/best.pt", 1]],
+    "g-plain50+third50": [["runs/ft40-s1r-memorise-337666/train/weights/last.pt", 1],
+                          ["runs/ft40-s1r-third-337119/train/weights/best.pt", 1]],
+    "g-flip75+third25": [["runs/ft40-s1r-flipmem-338727/train/weights/last.pt", 3],
+                         ["runs/ft40-s1r-third-337119/train/weights/best.pt", 1]]
+  },
+  "score": ["ft40-s1r-memorise-337666", "ft40-s1r-flipmem-338727", "ft40-s1r-fliprefit-340514",
+            "g-third", "g-plain-last", "g-flip-last", "g-plain+flip", "g-plain+flip+spk+anneal", "g-plain+refit",
+            "g-plain75+third25", "g-plain50+third50", "g-flip75+third25"]
+}

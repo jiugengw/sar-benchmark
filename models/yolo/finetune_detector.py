@@ -563,6 +563,39 @@ def repeat_labels(labels: list[dict], factors: dict[int, int], only_width: int |
     return out
 
 
+def enable_dedupe_twins() -> None:
+    """List each scene once: of every same-class twin group among the training images (sarbench/train_twins.json,
+    thumbnails correlated above 0.9; 2,540 pairs among the 9,392 labelled images), keep the first image and drop its
+    twins, so training spends its steps on distinct scenes instead of relearning repeated ones (validation untouched).
+    Enable it before the repeat and flip hooks so they act on the de-duplicated list."""
+    from ultralytics.data import dataset as ul_dataset
+    from sarbench.twins import load_twins
+
+    image_map = json.loads((ROOT / 'data/yolo11s-sar-512/image_map.json').read_text())
+    course = {key.split('/')[-1]: info['file_name'] for key, info in image_map.items()}
+    twins = load_twins()
+    original = ul_dataset.YOLODataset.get_labels
+
+    def get_labels(self):
+        labels = original(self)
+        if not self.augment:
+            return labels
+        kept, seen = [], set()
+        for label in labels:
+            name = course.get(Path(label['im_file']).name)
+            if name is not None and name in seen:
+                continue
+            if name is not None:
+                seen.add(name)
+                seen.update(twins.get(name, ()))
+            kept.append(label)
+        self.im_files = [label['im_file'] for label in kept]
+        print(f'dedupe twins: {len(kept)} of {len(labels)} training images kept (one per twin group)', flush=True)
+        return kept
+
+    ul_dataset.YOLODataset.get_labels = get_labels
+
+
 def enable_class_repeat(factors: dict[int, int], only_width: int | None = None) -> None:
     """Apply repeat_labels to every training dataset (validation keeps each image once)."""
     from ultralytics.data import dataset as ul_dataset
@@ -934,6 +967,13 @@ def main() -> None:
                         help='with --mosaic: the partner tiles share the first tile\'s class and source width')
     parser.add_argument('--skip-evaluation', action='store_true',
                         help='save detector and curves only; use when a later stage refits the image classifier')
+    parser.add_argument('--freeze', type=int, default=0,
+                        help='keep the first N layers fixed (11 = the whole backbone): the stage sharpens the neck '
+                             'and head but keeps the features learnt with augmentation, as linear-probe-then-fine-tune '
+                             'does to hold up on new images (Kumar et al. 2022, arXiv 2202.10054)')
+    parser.add_argument('--dedupe-twins', action='store_true',
+                        help='train on one image per same-class twin group (enable_dedupe_twins)')
+    parser.add_argument('--weight-decay', type=float, default=0.0005, help='optimizer weight decay (recipe: 0.0005)')
     args = parser.parse_args()
 
     import torch
@@ -955,6 +995,8 @@ def main() -> None:
         if args.no_augment:
             raise ValueError('--rotate90 is an augmentation; memorise (--no-augment) runs without it')
         enable_rotate90(args.rotate90)
+    if args.dedupe_twins:  # first, so the flip and repeat hooks below act on the de-duplicated list
+        enable_dedupe_twins()
     if args.dataset_flips:
         if args.keep_flips:
             raise ValueError('--dataset-flips replaces --keep-flips (Ultralytics flips mirror without the dataset offset)')
@@ -1017,8 +1059,9 @@ def main() -> None:
                 'box_paste': args.box_paste, 'box_paste_max': args.box_paste_max, 'rotate90': args.rotate90,
                 'dataset_flips': args.dataset_flips, 'dataset_flips_classes': args.dataset_flips_classes, 'same_class_mosaic': args.same_class_mosaic,
                 'batch': args.batch, 'anneal_augment': args.anneal_augment, 'anneal_speckle': args.anneal_speckle,
-                'skip_evaluation': args.skip_evaluation,
-                'control': 'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
+                'skip_evaluation': args.skip_evaluation, 'freeze': args.freeze, 'dedupe_twins': args.dedupe_twins,
+                'weight_decay': args.weight_decay,
+                'control':'continue_2 of job 329644: same recipe, no change (holdout mAP 44.98 full / 41.89 clean)'}
     write_json(run_root / 'experiment.json', settings)
 
     data_yaml = args.data.resolve()
@@ -1074,12 +1117,13 @@ def main() -> None:
         data=str(data_yaml),
         epochs=args.epochs, imgsz=512, batch=args.batch, workers=4, device=0,
         pretrained=True, optimizer='MuSGD', lr0=args.lr0, lrf=1.0 if args.constant_lr else 0.1, momentum=0.9,
-        weight_decay=0.0005,
+        weight_decay=args.weight_decay,
         warmup_epochs=0 if args.constant_lr else 1, warmup_bias_lr=0.0, cos_lr=not args.constant_lr,
         seed=args.seed, deterministic=True, mixup=0.0, copy_paste=0.0, close_mosaic=0,
         **augmentation, hsv_h=0.0, hsv_s=0.0, box=args.box_gain,
         multi_scale=0.0, amp=True, patience=args.epochs + 1,
         project=str(run_root), name='train', plots=True, save_period=args.save_period,
+        **({'freeze': args.freeze} if args.freeze else {}),
     )
     weights = run_root / ('train/weights/last.pt' if args.all_data else 'train/weights/best.pt')
     write_json(run_root / 'compute.json', {'wall_seconds': time.monotonic() - started})

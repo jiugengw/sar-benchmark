@@ -1,0 +1,9 @@
+{
+  "detector": "50/50 weight average of runs/soup-s1/alldata-s1-six.pt (plain stride-1 soup, +58.00 model) and runs/soup-s1fs/alldata-s1fs-six.pt (flip soup, the final model); same start ft40-s1ad-third-338033 (job-d1 344722)",
+  "classifier": "two-head (branch + conv) trained on the averaged detector, all data",
+  "post": "make_final_zip.py: one2many conf 0.001 max-det 300, whole-pixel rounding, two-tier hedging, low-score tail, two-head labels",
+  "purpose": "Phase 2 check (31 Oct): on the training split the plain+flip average kept new-scene accuracy (new6 46.55 vs 46.15 for the final recipe, 46.88 plain); this upload measures its Phase 1 cost",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512
+}

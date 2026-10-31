@@ -34,7 +34,9 @@ of memorise runs that also see those classes' images flipped, with its two-head 
 [20–26 October](#rounding-hedging-soup-stride-1-and-repeated-scenes--2026-october-2026). On 28 October 19 more flip epochs (refit 2), its two-head classifier and a low-score tail gave **Δm +65.92** (95.24 F1,
 60.04 mAP). On 30 October the flip soup with the same tail scored **+65.80** (95.40 F1, 59.94 mAP): the refits added
 only +0.12, within run-to-run noise, so the final model (Phase 1 and Phase 2) is the flip soup without refits;
-[BEST_MODEL_RECIPE.md](BEST_MODEL_RECIPE.md) lists the whole chain.
+[BEST_MODEL_RECIPE.md](BEST_MODEL_RECIPE.md) lists the whole chain. On 31 October we checked it on new scenes: every
+step after the detector helps there too, and nothing we tried beat it on new images beyond noise; see
+[Phase 2 checks](#phase-2-checks-new-images--31-october-2026).
 
 | Date (2026) | Approach | Official F1 | Official mAP | Official Δm |
 |---|---|---:|---:|---:|
@@ -639,6 +641,37 @@ passes in their real orientation and shift their boxes by an offset they never h
 from the two training-data findings above (which classes the dataset mirrors, and which classes lost on the
 holdout): aircraft, car and ship images are listed four times as they are, 80 passes instead of 40. The all-data
 soup is rebuilt with six class-selective ingredients (`~/sbatch-staging/flipsoup3.sh`).
+
+## Phase 2 checks: new images — 31 October 2026
+
+Phase 2 scores new images with the final model, so on 31 October we ranked runs by **new6**: holdout AP on new scenes
+(64 px correlation < 0.6 to every training image under the four flips, 451 images), averaged over the six classes with
+at least 95 new-scene labels (aircraft, bridge, car, oil tank, playground, ship). Airport (13), harbor (15) and wind
+turbine (8) have too few labels to rank runs. All runs below are training-split models from the same third stage,
+rounded and hedged (`sbatch/staging/job_g.py`, `job_n.sbatch`).
+
+| Run (training split) | new6 | Flipped copies | Official-mix |
+|---|---:|---:|---:|
+| Plain memorise (337666) | 46.88 | 66.5 | 54.73 |
+| All-class flips (338727) | 45.50 | 88.1 | 58.32 |
+| Class-selective flips (344678, the final recipe) | 46.15 | 87.5 | 58.88 |
+| 50/50 weight average of plain and all-class flips | 46.55 | 79.7 | 57.14 |
+| Plain, frozen backbone (`--freeze 11`) | −0.4 vs plain | | |
+| Plain, one image per twin group (`--dedupe-twins`, 344970) | 46.81 | 64.8 | 54.65 |
+| Plain, weight decay 0.005 (345074) | 46.85 | 66.4 | 54.45 |
+| Plain, constant LR + SWA of epochs 20–40 (344680) | 46.98 | 66.3 | 54.45 |
+| Blends toward the third stage (75/25, 50/50) | 46.82, 46.67 | | |
+
+The flip training is the only part of the final model that leans on Phase 1: −0.7 new6 for +21 on the flipped copies.
+The all-data plain/flip average, with its own two-head classifier and all five steps, scored **+63.03** on Codabench
+(58.60 mAP, 95.00 F1; not posted), −2.77 against the final model. Its expected Phase 2 gain (about +0.3 mAP, +0.5 Δm) is
+within run-to-run noise (±0.3 new6), so the final model stays the +65.80 flip soup. None of the four regularisers
+moved new6 beyond noise.
+
+Each step after the detector, added one at a time on the holdout's new scenes (`sbatch/staging/job_s.py`, same on
+all three models): rounding +0.3 new6, hedging +0.8, the low-score tail +0.1. Image labels on new scenes: the 50/50
+two-head average 94.9% accuracy / 93.5 F1, against 93.8 / 92.7 (branch head) and 92.5 / 91.3 (conv head). F1 on new
+scenes is about 2 points below the whole holdout (95.7), so Phase 2's F1 will likely land a little under Phase 1's.
 
 ## Cross-cutting lessons
 
