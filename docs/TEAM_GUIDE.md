@@ -26,21 +26,25 @@ every time. Use the same command for new test images.
 3. On a GPU node, from the repository root:
 
    ```bash
-   python models/yolo/make_final_zip.py --out final.zip \
+   python models/yolo/make_submission.py --final --out final.zip \
      --compare submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/alldata-s1fs-soup6-rounded-hedged-s1two-tail.zip
    ```
 
-   It takes about 5 minutes. As a Slurm job: [`sbatch/staging/job_z.sbatch`](../sbatch/staging/job_z.sbatch). It
-   ends with one of three verdicts:
-   - `MATCH`: byte-for-byte the ZIP we uploaded. Expect this on the cluster's Blackwell slices
-     (`rtx_pro_6000_blackwell_max`), the GPU type that made it (checked on 30 Oct: job 344390, 4 minutes).
+   It takes about 5 minutes. As a Slurm job: [`sbatch/staging/job_m.sbatch`](../sbatch/staging/job_m.sbatch), which
+   also tries step 4 on a folder of test images. It ends with one of three verdicts:
+   - `MATCH`: the same `detection.json` and `classification.csv`, byte for byte, as the ZIP we uploaded. Expect
+     this on the cluster's Blackwell slices (`rtx_pro_6000_blackwell_max`), the GPU type that made it (checked on
+     31 Oct: job 346225, 4 minutes).
    - `CLOSE MATCH`: the same labels, and boxes that differ only by another GPU type's floating-point rounding. On
      an A40 (tested on refit 2), 68,762 of 68,909 boxes were within 1 px (median 0.001 px) and the other 157 sat
      at the score cut-offs. Same model, same result for practical purposes.
    - `DIFFERENT`: something else changed (weights, data or code); check step 2 and the setup.
 4. **New images** (e.g. Phase 2): put them in a folder laid out like `data/course-data/val`, that is an
    `images.json` listing each image's `id`, `file_name`, `width` and `height`, plus the image files. Then run
-   `python models/yolo/make_final_zip.py --images <folder> --out phase2.zip` and upload `phase2.zip`.
+   `python models/yolo/make_submission.py --final --images <folder> --out phase2.zip` and upload `phase2.zip`.
+   Keep the organisers' image ids: Codabench matches predictions to images by id. Tested on 31 Oct (job 346225)
+   with 60 test images of all six sizes copied to their own folder: the same labels as the uploaded ZIP and boxes
+   within 1 px (`CLOSE MATCH`; a different mix of images per GPU batch changes the rounding slightly).
 
 **What the command does.** These are the five steps that built our final ZIP, with the saved weights:
 1. Detector boxes, score ≥ 0.001.
@@ -193,7 +197,7 @@ The two heads' probabilities are averaged 50/50 and the highest class is the lab
 `sbatch/staging/fliprefit_heads.sbatch` does all of it and writes `classification.csv` into the ZIP. That job also
 applies a **size rule** (`classifier_combo_study.py`: classes never seen at an image's original size in training are
 set to 0, e.g. 256 px images only hold aircraft, bridge, harbour, oil tank or ship). The final pipeline
-(`make_final_zip.py`) leaves it out from 30 Oct: it changed 0 of 939 holdout and 0 of 1,426 test labels, so the ZIP
+(`make_submission.py --final`) leaves it out from 30 Oct: it changed 0 of 939 holdout and 0 of 1,426 test labels, so the ZIP
 is the same, and on images from new sources it could force a wrong label. Retrain both heads for every new detector: heads trained on one detector's features do not carry over.
 
 - **Quick classifier** (for fast probe ZIPs): `package_candidate.py --classifier-all-data` pools each P2-P5 map and

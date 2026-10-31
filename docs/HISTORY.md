@@ -673,6 +673,12 @@ all three models): rounding +0.3 new6, hedging +0.8, the low-score tail +0.1. Im
 two-head average 94.9% accuracy / 93.5 F1, against 93.8 / 92.7 (branch head) and 92.5 / 91.3 (conv head). F1 on new
 scenes is about 2 points below the whole holdout (95.7), so Phase 2's F1 will likely land a little under Phase 1's.
 
+One command for Phase 2 (31 Oct): the five steps moved from `make_final_zip.py` into
+`models/yolo/make_submission.py --final` (`make_final_zip.py` now just calls it). Job 346225
+(`sbatch/staging/job_m.sbatch`, 4 minutes on a Blackwell slice) rebuilt the final ZIP with it: `detection.json` and
+`classification.csv` byte-identical to the uploaded +65.80 ZIP (MATCH). The same command on 60 test images copied to
+their own folder, the way Phase 2's images will come, gave the same labels and boxes within 1 px (CLOSE MATCH).
+
 ## Cross-cutting lessons
 
 - **Detection is the score.** 1 mAP point ≈ 1.91 Δm vs 0.54 for F1. Changes that trade mAP for F1 (Phase 3)

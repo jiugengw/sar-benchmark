@@ -34,7 +34,7 @@ print `OK` for all three.
 ## Make the ZIP
 
 ```bash
-python models/yolo/make_final_zip.py --out final.zip
+python models/yolo/make_submission.py --final --out final.zip
 ```
 
 See [docs/TEAM_GUIDE.md](../docs/TEAM_GUIDE.md#0-replicate-our-submission-no-training) for the setup it needs, how to

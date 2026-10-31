@@ -55,7 +55,7 @@ come from `group_runs.py`; official-mix is the clean holdout weighted like the t
 - `soup-s1fs/heads-339995/{branch_head,conv_head}.pt`: its two classifier heads
 
   These are on the GitHub release `model-flipsoup-twohead` ([final_model/README.md](../final_model/README.md));
-  `models/yolo/make_final_zip.py` rebuilds the final ZIP from them.
+  `models/yolo/make_submission.py --final` rebuilds the final ZIP from them.
 - `ft40-s1adfsr2-340754/train/weights/last.pt` and `soup-s1fs/fliprefit-heads-341248/{branch_head,conv_head}.pt`:
   refit 2 and its heads (+65.92), on the release `model-refit2-twohead`
 - `ft40-s1ad-third-*/train/weights/last.pt`: the all-data third stage (start of new soups or reruns)
