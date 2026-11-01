@@ -728,6 +728,15 @@ Phase 2's ZIP gets them too. Job 348351 (Blackwell, 5 minutes) rebuilt the final
 `submissions/final/final.zip`: steps 1-5 and the labels byte for byte the +65.80 ZIP's; against try 1 a close match
 (92,699 vs 92,704 boxes, 24 extra boxes without a partner, because try 1's NMS-0.95 pass ran on an L40S).
 
+Density head, last half hour (`sbatch/staging/job_dh.py`, job 348529, Blackwell, 11 minutes): a three-layer head on the
+frozen final detector's neck (P3 plus upsampled P4/P5) learns a per-class heat map of object centres (CenterNet-style
+focal loss, Gaussian targets) from all labelled images for 10 minutes, about 2.3 epochs. Its map at each box centre
+re-ranks the final ZIP's bridge and playground boxes at 0.001 or more (1,107 boxes; score 0.001 + (s − 0.001)(1 + g·d)/(1 + g),
+so they stay above every hedge copy, tail and extra box), then `job_dh_extras.py` puts them on the +65.85 extras ZIP.
+No holdout check (all data, user's call). Codabench: g 1 **+65.47** (mAP 59.76), g 2 **+65.37** (59.71), against
++65.85 (59.96); the stronger the re-ranking, the worse, as with the classifier re-scoring. Records:
+`nonsubmissions/011126/density-boost/`. Not used; +65.85 stays the final and Phase 2 model.
+
 ## Cross-cutting lessons
 
 - **Detection is the score.** 1 mAP point ≈ 1.91 Δm vs 0.54 for F1. Changes that trade mAP for F1 (Phase 3)
