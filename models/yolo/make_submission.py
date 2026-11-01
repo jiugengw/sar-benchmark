@@ -73,6 +73,21 @@ def model_names(names) -> list[str]:
     return [str(name) for name in names]
 
 
+def force_multi_label() -> None:
+    """Make Ultralytics' NMS keep every class above the score threshold for each box (multi_label=True, what its own
+    validator uses) instead of only the box's top class."""
+    import functools
+    import importlib
+
+    for name in ("ultralytics.utils.nms", "ultralytics.utils.ops"):
+        try:
+            module = importlib.import_module(name)
+        except ImportError:
+            continue
+        if hasattr(module, "non_max_suppression"):
+            module.non_max_suppression = functools.partial(module.non_max_suppression, multi_label=True)
+
+
 def run(*args) -> None:
     subprocess.run([sys.executable, "-u", *map(str, args)], check=True)
 
@@ -172,15 +187,17 @@ def make_final(args: argparse.Namespace) -> None:
     for path in (base, rounded, hedged, lowconf, tailed):
         path.unlink(missing_ok=True)
     default_pass = Path(__file__).resolve()
+    multi_label = ["--multi-label"] if args.multi_label else []
     print("== 1. detector boxes", flush=True)
-    run(default_pass, "--weights", detector, "--data", data, "--detection-branch", "one2many", "--out", base)
+    run(default_pass, "--weights", detector, "--data", data, "--detection-branch", "one2many", "--out", base,
+        *multi_label)
     print("== 2. rounding", flush=True)
     round_zip(base, rounded, "whole-pixel-classes", images_json)
     print("== 3. hedging", flush=True)
     hedge_zip(rounded, hedged)
     print("== 4. low-score tail", flush=True)
     run(default_pass, "--weights", detector, "--data", data, "--detection-branch", "one2many", "--out", lowconf,
-        "--conf", "1e-5", "--max-det", "1000")
+        "--conf", "1e-5", "--max-det", "1000", *multi_label)
     add_tail(hedged, lowconf, tailed, images_json)
     print("== 5. two-head classifier", flush=True)
     probs = {}
@@ -221,6 +238,9 @@ def main() -> None:
     parser.add_argument("--nms-iou", type=float, default=0.7)
     parser.add_argument("--conf", type=float, default=0.001, help="lowest box score kept (studies only; ZIPs use 0.001)")
     parser.add_argument("--max-det", type=int, default=300, help="most boxes kept per image")
+    parser.add_argument("--multi-label", action="store_true",
+                        help="keep every class above --conf for each box, as Ultralytics' validator does, not only the "
+                             "top one (holdout, 1 Nov: no gain, so our ZIPs leave it off)")
     parser.add_argument("--box-class-policy", choices=(
         "native_detector_classes", "classifier_class_all_boxes", "classifier_class_score_weighted"
     ), default="native_detector_classes")
@@ -278,6 +298,8 @@ def main() -> None:
         raise FileExistsError(f"Refusing to overwrite temporary archive {temporary_zip}")
 
     detector = load_detector(args.weights, args.architecture)
+    if args.multi_label:
+        force_multi_label()
     if args.detection_branch != "default":
         if args.architecture != "yolo":
             raise ValueError("Explicit branch selection is supported only for YOLO")
@@ -476,6 +498,7 @@ def main() -> None:
         "detection_branch": args.detection_branch,
         "effective_detection_branch": actual_branch,
         "nms_iou": args.nms_iou,
+        "multi_label": args.multi_label,
         "classifier_feature_pooling": classifier_payload.get("feature_pooling", "mean") if classifier_head is not None else None,
         "classifier_checkpoint": str(args.classifier_checkpoint) if args.classifier_checkpoint else None,
         "classification_fallback_class": fallback_class,

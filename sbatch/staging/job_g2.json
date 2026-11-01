@@ -1,0 +1,9 @@
+{
+  "build": {
+    "g2-flipsel-sl": [["runs/ft40-s1r-flipsel-344678/train/weights/best.pt", 1]],
+    "g2-flipsel-ml": [["runs/ft40-s1r-flipsel-344678/train/weights/best.pt", 1]],
+    "g2-plain-ml": [["runs/ft40-s1r-memorise-337666/train/weights/last.pt", 1]]
+  },
+  "multi_label": ["g2-flipsel-ml", "g2-plain-ml"],
+  "score": ["ft40-s1r-flipsel-344678", "g2-flipsel-sl", "g2-flipsel-ml", "g-plain-last", "g2-plain-ml"]
+}

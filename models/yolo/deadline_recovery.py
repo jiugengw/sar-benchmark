@@ -31,7 +31,7 @@ def write_json(path, value):
     path.write_text(json.dumps(value, indent=2) + '\n')
 
 
-def evaluate_export(weights, classifier, branch, output, batch=16, nms_iou=0.7):
+def evaluate_export(weights, classifier, branch, output, batch=16, nms_iou=0.7, multi_label=False):
     """Evaluate exactly the same prediction code that produces the official ZIP."""
     from sarbench.metrics import detection_metrics
     from models.yolo.image_head import classification_metrics
@@ -55,7 +55,8 @@ def evaluate_export(weights, classifier, branch, output, batch=16, nms_iou=0.7):
         package = Path(temporary) / 'holdout.zip'
         run([sys.executable, '-u', ROOT / 'models/yolo/make_submission.py',
              '--weights', weights, '--classifier-checkpoint', classifier,
-             '--detection-branch', branch, '--data', view, '--out', package, '--batch', batch, '--nms-iou', nms_iou])
+             '--detection-branch', branch, '--data', view, '--out', package, '--batch', batch, '--nms-iou', nms_iou,
+             *(['--multi-label'] if multi_label else [])])
         with zipfile.ZipFile(package) as archive:
             predictions = json.loads(archive.read('detection.json'))
             labels = {int(row['image_id']): int(row['label']) for row in csv.DictReader(

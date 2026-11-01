@@ -8,7 +8,8 @@
 #     new6 averages the six classes with at least 95 new-scene labels (aircraft, bridge, car, oil tank, playground,
 #     ship); airport (13), harbor (15) and wind turbine (8) have too few to rank runs, so new9 swings with them.
 #   python job_g.py SPEC.json
-#   SPEC: {"build": {"tag": [["checkpoint", weight], ...], ...}, "score": ["tag", ...]}
+#   SPEC: {"build": {"tag": [["checkpoint", weight], ...], ...}, "score": ["tag", ...],
+#          "multi_label": ["tag", ...]}   (optional: tags exported with make_submission.py --multi-label)
 import contextlib, copy, io, json, sys
 from pathlib import Path
 import numpy as np
@@ -92,7 +93,7 @@ def build(spec):
         else:
             model = Path('results') / tag / 'model.pt'; model.parent.mkdir(parents=True, exist_ok=True)
             mix_weights(parts, model)
-        evaluate_export(model, CLASSIFIER, 'one2many', out)
+        evaluate_export(model, CLASSIFIER, 'one2many', out, multi_label=tag in spec.get('multi_label', ()))
         print(f'{tag}: exported', flush=True)
 
 

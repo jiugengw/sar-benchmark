@@ -679,6 +679,13 @@ One command for Phase 2 (31 Oct): the five steps moved from `make_final_zip.py` 
 `classification.csv` byte-identical to the uploaded +65.80 ZIP (MATCH). The same command on 60 test images copied to
 their own folder, the way Phase 2's images will come, gave the same labels and boxes within 1 px (CLOSE MATCH).
 
+Multi-label NMS (1 Nov): Ultralytics' predictor keeps only each box's top class; its validator keeps every class
+scoring above the threshold. `make_submission.py --multi-label` does the latter. On the holdout, rounded and hedged as
+submitted (job 348074, `sbatch/staging/job_g.py` with `job_g2.json`): official-mix 58.87 → 58.87 and new6
+46.14 → 46.13 on the class-selective flip model (344678), 54.63 → 54.62 and 46.68 → 46.68 on the plain stride-1 model
+(337666). The detector almost never gives a box a second class at 0.001 or more (4,180 → 4,214 boxes on 939 images),
+so there was nothing to gain. Left out.
+
 ## Cross-cutting lessons
 
 - **Detection is the score.** 1 mAP point ≈ 1.91 Δm vs 0.54 for F1. Changes that trade mAP for F1 (Phase 3)
