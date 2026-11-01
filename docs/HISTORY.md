@@ -66,6 +66,7 @@ step after the detector helps there too, and nothing we tried beat it on new ima
 | Oct 28 | Flip soup + 19 more class-selective flip epochs on all data (refit 2), quick classifier | 92.34 | 59.93 | +64.16 |
 | Oct 28 | Refit 2 + its two-head classifier | 95.24 | 59.93 | +65.71 |
 | Oct 28 | Same + low-score tail (the detector's own boxes under 0.001, ranked below every box) | 95.24 | 60.04 | **+65.92** |
+| Nov 1 | The final model (flip soup, no refit, +65.80) + NMS-removed boxes and wider hedge copies ranked last | 95.40 | 59.96 | +65.85 |
 
 All uploads, with Codabench IDs where known, are in [submissions/README.md](../submissions/README.md). Unless stated,
 "local" scores below are on the fixed 939-image holdout of the labelled training set (8,453 train / 939 holdout,
@@ -692,6 +693,35 @@ YOLO26 computes both branches in every forward pass, but adding the one2one boxe
 the one2one boxes no one2many box covers (IoU < 0.5) 58.53, one2one alone 57.45. Multiplying each box's score by the
 two-head classifier's probability of its class (training-split heads 337761, holdout accuracy 96.6) was flat: 58.57
 for ×1 on the image's class and ×0.5 otherwise, 58.54 for p^0.5, 58.28 for p^2. Neither was used; +65.80 stays.
+
+Where the new-scene bridges and playgrounds go (1 Nov, same refit and scoring; jobs 348088, 348097, 348100,
+`sbatch/staging/job_l*.py`): of 318 bridge labels, 24% are found, 10% only by a box under 0.001, 21% are near misses
+(IoU 0.1–0.5) and 44% get no box; playgrounds 13 / 13 / 15 / 60%. In 256-px images, which the model sees at 2×, 61% of
+bridges are found against 20% in 512-px ones. Neither score raising nor re-ranking helps: lifting every bridge and
+playground box under 0.001 gives 58.58 (the right ones are 0.2% of that band), a per-image rank penalty 57.95–58.41,
+class-wise NMS at 0.5 or 0.3 58.55 / 58.54. Only oracles that know where the objects are gain: snapping near misses
+onto their labels 59.12, lifting just the right low boxes 59.25.
+
+Two changes went straight to Codabench the same evening (labels byte-identical to +65.80 in both):
+- **Extra boxes ranked last** (`sbatch/staging/job_w.py`, job 348180): the detector's own boxes that NMS at IoU 0.7
+  removed (a pass with NMS at 0.95, scores ≥ 0.001) and wider hedge copies (×1.2 / ×0.83, ±16%), all below the
+  ZIP's lowest score and within 100 per image and class. Boxes appended below all others can only add COCO matches.
+  **+65.80 → +65.85** (mAP 59.94 → 59.96): worth hundredths, as the low-score tail was.
+- **Detection head retrained alone** (`sbatch/staging/job_x.sbatch`, layer 29 of 30 with backbone and neck frozen, so
+  the classifier's features stay exact; bridge and playground images ×3 and their targets ×2, LR 0.002, 5 epochs;
+  `job_y.py` moves the head into the soup): with the extra boxes **+65.68** (mAP 59.87, AP50 75.70 against 75.61). A
+  little more found at IoU 0.5, more lost at stricter IoU. Its training-split twin had been flat on the holdout
+  (Ultralytics val, epochs 1–3: mAP50 77.19–77.35 vs 77.15, mAP50-95 60.04–60.07 vs 60.25), and a 10-epoch run at
+  LR 0.005 was cancelled.
+
+Last, the finer internal stride at inference (`sbatch/staging/job_v.py`, job 348313): the second downsampling conv
+at stride 1 with the head's strides halved, no weight change, so the model sees a 512-px image the way it sees the
+upscaled 256-px ones, where it finds three times as many bridges. Team 9's numbers (AP50 +3.4, mAP +0.8 over ours)
+look like more small objects found with looser boxes, which is what a higher effective resolution gives. It fails
+without retraining: holdout official-mix 59.00 → 55.2 with the finer stride on bridge and playground scenes only
+(55.4 on their 512-px images only), 35.2 on the six small-object classes, 12.0 everywhere; new-scene bridge AP
+7.1 → 2.1, playground 4.4 → 0. The layers after the changed stride don't read features at that scale. Phase 1 ends
+at +65.92 (refit 2) and +65.85 for the final model.
 
 ## Cross-cutting lessons
 

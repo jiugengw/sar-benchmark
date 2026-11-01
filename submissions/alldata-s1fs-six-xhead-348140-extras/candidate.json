@@ -1,0 +1,9 @@
+{
+  "detector": "the flip soup runs/soup-s1fs/alldata-s1fs-six.pt with a retrained detection head (layer 29 only, from job 348113: 5 epochs on all data, backbone and neck frozen, LR 0.002, bridge/playground images x3 and positive targets x2); every other layer byte-identical to the soup (runs/soup-s1fs/alldata-s1fs-six-xhead-348140.pt)",
+  "classifier": "stride-1 two-head on the flip soup (job 339995); classification.csv byte-for-byte that of the +65.80 ZIP (0 of 1426 labels differ)",
+  "post": "make_submission.py --final (rounding, two-tier hedging, low-score tail; job 348140, L40S), then 2,547 NMS-removed boxes and 16,121 wider hedge copies ranked below every box (sbatch/staging/job_w.py, job 348208)",
+  "purpose": "Phase 1 race (1 Nov), try 2: does the retrained head beat +65.85 (try 1, the same extras on the unchanged soup)?",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512
+}
