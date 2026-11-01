@@ -686,6 +686,13 @@ submitted (job 348074, `sbatch/staging/job_g.py` with `job_g2.json`): official-m
 (337666). The detector almost never gives a box a second class at 0.001 or more (4,180 → 4,214 boxes on 939 images),
 so there was nothing to gain. Left out.
 
+Two more recall checks (1 Nov, after another team posted Δm +67.16 with AP50 78.99), on refit 340514 scored as
+submitted, rounded + hedged + low-score tail (official-mix 58.55, new6 45.53; job 348081, `sbatch/staging/job_k.py`).
+YOLO26 computes both branches in every forward pass, but adding the one2one boxes lost: NMS union of both 57.99, only
+the one2one boxes no one2many box covers (IoU < 0.5) 58.53, one2one alone 57.45. Multiplying each box's score by the
+two-head classifier's probability of its class (training-split heads 337761, holdout accuracy 96.6) was flat: 58.57
+for ×1 on the image's class and ×0.5 otherwise, 58.54 for p^0.5, 58.28 for p^2. Neither was used; +65.80 stays.
+
 ## Cross-cutting lessons
 
 - **Detection is the score.** 1 mAP point ≈ 1.91 Δm vs 0.54 for F1. Changes that trade mAP for F1 (Phase 3)
