@@ -723,6 +723,11 @@ without retraining: holdout official-mix 59.00 → 55.2 with the finer stride on
 7.1 → 2.1, playground 4.4 → 0. The layers after the changed stride don't read features at that scale. Phase 1 ends
 at +65.92 (refit 2) and +65.85 for the final model.
 
+The extra boxes are now step 6 of the final pipeline (`make_submission.py --final`, `models/yolo/extra_boxes.py`), so
+Phase 2's ZIP gets them too. Job 348351 (Blackwell, 5 minutes) rebuilt the final ZIP with it,
+`submissions/final/final.zip`: steps 1-5 and the labels byte for byte the +65.80 ZIP's; against try 1 a close match
+(92,699 vs 92,704 boxes, 24 extra boxes without a partner, because try 1's NMS-0.95 pass ran on an L40S).
+
 ## Cross-cutting lessons
 
 - **Detection is the score.** 1 mAP point ≈ 1.91 Δm vs 0.54 for F1. Changes that trade mAP for F1 (Phase 3)

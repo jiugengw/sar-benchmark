@@ -2,7 +2,7 @@
 
 Ideas that raised the Codabench score but aren't allowed under the course rules. We tried them as probes only:
 none was posted to the leaderboard, and none is part of our method or our final model. Our best allowed result
-stays **Δm +65.92** (mAP 60.04, F1 95.24); our final model, without refits, scores +65.80
+stays **Δm +65.92** (mAP 60.04, F1 95.24); our final model, without refits, scores +65.85
 ([submissions/README.md](../submissions/README.md)).
 
 ## Label transfer from the most similar labelled image (30 October)

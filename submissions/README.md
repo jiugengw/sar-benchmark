@@ -4,6 +4,8 @@ Every ZIP uploaded to the [Codabench competition](https://www.codabench.org/comp
 
 Seven probes of a trick that isn't allowed (label transfer, 30 Oct) are listed in [docs/NOT_ALLOWED_TRICKS.md](../docs/NOT_ALLOWED_TRICKS.md), not in this table.
 
+**Our final ZIP:** [final/final.zip](final/final.zip), made by `models/yolo/make_submission.py --final` (six steps, job 348351). Same labels and boxes as the +65.85 entry below (try 1) except 24 of its 19,149 bottom-ranked extra boxes, which came out slightly differently on another GPU type.
+
 | Codabench ID | Uploaded | ZIP | Status | Official Δm | Scoring result |
 |---:|---|---|---|---:|---|
 | — | 2026-11-01 ~20:13 | [alldata-s1fs-six-xhead-348140-extras.zip](alldata-s1fs-six-xhead-348140-extras/alldata-s1fs-six-xhead-348140-extras.zip) | Finished, probe (not posted): the final model with only its detection head retrained (5 epochs on all data, backbone and neck frozen, bridge and playground images ×3) plus the extra boxes below; labels unchanged. mAP 59.87 (−0.09 against the extras alone), AP50 75.70 (+0.09): a few more found at IoU 0.5, more lost at stricter IoU | +65.68 | [scores.json](alldata-s1fs-six-xhead-348140-extras/scoring_result/scores.json) |

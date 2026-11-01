@@ -3,8 +3,8 @@
 
 By default: one detector pass, with an optional single image-classifier head. Every ZIP we made starts from it.
 
-With --final: our final submission (Δm +65.80, the flip soup without refits) from the saved weights in final_model/,
-training nothing, in five steps:
+With --final: our final submission (Δm +65.85, the flip soup without refits) from the saved weights in final_model/,
+training nothing, in six steps:
   1. detector boxes: the default pass, one2many branch, boxes >= 0.001, at most 300 per image
   2. rounding to whole pixels: round_boxes.py (whole-pixel-classes)
   3. hedging: resized and shifted copies of each box at lower scores (hedge_study.py)
@@ -13,13 +13,16 @@ training nothing, in five steps:
   5. image labels: the saved two-head classifier (branch head + conv head, probabilities averaged 50/50, highest class).
      The size rule of classifier_combo_study.py is left out (30 Oct): it changed 0 of 939 holdout and 0 of 1,426 test
      labels, and on images from new sources it could force a wrong label.
+  6. extra boxes ranked last (1 Nov): the boxes NMS removed (the default pass again with --nms-iou 0.95) and wider
+     hedge copies, all below every box of steps 1-4 (extra_boxes.py); +0.02 mAP on Codabench (+65.80 -> +65.85).
+     --no-extras leaves it out, as the +65.80 ZIP was made.
 Each GPU step runs in its own process, as when the uploaded ZIP was made, so the result matches that ZIP.
 
 Run from the repository root on a CUDA GPU, after the setup in docs/TEAM_GUIDE.md section 1, with the weights in
 final_model/ (final_model/README.md says where to download them):
     python models/yolo/make_submission.py --final --out final.zip                     # Phase 1 images (data/course-data/val)
     python models/yolo/make_submission.py --final --images NEW_DIR --out phase2.zip   # NEW_DIR: images.json + the images
-    python models/yolo/make_submission.py --final --out final.zip --compare submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/alldata-s1fs-soup6-rounded-hedged-s1two-tail.zip
+    python models/yolo/make_submission.py --final --out final.zip --compare submissions/final/final.zip
 NEW_DIR is laid out like data/course-data/val: an images.json whose "images" list id, file_name, width and height,
 and the image files at NEW_DIR/<file_name>. Intermediate ZIPs and probabilities are kept in <out>-work/.
 """
@@ -147,11 +150,12 @@ def compare(mine: Path, reference: Path) -> None:
 
 
 def make_final(args: argparse.Namespace) -> None:
-    """--final: the five steps of our final submission (see the top of this file)."""
+    """--final: the six steps of our final submission (see the top of this file)."""
     root = Path.cwd()
     if not (root / "models/yolo/round_boxes.py").is_file():
         sys.exit("Run from the repository root.")
     sys.path[:0] = [str(root / "models/yolo"), str(root)]
+    from extra_boxes import main as add_extras
     from hedge_study import rewrite_zip as hedge_zip
     from lowconf_tail import main as add_tail
     from round_boxes import rewrite_zip as round_zip
@@ -184,7 +188,8 @@ def make_final(args: argparse.Namespace) -> None:
 
     base, rounded, hedged = work / "base.zip", work / "rounded.zip", work / "hedged.zip"
     lowconf, tailed = work / "lowconf.zip", work / "tailed.zip"
-    for path in (base, rounded, hedged, lowconf, tailed):
+    nms95, extras = work / "nms95.zip", work / "extras.zip"
+    for path in (base, rounded, hedged, lowconf, tailed, nms95, extras):
         path.unlink(missing_ok=True)
     default_pass = Path(__file__).resolve()
     multi_label = ["--multi-label"] if args.multi_label else []
@@ -210,8 +215,13 @@ def make_final(args: argparse.Namespace) -> None:
     ids = [im["id"] for im in images]
     mean = 0.5 * np.array([b[str(i)] for i in ids]) + 0.5 * np.array([c[str(i)] for i in ids])
     labels = mean.argmax(1)
+    if not args.no_extras:
+        print("== 6. extra boxes ranked last", flush=True)
+        run(default_pass, "--weights", detector, "--data", data, "--detection-branch", "one2many", "--out", nms95,
+            "--conf", "0.001", "--max-det", "1000", "--nms-iou", "0.95", *multi_label)
+        add_extras(tailed, nms95, extras, images_json)
 
-    with zipfile.ZipFile(tailed) as archive:
+    with zipfile.ZipFile(tailed if args.no_extras else extras) as archive:
         detection = archive.read("detection.json")
     with zipfile.ZipFile(args.out, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("detection.json", detection)
@@ -245,12 +255,13 @@ def main() -> None:
         "native_detector_classes", "classifier_class_all_boxes", "classifier_class_score_weighted"
     ), default="native_detector_classes")
     final = parser.add_argument_group("final submission")
-    final.add_argument("--final", action="store_true", help="make our final submission ZIP: the five steps above")
+    final.add_argument("--final", action="store_true", help="make our final submission ZIP: the six steps above")
     final.add_argument("--images", type=Path, default=Path("data/course-data/val"),
                        help="folder with images.json and the images (default: the Phase 1 test images)")
     final.add_argument("--branch", type=Path, default=FINAL_WEIGHTS / "branch_head.pt", help="branch head weights")
     final.add_argument("--conv", type=Path, default=FINAL_WEIGHTS / "conv_head.pt", help="conv head weights")
     final.add_argument("--compare", type=Path, help="reference ZIP to compare the result with")
+    final.add_argument("--no-extras", action="store_true", help="leave out step 6, as the +65.80 ZIP was made")
     args = parser.parse_args()
     if args.final:
         make_final(args)

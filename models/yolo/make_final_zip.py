@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The same as `python models/yolo/make_submission.py --final ...`: make_submission.py now holds the five steps of our
+"""The same as `python models/yolo/make_submission.py --final ...`: make_submission.py now holds the six steps of our
 final submission (see the top of that file). Kept so commands written before 31 Oct still work."""
 import os
 import sys

@@ -1,7 +1,8 @@
 # Final model weights
 
-The model we submit (Phase 1 and Phase 2): **the flip soup without refits, Δm +65.80** (mAP 59.94, macro-F1 95.40,
-[`submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/`](../submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/)).
+The model we submit (Phase 1 and Phase 2): **the flip soup without refits, Δm +65.85** (mAP 59.96, macro-F1 95.40,
+[`submissions/final/final.zip`](../submissions/final/)). The weights are the same as for +65.80 (30 Oct); the extra
+boxes added on 1 Nov come from the same detector.
 The weights are too large for git, so they are attached to the GitHub release
 [`model-flipsoup-twohead`](https://github.com/jiugengw/sar-benchmark/releases/tag/model-flipsoup-twohead).
 
@@ -14,8 +15,8 @@ The weights are too large for git, so they are attached to the GitHub release
 How each one was trained: [docs/TEAM_GUIDE.md](../docs/TEAM_GUIDE.md) section 2 and
 [docs/BEST_MODEL_RECIPE.md](../docs/BEST_MODEL_RECIPE.md).
 
-**Why not the refits.** Refit 2 (19 more flip epochs on this soup) scored +65.92, only +0.12 more, within run-to-run
-noise, and the refits only target the test's flipped copies of training images. From 30 Oct we submit the simpler
+**Why not the refits.** Refit 2 (19 more flip epochs on this soup) scored +65.92, only +0.12 more (before the extra boxes),
+within run-to-run noise, and the refits only target the test's flipped copies of training images. From 30 Oct we submit the simpler
 model. Refit 2's weights stay on the release
 [`model-refit2-twohead`](https://github.com/jiugengw/sar-benchmark/releases/tag/model-refit2-twohead).
 

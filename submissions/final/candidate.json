@@ -1,0 +1,10 @@
+{
+  "detector": "runs/soup-s1fs/alldata-s1fs-six.pt, the flip soup without refits (release model-flipsoup-twohead, detector.pt)",
+  "classifier": "stride-1 two-head on the flip soup (job 339995), branch + conv head averaged 50/50; labels byte-for-byte those of the +65.80 and +65.85 ZIPs",
+  "post": "models/yolo/make_submission.py --final, six steps: whole-pixel rounding, two-tier hedging, low-score tail, two-head labels, extra boxes ranked last (NMS-removed boxes + wider hedge copies); job 348351, Blackwell, 5 min",
+  "purpose": "our final submission ZIP, rebuilt by the final pipeline: steps 1-5 byte-identical to the +65.80 ZIP; CLOSE MATCH to try 1 (+65.85, the extras made on an L40S): 92,699 vs 92,704 boxes, 24 extra boxes unpaired, labels identical",
+  "sha256": "6b4705f69b1fd19bdfae3e1a50e471e03fd5dd96d92d3b04f8c414c67d222897",
+  "no_ensemble": true,
+  "no_test_time_augmentation": true,
+  "image_size": 512
+}

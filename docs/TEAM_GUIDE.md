@@ -1,9 +1,9 @@
 # Team guide: set up, rebuild and extend our best model
 
-**Our final model: Δm +65.80** (mAP 59.94, macro-F1 95.40), the flip soup without refits,
-[`submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/`](../submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/).
-It is the model we submit for Phase 1 and Phase 2. Our best score, +65.92, came from the same model plus 19 refit
-epochs (refit 2); that gain (+0.12) is within run-to-run noise, so we dropped the refits on 30 Oct.
+**Our final model: Δm +65.85** (mAP 59.96, macro-F1 95.40), the flip soup without refits,
+[`submissions/final/final.zip`](../submissions/final/). It is the model we submit for Phase 1 and Phase 2. Our best
+score, +65.92, came from the same model plus 19 refit epochs (refit 2); that gain (+0.12, before the extra boxes of
+step 6) is within run-to-run noise, so we dropped the refits on 30 Oct.
 
 - **What the model is and why:** [BEST_MODEL_RECIPE.md](BEST_MODEL_RECIPE.md) (the stage-by-stage chain, options,
   times and scores) and [HISTORY.md](HISTORY.md) (every experiment and its lesson).
@@ -16,7 +16,7 @@ epochs (refit 2); that gain (+0.12) is within run-to-run noise, so we dropped th
 
 ## 0. Replicate our submission (no training)
 
-This rebuilds our final ZIP (+65.80) from the saved weights in one command. It trains nothing, so it gives the same model
+This rebuilds our final ZIP (+65.85) from the saved weights in one command. It trains nothing, so it gives the same model
 every time. Use the same command for new test images.
 
 1. Do the one-time setup in [section 1](#1-one-time-setup-on-the-smu-cluster-about-an-hour). The command needs the
@@ -26,15 +26,16 @@ every time. Use the same command for new test images.
 3. On a GPU node, from the repository root:
 
    ```bash
-   python models/yolo/make_submission.py --final --out final.zip \
-     --compare submissions/alldata-s1fs-soup6-rounded-hedged-s1two-tail/alldata-s1fs-soup6-rounded-hedged-s1two-tail.zip
+   python models/yolo/make_submission.py --final --out final.zip --compare submissions/final/final.zip
    ```
 
    It takes about 5 minutes. As a Slurm job: [`sbatch/staging/job_m.sbatch`](../sbatch/staging/job_m.sbatch), which
    also tries step 4 on a folder of test images. It ends with one of three verdicts:
-   - `MATCH`: the same `detection.json` and `classification.csv`, byte for byte, as the ZIP we uploaded. Expect
-     this on the cluster's Blackwell slices (`rtx_pro_6000_blackwell_max`), the GPU type that made it (checked on
-     31 Oct: job 346225, 4 minutes).
+   - `MATCH`: the same `detection.json` and `classification.csv`, byte for byte, as `submissions/final/final.zip`.
+     Expect this on the cluster's Blackwell slices (`rtx_pro_6000_blackwell_max`), the GPU type that made it (job
+     348351 on 1 Nov, 5 minutes; steps 1-5 are byte for byte the uploaded +65.80 ZIP's, as job 346225 found on 31 Oct).
+     The uploaded +65.85 ZIP (try 1) had its extra boxes made on an L40S, so against it the result is a `CLOSE
+     MATCH`: same labels, 92,680 of 92,699 boxes identical, 24 extra boxes without a partner.
    - `CLOSE MATCH`: the same labels, and boxes that differ only by another GPU type's floating-point rounding. On
      an A40 (tested on refit 2), 68,762 of 68,909 boxes were within 1 px (median 0.001 px) and the other 157 sat
      at the score cut-offs. Same model, same result for practical purposes.
@@ -46,14 +47,17 @@ every time. Use the same command for new test images.
    with 60 test images of all six sizes copied to their own folder: the same labels as the uploaded ZIP and boxes
    within 1 px (`CLOSE MATCH`; a different mix of images per GPU batch changes the rounding slightly).
 
-**What the command does.** These are the five steps that built our final ZIP, with the saved weights:
+**What the command does.** These are the six steps that built our final ZIP, with the saved weights:
 1. Detector boxes, score ≥ 0.001.
 2. Rounding to whole pixels.
 3. Hedging: shifted and resized copies of each box at lower scores.
 4. A low-score tail: the same detector's boxes below 0.001, ranked last.
 5. Image labels from the two-head classifier (the 50/50 average of its two heads; no size rule, see section 2).
+6. Extra boxes ranked last (1 Nov): the same detector's boxes that NMS removed (its pass again with NMS at IoU 0.95)
+   and wider hedge copies, all scored below every box of steps 1–4. In COCO AP a box ranked below all others of
+   its class can't lower the precision of the ones above it, so these can only add matches (+0.02 mAP).
 
-The ZIP holds `detection.json` (steps 1–4) and `classification.csv` (step 5).
+The ZIP holds `detection.json` (steps 1–4 and 6) and `classification.csv` (step 5).
 
 ## 1. One-time setup on the SMU cluster (about an hour)
 
@@ -102,8 +106,9 @@ FLIPS='--dataset-flips --dataset-flips-classes airport,bridge,harbor,oil_tank,pl
 | 7. Package (quick classifier, rounding, hedging, low-score tail) | `sbatch $G --export=ALL,TAG=alldata-s1fs-soup6,DET=runs/soup-s1fs/alldata-s1fs-six.pt,RUN=runs/soup-s1fs sbatch/staging/fliprefit_package.sbatch`; its log `runs/sar-s1fsr-pkg-<job>.out` prints `S1FSR_ZIP_READY <zip>` and `S1FSR_TAIL_READY <zip>` |
 | 8. Two-head classifier | `sbatch $G --export=ALL,DET=runs/soup-s1fs/alldata-s1fs-six.pt,Z=<the S1FSR_ZIP_READY zip> sbatch/staging/fliprefit_heads.sbatch`; its log `runs/sar-s1fsr-heads-<job>.out` prints `S1FSR_TWOHEAD_ZIP <zip>` |
 | 9. Tail on the final ZIP | `python models/yolo/lowconf_tail.py <two-head zip> <same folder>/alldata-s1fs-soup6-lowconf.zip <two-head zip without .zip>-tail.zip` |
+| 10. Extra boxes ranked last | `python models/yolo/make_submission.py --weights runs/soup-s1fs/alldata-s1fs-six.pt --detection-branch one2many --conf 0.001 --max-det 1000 --nms-iou 0.95 --out nms95.zip`, then `python models/yolo/extra_boxes.py <tail zip> nms95.zip final.zip` |
 
-The ZIP from step 9 is the one to upload. Run times recorded by our runs: stage 1 12.7 h (on a 24 GB Blackwell
+The ZIP from step 10 is the one to upload. Run times recorded by our runs: stage 1 12.7 h (on a 24 GB Blackwell
 slice), stages 2-4 2.8, 2.8 and 5.5 h, each soup run 5-11 h depending on the GPU (45 h for all six), packaging about
 1.5 h, the heads about 4 h. In all about 75 GPU-hours: about 2 days of wall-clock with six GPUs for the soup, about
 2.5 days with two.
