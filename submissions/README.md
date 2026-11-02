@@ -6,6 +6,8 @@ Seven probes of a trick that isn't allowed (label transfer, 30 Oct) are listed i
 
 **Our final ZIP:** [final/final.zip](final/final.zip), made by `models/yolo/make_submission.py --final` (six steps, job 348351). Same labels and boxes as the +65.85 entry below (try 1) except 24 of its 19,149 bottom-ranked extra boxes, which came out slightly differently on another GPU type.
 
+**Phase 2 (test images, released 2 Nov 00:01):** [phase2/phase2.zip](phase2/phase2.zip), the same six steps and weights (`--final --images data/course-data/test`, job 348911, `sbatch/staging/job_p2.sbatch`), uploaded 2 Nov 04:15: **Δm +71.57** (F1 96.11, mAP 61.21, accuracy 96.22, AP50 77.75; [scores.json](phase2/scoring_result/scores.json)). Phase 2's Δm uses a new reference (F1 93.99, mAP 25.41 instead of 93.31, 26.13), so it isn't comparable one to one with Phase 1: on Phase 1's reference these numbers give +68.63.
+
 | Codabench ID | Uploaded | ZIP | Status | Official Δm | Scoring result |
 |---:|---|---|---|---:|---|
 | — | 2026-11-01 ~20:13 | [alldata-s1fs-six-xhead-348140-extras.zip](alldata-s1fs-six-xhead-348140-extras/alldata-s1fs-six-xhead-348140-extras.zip) | Finished, probe (not posted): the final model with only its detection head retrained (5 epochs on all data, backbone and neck frozen, bridge and playground images ×3) plus the extra boxes below; labels unchanged. mAP 59.87 (−0.09 against the extras alone), AP50 75.70 (+0.09): a few more found at IoU 0.5, more lost at stricter IoU | +65.68 | [scores.json](alldata-s1fs-six-xhead-348140-extras/scoring_result/scores.json) |
