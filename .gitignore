@@ -25,5 +25,3 @@ __pycache__/
 # Final-model weights: downloaded from the GitHub release (final_model/README.md), not committed
 /final_model/*.pt
 
-# Public dataset audits: downloaded datasets and caches (e.g. ~117k files for SARDet-100K)
-/dataset_audit/*/data/

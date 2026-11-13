@@ -1,11 +1,8 @@
 # CS701 SAR benchmark
 
-This repository has two sections:
-
-- **Course project (below):** our CS701 SAR model: training, submissions and the record of every experiment
-  (`models/`, `sbatch/`, `submissions/`, `results/`, `docs/`, `tools/`, ...).
-- **[Dataset audit](dataset_audit/README.md):** a separate study of leakage in public SAR detection benchmarks
-  (SARDet-100K, RSAR, M4-SAR). It has its own scripts, results and data in `dataset_audit/`.
+This repository is our CS701 SAR course project: training, submissions and the record of every experiment. The
+separate study of leakage in public SAR detection benchmarks (SARDet-100K, RSAR, M4-SAR) moved to its own private
+repository, [jiugengw/sar-dataset-audit](https://github.com/jiugengw/sar-dataset-audit) (13 Nov 2026).
 
 Our work on the CS701 SAR multi-task benchmark: classify each SAR image (9 classes) and detect its objects. Our final
 model scores **Δm +65.85** (macro-F1 95.40, mAP 59.96), from [`submissions/final/final.zip`](submissions/final/):
