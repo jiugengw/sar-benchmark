@@ -1,6 +1,6 @@
 """SARDet-100K leakage audit, stage 2: check stage-1 candidates at full resolution and by label transfer.
 
-For every query image whose best train match (sardet_candidates.py) has thumbnail r >= 0.7:
+For every query image whose best train match (candidates.py) has thumbnail r >= 0.7:
   full_r : Pearson of the full-resolution query (turned the matched way, resized to the reference size) and the reference.
            A re-saved copy gives ~0.95+; a new pass over the same place (new speckle) gives much less.
   low_r  : the same on 8x area-averaged images (speckle mostly gone): high low_r with modest full_r = same scene, new pass.
@@ -8,8 +8,8 @@ For every query image whose best train match (sardet_candidates.py) has thumbnai
            transferred box of the same class at IoU >= 0.5 ('label transfer'), and share of transferred boxes matched.
 Source group comes from size / format / classes (the annotation files carry no source field), see source().
 
-    ~/.venvs/sar-audit/bin/python tools/analysis/sardet_verify.py val    # -> results/sardet100k-audit/verify_val.csv
-    ~/.venvs/sar-audit/bin/python tools/analysis/sardet_verify.py test   # (no labels: no box_* columns)
+    ~/.venvs/sar-audit/bin/python dataset_audit/sardet100k/verify.py val    # -> results/verify_val.csv
+    ~/.venvs/sar-audit/bin/python dataset_audit/sardet100k/verify.py test   # (no labels: no box_* columns)
 """
 import csv, json, sys
 from collections import defaultdict
@@ -18,7 +18,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-ROOT = Path('data/sardet100k/SARDet_100K'); OUT = Path('results/sardet100k-audit')
+HERE = Path(__file__).resolve().parent
+ROOT = HERE / 'data' / 'SARDet_100K'; OUT = HERE / 'results'
 MIN_THUMB_R = 0.7
 F = {'id': lambda a: a, 'rot90': lambda a: np.rot90(a, 1), 'rot180': lambda a: np.rot90(a, 2), 'rot270': lambda a: np.rot90(a, 3),
      'lr': lambda a: a[:, ::-1], 'ud': lambda a: a[::-1, :], 'transpose': lambda a: a.T, 'antitranspose': lambda a: np.rot90(a, 2).T}

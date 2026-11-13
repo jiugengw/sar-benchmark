@@ -4,12 +4,13 @@ Every image is read as grey, shrunk with area averaging (which also averages out
 (cached), and turned into a 32 px zero-mean unit-norm descriptor, so an inner product is a Pearson correlation.
 Each query image is tried under all 8 flips / 90-degree turns against the reference split; the best match is kept.
 
-    ~/.venvs/sar-audit/bin/python tools/analysis/sardet_candidates.py thumbs            # cache thumbnails (~10 min)
-    ~/.venvs/sar-audit/bin/python tools/analysis/sardet_candidates.py search val train  # val (query) vs train
-    ~/.venvs/sar-audit/bin/python tools/analysis/sardet_candidates.py search test train
-    ~/.venvs/sar-audit/bin/python tools/analysis/sardet_candidates.py search val val    # duplicates inside val
+    ~/.venvs/sar-audit/bin/python dataset_audit/sardet100k/candidates.py thumbs            # cache thumbnails (~20 s)
+    ~/.venvs/sar-audit/bin/python dataset_audit/sardet100k/candidates.py search val train  # val (query) vs train
+    ~/.venvs/sar-audit/bin/python dataset_audit/sardet100k/candidates.py search test train
+    ~/.venvs/sar-audit/bin/python dataset_audit/sardet100k/candidates.py search val val    # duplicates inside val
 
-Writes data/sardet100k/audit/thumbs_<split>.npz and results/sardet100k-audit/nn_<query>_vs_<ref>.csv
+Paths are relative to this folder: reads data/SARDet_100K/, writes data/cache/thumbs_<split>.npz (git-ignored) and
+results/nn_<query>_vs_<ref>.csv
 (query file, best reference file, r, transform, query/ref sizes, query/ref std).
 """
 import csv, json, sys
@@ -18,7 +19,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-ROOT = Path('data/sardet100k/SARDet_100K'); CACHE = Path('data/sardet100k/audit'); OUT = Path('results/sardet100k-audit')
+HERE = Path(__file__).resolve().parent
+ROOT = HERE / 'data' / 'SARDet_100K'; CACHE = HERE / 'data' / 'cache'; OUT = HERE / 'results'
 SPLITS = ('train', 'val', 'test'); T, D, K = 64, 32, 5
 MIN_STD = 4.0  # nearly blank images match everything; leave them out (as in near_copies.py)
 

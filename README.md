@@ -1,5 +1,12 @@
 # CS701 SAR benchmark
 
+This repository has two sections:
+
+- **Course project (below):** our CS701 SAR model: training, submissions and the record of every experiment
+  (`models/`, `sbatch/`, `submissions/`, `results/`, `docs/`, `tools/`, ...).
+- **[Dataset audit](dataset_audit/README.md):** a separate study of leakage in public SAR detection benchmarks
+  (SARDet-100K, RSAR, M4-SAR). It has its own scripts, results and data in `dataset_audit/`.
+
 Our work on the CS701 SAR multi-task benchmark: classify each SAR image (9 classes) and detect its objects. Our final
 model scores **Δm +65.85** (macro-F1 95.40, mAP 59.96), from [`submissions/final/final.zip`](submissions/final/):
 one YOLO26m-P2 detector with a stride-1 first layer: the weight average of six all-data memorise runs that also see

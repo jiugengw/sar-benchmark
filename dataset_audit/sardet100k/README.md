@@ -1,22 +1,24 @@
 # SARDet-100K leakage audit (first pass, 13 Nov 2026)
 
 Data: Kaggle `greatbird/sardet-100k` (train 94,493 and val 10,492 with labels; test 11,613 images without labels),
-kept locally in `data/sardet100k/` (git-ignored). Source dataset per image is inferred from size, format and classes
+kept locally in `data/` here (git-ignored). The splits are the authors' own (`Annotations/train.json`,
+`val.json`, `JPEGImages/test/`); nothing was re-split. Source dataset per image is inferred from size, format and classes
 (the annotation files have no source field); the counts match the per-source table in the official repo.
 
 ## Method
 
-1. `tools/analysis/sardet_candidates.py`: every image becomes a 32 px area-averaged thumbnail (averaging removes most
+1. [`candidates.py`](candidates.py): every image becomes a 32 px area-averaged thumbnail (averaging removes most
    speckle). Each val or test image is compared with every train image under all 8 flips and 90-degree turns (FAISS,
    Pearson r), and the best match is kept.
-2. `tools/analysis/sardet_verify.py`: each match with thumbnail r >= 0.7 is checked again:
+2. [`verify.py`](verify.py): each match with thumbnail r >= 0.7 is checked again:
    - `full_r`: correlation at full resolution;
    - `low_r`: correlation after 8x averaging (speckle removed);
    - val only: the matched train boxes are turned back onto the val image to see how many val boxes they recover
      (label transfer, IoU >= 0.5, same class).
    As a baseline, boxes from a random train image of the same source recover 0.00-0.01 of the val boxes in every
    source except SIVED (0.19).
-3. Visual checks: `sheets/val_pairs_by_band.png` and `sheets/val_bandC_label_hits.png`.
+3. Visual checks: [`results/sheets/val_pairs_by_band.png`](results/sheets/val_pairs_by_band.png) and
+   [`results/sheets/val_bandC_label_hits.png`](results/sheets/val_bandC_label_hits.png).
 
 ## Leak groups
 
@@ -66,3 +68,15 @@ against 256 px ship chips (not yet checked by eye).
 - Duplicates inside one split. Stage 1 gives 17.5% of val and 25.2% of test with a thumbnail r >= 0.99 twin inside
   the same split; these are not verified yet.
 - How a trained model scores on the leaked group compared with the clean group.
+
+## Reproduce
+
+```bash
+python3 -m venv ~/.venvs/sar-audit && ~/.venvs/sar-audit/bin/pip install kaggle six faiss-cpu numpy pillow
+~/.venvs/sar-audit/bin/kaggle datasets download greatbird/sardet-100k -p dataset_audit/sardet100k/data --unzip
+~/.venvs/sar-audit/bin/python dataset_audit/sardet100k/candidates.py thumbs
+for q in val test; do ~/.venvs/sar-audit/bin/python dataset_audit/sardet100k/candidates.py search $q train; done
+for q in val test; do ~/.venvs/sar-audit/bin/python dataset_audit/sardet100k/verify.py $q; done
+```
+
+The Kaggle download needs a Kaggle API token in `~/.kaggle/`.
