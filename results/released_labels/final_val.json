@@ -1,0 +1,81 @@
+{
+ "all": {
+  "images": 1426,
+  "delta_m": 65.86,
+  "macro_f1": 95.4,
+  "mAP": 59.96,
+  "accuracy": 95.58,
+  "AP50": 75.61
+ },
+ "copy": {
+  "images": 41,
+  "delta_m": 96.81,
+  "macro_f1": 82.86,
+  "mAP": 79.65,
+  "accuracy": 97.56,
+  "AP50": 99.12
+ },
+ "flipped copy": {
+  "images": 438,
+  "delta_m": 134.49,
+  "macro_f1": 100.0,
+  "mAP": 94.54,
+  "accuracy": 100.0,
+  "AP50": 98.95
+ },
+ "near-copy 0.7-0.9": {
+  "images": 191,
+  "delta_m": 47.01,
+  "macro_f1": 90.79,
+  "mAP": 51.4,
+  "accuracy": 97.38,
+  "AP50": 72.99
+ },
+ "borderline 0.6-0.7": {
+  "images": 90,
+  "delta_m": 40.15,
+  "macro_f1": 85.02,
+  "mAP": 49.43,
+  "accuracy": 95.56,
+  "AP50": 72.42
+ },
+ "new <0.6": {
+  "images": 666,
+  "delta_m": 32.93,
+  "macro_f1": 92.95,
+  "mAP": 43.44,
+  "accuracy": 92.04,
+  "AP50": 63.08,
+  "per_class_AP": {
+   "aircraft": 62.65,
+   "airport": 32.69,
+   "bridge": 2.45,
+   "car": 69.93,
+   "harbor": 31.23,
+   "oil_tank": 78.14,
+   "playground": 12.76,
+   "ship": 42.88,
+   "wind_turbine": 58.22
+  },
+  "per_class_images": {
+   "aircraft": 130,
+   "airport": 49,
+   "bridge": 117,
+   "car": 50,
+   "harbor": 15,
+   "oil_tank": 53,
+   "playground": 132,
+   "ship": 97,
+   "wind_turbine": 23
+  }
+ },
+ "all copies (r >= 0.9)": {
+  "images": 479,
+  "delta_m": 114.84,
+  "macro_f1": 98.79,
+  "mAP": 84.61,
+  "accuracy": 99.79,
+  "AP50": 98.91
+ },
+ "new6": 44.8
+}
