@@ -27,6 +27,10 @@ rebuild the best model, the rules) and [docs/BEST_MODEL_RECIPE.md](docs/BEST_MOD
 - **[docs/RELEASED_LABELS.md](docs/RELEASED_LABELS.md): the final model on the released val and test labels**
   (13 Nov). The local scorer matches Codabench. Per-class test results, and test mAP 81.2 on copies of training
   images against 47.5 on new images.
+- **[docs/LEAKFREE_SPLIT.md](docs/LEAKFREE_SPLIT.md): a leak-free re-split of all labelled images** (19 Nov).
+  47.7% of the official test (47.6% of val) repeats training images: flipped copies, overlapping tiles, zoomed
+  chips. The new split keeps the TA's sizes and class mix, with no link across splits:
+  [`results/leakfree/split.csv`](results/leakfree/split.csv).
 - **[submissions/README.md](submissions/README.md): official scores.** Every ZIP uploaded to Codabench, with its Δm.
   Packaged ZIPs that were never uploaded are in [nonsubmissions/](nonsubmissions/).
 - **[docs/NOT_ALLOWED_TRICKS.md](docs/NOT_ALLOWED_TRICKS.md): tricks we thought of that aren't allowed** (label

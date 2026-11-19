@@ -1,0 +1,239 @@
+{
+ "controls": {
+  "same zoom (pixsearch)": {
+   "null: queries with a false link": 0,
+   "null: false link rate %": 0.0,
+   "null: max r by shared": {
+    "[0.1, 0.25)": 0.953,
+    "[0.25, 0.5)": 0.929,
+    "[0.5, 1.01)": 0.894
+   },
+   "planted recall (shared: found / planted)": {
+    "0.15": "18 / 100",
+    "0.3": "72 / 100",
+    "0.5": "90 / 100",
+    "0.75": "100 / 100",
+    "1.0": "100 / 100"
+   }
+  },
+  "zoom (scalesearch)": {
+   "null1: pairs passing": 0,
+   "null1: max r (zoom >= 1.05)": 0.976,
+   "null2: pairs passing": 0,
+   "null2: max r (zoom >= 1.05)": 0.953,
+   "planted1 recall": {
+    "fully inside": "64 / 100",
+    "half outside": "23 / 100"
+   },
+   "planted2 recall": {
+    "fully inside": "142 / 200",
+    "half outside": "0 / 0"
+   }
+  }
+ },
+ "links": {
+  "all": 14335,
+  "by kind": {
+   "overlap": 9615,
+   "flipped copy": 3263,
+   "copy": 1019,
+   "zoom copy": 438
+  }
+ },
+ "official split leak rate": {
+  "val": {
+   "images": 1426,
+   "leaked": 679,
+   "%": 47.6,
+   "by kind (first that applies)": {
+    "new": 747,
+    "overlap": 294,
+    "flipped copy": 334,
+    "copy": 45,
+    "zoom copy": 6
+   },
+   "per class %": {
+    "aircraft": 85.8,
+    "airport": 54.2,
+    "bridge": 9.7,
+    "car": 14.0,
+    "harbor": 47.0,
+    "oil_tank": 87.7,
+    "playground": 21.2,
+    "ship": 6.2,
+    "wind_turbine": 71.2
+   }
+  },
+  "test": {
+   "images": 2065,
+   "leaked": 985,
+   "%": 47.7,
+   "by kind (first that applies)": {
+    "new": 1080,
+    "overlap": 444,
+    "flipped copy": 477,
+    "copy": 61,
+    "zoom copy": 3
+   },
+   "per class %": {
+    "aircraft": 87.8,
+    "airport": 64.2,
+    "bridge": 7.5,
+    "car": 16.3,
+    "harbor": 47.7,
+    "oil_tank": 77.5,
+    "playground": 21.5,
+    "ship": 10.3,
+    "wind_turbine": 72.6
+   }
+  }
+ },
+ "groups": {
+  "groups": 7468,
+  "largest": [
+   145,
+   81,
+   72,
+   70,
+   58,
+   57,
+   54,
+   51,
+   50,
+   49
+  ],
+  "single images": 6049,
+  "groups spanning official splits": 752
+ },
+ "new split": {
+  "images": {
+   "train": 9392,
+   "val": 1426,
+   "test": 2065
+  },
+  "official sizes": {
+   "train": 9392,
+   "val": 1426,
+   "test": 2065
+  },
+  "links crossing splits (must be 0)": 0,
+  "per class (train / val / test)": {
+   "aircraft": [
+    1182,
+    148,
+    270
+   ],
+   "airport": [
+    650,
+    190,
+    190
+   ],
+   "bridge": [
+    1249,
+    124,
+    227
+   ],
+   "car": [
+    443,
+    93,
+    153
+   ],
+   "harbor": [
+    1355,
+    117,
+    128
+   ],
+   "oil_tank": [
+    1233,
+    155,
+    204
+   ],
+   "playground": [
+    1175,
+    179,
+    246
+   ],
+   "ship": [
+    1187,
+    160,
+    253
+   ],
+   "wind_turbine": [
+    918,
+    260,
+    394
+   ]
+  },
+  "official per class (train / val / test)": {
+   "aircraft": [
+    1182,
+    148,
+    270
+   ],
+   "airport": [
+    650,
+    190,
+    190
+   ],
+   "bridge": [
+    1249,
+    124,
+    227
+   ],
+   "car": [
+    443,
+    93,
+    153
+   ],
+   "harbor": [
+    1355,
+    117,
+    128
+   ],
+   "oil_tank": [
+    1233,
+    155,
+    204
+   ],
+   "playground": [
+    1175,
+    179,
+    246
+   ],
+   "ship": [
+    1187,
+    160,
+    253
+   ],
+   "wind_turbine": [
+    918,
+    260,
+    394
+   ]
+  },
+  "per size (train / val / test)": {
+   "512": [
+    6995,
+    1067,
+    1618
+   ],
+   "256": [
+    2321,
+    349,
+    438
+   ],
+   "other": [
+    76,
+    10,
+    9
+   ]
+  },
+  "images that change split": 5373,
+  "split.csv md5": "38a4c36ce3ea5fe28b998bb85c3d3608"
+ },
+ "rules": {
+  "pix": "shared >= 0.25: r >= 0.97; 0.10-0.25: r >= 0.99",
+  "scale": "zoom >= 1.05: r >= 0.98",
+  "seed": 0
+ }
+}
