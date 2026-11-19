@@ -11,7 +11,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 CLS=$R/runs/memorise-lr2-332326-package/image_classifier.pt   # only for the skipped evaluation, as in the recipe
 rm -rf $W; mkdir -p $W/data $LF/runs $LF/results; trap 'rm -rf $W' EXIT
 tar -C $R --exclude=__pycache__ -cf - models scripts sarbench pretrained | tar -C $W -xf -
-ln -s $LF/runs $W/runs; ln -s $LF/results $W/results
+ln -s $LF/runs $W/runs; ln -s $LF/results $W/results; ln -s $R/.venv $W/.venv   # train_yolo26s_p2.py reads .venv/.../yolo26-p2.yaml
 tar -C $W/data -xf $LF/course-data.tar
 cd $W; export PYTHONPATH=$W:$W/models/yolo
 if [ "${YOLO_DATA:-1}" = 1 ]; then
