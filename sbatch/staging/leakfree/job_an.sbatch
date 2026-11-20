@@ -16,8 +16,17 @@ set -euo pipefail
 source ~/sbatch-staging/leakfree/env.sh
 O=results/final-$SLURM_JOB_ID; mkdir -p $O; D=$O/soup.pt
 python -c "import sys; from pathlib import Path; from swa_study import average; average([Path(p) for p in sys.argv[2:]], Path(sys.argv[1])); print('averaged', len(sys.argv) - 2)" $D $SOUP
-python -u models/yolo/branch_head_study.py --detector $D --output $O/branch_head.pt --epochs 20 --batch 16 --all-data
-python -u models/yolo/conv_head_study.py --detector $D --output $O/conv_head.pt --batch 16 --epochs 30 --all-data
+# The head scripts' default --holdout-gt is an old official-split run file; with --all-data it only feeds printed
+# diagnostics. Give them the new split's holdout ids under names that match no official twin pair (no "clean" subset).
+python - $O/holdout_gt.json <<'PY'
+import json, sys
+split = json.load(open('runs/tm-48baseline-326894/terramind_pretrained_moelora/split.json'))
+ids = sorted(map(int, split['val_image_ids']))
+json.dump({'images': [{'id': i, 'file_name': f'leakfree/{i}'} for i in ids]}, open(sys.argv[1], 'w'))
+print('holdout ids', len(ids))
+PY
+python -u models/yolo/branch_head_study.py --detector $D --output $O/branch_head.pt --epochs 20 --batch 16 --all-data --holdout-gt $O/holdout_gt.json
+python -u models/yolo/conv_head_study.py --detector $D --output $O/conv_head.pt --batch 16 --epochs 30 --all-data --holdout-gt $O/holdout_gt.json
 for s in test val; do
   python -u models/yolo/make_submission.py --final --weights $D --branch $O/branch_head.pt --conv $O/conv_head.pt --images data/course-data/$s --out $O/final-$s.zip
   python - $O/final-$s-work/base.zip $O/final-$s.zip $O/plain-$s.zip <<'PY'
