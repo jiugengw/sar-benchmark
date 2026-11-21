@@ -87,3 +87,63 @@ our separate audit of public SAR benchmarks (SARDet-100K, RSAR, M4-SAR), where i
 Train the same recipe on the new `train` (+ `val` where the recipe uses the holdout), unchanged, and score on the new
 `test` with `scripts/score_released.py`'s rules; report it next to the official test score. Settings chosen on the
 official val stay as they were: nothing is tuned on the new test.
+
+## Results: the final pipeline retrained on the new split (21 Nov)
+
+The whole final pipeline ([BEST_MODEL_RECIPE.md](BEST_MODEL_RECIPE.md)) was retrained from the DOTA weights on the
+new `train` + holdout, with every setting unchanged:
+- stage 1, 100 epochs;
+- stages 2-4, 40 epochs each, all data;
+- six flip-soup runs, 20 epochs each, averaged;
+- the two-head classifier;
+- `make_submission.py --final`.
+
+The TA's reference model was also retrained on the new split, with its three seeds (0, 1, 2) as in the official
+reference. Δm uses each split's own reference, the mean of the three seeds. Scores come from
+`scripts/score_released.py` on the new labels. That script prints Δm against the official reference, so the Δm
+below is recomputed.
+
+| | images | F1 | mAP | AP50 | reference F1 / mAP | **Δm** |
+|---|---:|---:|---:|---:|---:|---:|
+| Official Phase 2 test (for comparison) | 2,065 | 96.11 | 61.21 | 77.75 | 93.99 / 25.41 | **+71.58** |
+| **New test, final pipeline** | 2,065 | 94.61 | 44.53 | 66.04 | 89.37 / 19.28 | **+68.41** |
+| New test, plain detector pass | 2,065 | 94.61 | 43.34 | 65.44 | 89.37 / 19.28 | +65.33 |
+| New val, final pipeline | 1,426 | 95.43 | 45.86 | 67.62 | 91.30 / 20.77 | +62.66 |
+| New val, plain detector pass | 1,426 | 95.43 | 44.48 | 67.00 | 91.30 / 20.77 | +59.34 |
+
+"Plain" is the step-1 detector boxes with the same image labels: no rounding, hedge copies, low-score tail or extra
+boxes.
+
+TA reference per seed (F1 / mAP):
+
+| | seed 0 | seed 1 | seed 2 | mean |
+|---|---:|---:|---:|---:|
+| new test | 89.45 / 19.70 | 89.02 / 19.13 | 89.63 / 19.02 | **89.37 / 19.28** |
+| new val | 91.24 / 21.31 | 90.53 / 20.21 | 92.12 / 20.79 | **91.30 / 20.77** |
+
+Per class on the new test (AP, final pipeline; official Phase 2 test in brackets): aircraft 29.3 (68.6), airport
+57.4 (81.5), bridge 4.5 (6.9), car 66.1 (70.4), harbor 61.4 (82.8), oil tank 66.3 (79.8), playground 7.9 (21.6),
+ship 46.6 (54.3), wind turbine 61.3 (85.2).
+
+- **Without copies our mAP falls by 16.7 points (61.2 → 44.5); the reference's falls by 6.1 (25.4 → 19.3).** Our
+  mAP is still 2.31x the reference's, against 2.41x on the official test, so Δm moves only from +71.6 to +68.4.
+- 44.5 is close to the 47.5 the final model scored on the new images of the official test
+  ([RELEASED_LABELS.md](RELEASED_LABELS.md#copies-vs-new-images)). The drop comes from classes made of overlapping
+  tiles: aircraft, wind turbine, harbor and airport.
+- Classification barely moves: F1 96.1 → 94.6.
+- The packaging steps still help on images with no copy in train: +1.19 mAP, +3.1 Δm over the plain pass. Those steps
+  were chosen on the official val, not on the new split.
+- Caveats:
+  - Ours is one training run; the reference is a three-seed mean.
+  - The pipeline keeps its dataset-flip training (stage 5), which was chosen for the benchmark's mirrored copies.
+    On the new split those copies sit in one split only.
+
+Files:
+- [`results/leakfree/retrain/`](../results/leakfree/retrain/): score files, with per class.
+- Jobs:
+  - data: job86;
+  - stages 1-4: job98, job99;
+  - soups: job100-105;
+  - final: job108 (job106 stopped on a missing holdout file, fixed in 19436b1);
+  - TA reference: job97 + job107.
+- Scripts: [`sbatch/staging/leakfree/`](../sbatch/staging/leakfree/).
