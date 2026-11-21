@@ -18,3 +18,7 @@ then on the login node, from the repository: `nohup bash ~/sbatch-staging/leakfr
 
 `env.sh` gives each job a private copy of the code in `/tmp` with the new-split data at `data/course-data`, so the
 scripts' built-in paths read the new split; outputs go to `runs/leakfree/{runs,results}` on scratch.
+
+21 Nov, after the main retrain (job109):
+- `job_ap.sbatch` + `probe_transfer.py`: the label-transfer probe (NOT ALLOWED, a record only) on the final new-test
+  ZIP. It runs the 30 Oct full-size matcher against the new train and scores the two ranges.
