@@ -1,0 +1,7 @@
+  matched 5 images of size (224, 224) against 59
+  matched 438 images of size (256, 256) against 2321
+  matched 1618 images of size (512, 512) against 6995
+best full-size similarity, quantiles 10..90%: [0.15, 0.207, 0.253, 0.31, 0.386, 0.486, 0.617, 0.772, 0.888]
+share at or above 0.45/0.6/0.7/0.8/0.9/0.98: [0.4329, 0.3177, 0.232, 0.1845, 0.0867, 0.0]
+all: 894 test images matched at 0.45-1.0, 3834 boxes copied -> results/transfer-373300/transferfull-all-not-allowed.zip
+near: 894 test images matched at 0.45-0.98, 3834 boxes copied -> results/transfer-373300/transferfull-near-not-allowed.zip

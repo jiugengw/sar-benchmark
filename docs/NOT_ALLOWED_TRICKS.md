@@ -45,6 +45,9 @@ A first version that added the copied boxes and kept the network's ones too was 
 - Matching first scored lower. When the match's class and the classifier disagreed (8–10 images), the match was
   usually wrong, for example an aircraft or oil-tank image matched to a bridge.
 - On new scenes the trick does nothing, so it wouldn't carry over to images that repeat no labelled scene.
+- On the leak-free split (21 Nov), with no copies left, the same full-size probe still lifts mAP 44.53 -> 53.79
+  (Δm +68.41 -> +92.43): the test repeats places, imaged on other passes
+  ([LEAKFREE_SPLIT.md](LEAKFREE_SPLIT.md#same-places-remain-label-transfer-probe-21-nov)).
 
 **Code and diagrams** (kept as a record):
 - [`sbatch/staging/transfer.py`](../sbatch/staging/transfer.py): 64 px thumbnail match.

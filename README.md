@@ -33,6 +33,8 @@ rebuild the best model, the rules) and [docs/BEST_MODEL_RECIPE.md](docs/BEST_MOD
   [`results/leakfree/split.csv`](results/leakfree/split.csv).
   **Retrained on it (21 Nov), the final pipeline scores Δm +68.41 on the new test** (F1 94.61, mAP 44.53, against
   the TA model retrained on the same split), next to +71.58 on the official test.
+  The split is copy-free, not location-free: a label-transfer probe (not allowed) still finds the same places
+  in train for 43% of the new test.
 - **[submissions/README.md](submissions/README.md): official scores.** Every ZIP uploaded to Codabench, with its Δm.
   Packaged ZIPs that were never uploaded are in [nonsubmissions/](nonsubmissions/).
 - **[docs/NOT_ALLOWED_TRICKS.md](docs/NOT_ALLOWED_TRICKS.md): tricks we thought of that aren't allowed** (label

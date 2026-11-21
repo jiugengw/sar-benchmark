@@ -1,8 +1,10 @@
 # A leak-free re-split of the course data (19 Nov 2026)
 
 After the TA released the val and test labels (13 Nov), all 12,883 labelled images can be pooled and split again so
-that no val or test image repeats a training image. This page gives the rule, how much the official split leaks, and
-the new split: [`results/leakfree/split.csv`](../results/leakfree/split.csv) (md5 `38a4c36ce3ea5fe28b998bb85c3d3608`).
+that no val or test image is a copy of a training image. It is copy-free, not location-free: many test images are
+other passes over a place in train, such as the same wind farm or airport imaged on another day (see
+[Same places remain](#same-places-remain-label-transfer-probe-21-nov)). This page gives the rule, how much the official
+split leaks, and the new split: [`results/leakfree/split.csv`](../results/leakfree/split.csv) (md5 `38a4c36ce3ea5fe28b998bb85c3d3608`).
 
 ## How much the official split leaks
 
@@ -137,6 +139,8 @@ ship 46.6 (54.3), wind turbine 61.3 (85.2).
   - Ours is one training run; the reference is a three-seed mean.
   - The pipeline keeps its dataset-flip training (stage 5), which was chosen for the benchmark's mirrored copies.
     On the new split those copies sit in one split only.
+  - The new test is copy-free but repeats places (next section). The TA model was trained on the same split, so the
+    comparison is fair, but +68.41 is not a score on never-seen places.
 
 Files:
 - [`results/leakfree/retrain/`](../results/leakfree/retrain/): score files, with per class.
@@ -147,3 +151,36 @@ Files:
   - final: job108 (job106 stopped on a missing holdout file, fixed in 19436b1);
   - TA reference: job97 + job107.
 - Scripts: [`sbatch/staging/leakfree/`](../sbatch/staging/leakfree/).
+
+## Same places remain: label-transfer probe (21 Nov)
+
+The 30 Oct label-transfer probe ([NOT_ALLOWED_TRICKS.md](NOT_ALLOWED_TRICKS.md), not allowed, a record only) was run
+on the new split:
+- Each new test image is compared at full size with every new train image of the same size, as is and in the three
+  flips.
+- Where the best match is at least 0.45, the matched image's boxes of the static classes (airport, wind turbine,
+  playground, bridge) replace the model's, at score 1.0.
+
+Script: `sbatch/staging/leakfree/probe_transfer.py`, job109. If the new test showed only new places, copying
+boxes would gain nothing. It gains a lot:
+
+| | mAP | Δm | wind turbine AP | playground AP | airport AP | bridge AP |
+|---|---:|---:|---:|---:|---:|---:|
+| final pipeline, new test | 44.53 | +68.41 | 61.3 | 7.9 | 57.4 | 4.5 |
+| + label transfer (not allowed) | 53.79 | +92.43 | 93.0 | 33.9 | 78.4 | 9.2 |
+
+F1 and the five other classes are unchanged.
+
+- No new test image matches a train image at 0.98 or above, so there are no copies. Even so, 894 of 2,065 (43%) match
+  at 0.45 or above, 18% at 0.8 and 9% at 0.9 (quantiles in `results/leakfree/retrain/transfer-373300/probe.log`).
+- These are other acquisitions of the same place: the speckle differs, but static objects stand in the same spots.
+  They fall below the split's link rule (r >= 0.97 over the shared region), which was set to catch copies without
+  false links.
+- On the official test the same probe gained less (+7.7 Δm), because the network had already memorised the exact
+  copies. Here the matched images were never trained on.
+- **So the split is copy-free, not location-free.** That is the standard near-duplicate fix (Barz & Denzler; Recht
+  et al.). The official split has the same-place repeats too, as well as the copies.
+- The probe shows how much a copier gains from known places, not how much our model does. Our model never copies
+  labels, but it may know these places a little.
+- A stricter, place-based split (spatial blocking, Roberts et al. 2017) would also group images by these matches. It
+  would need the whole pipeline and the TA reference retrained again (about 2-3 days); not done.
