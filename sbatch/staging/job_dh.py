@@ -1,5 +1,5 @@
 # job_dh (1 Nov, last hour): small density head on the frozen final detector, trained on all labelled images, then
-# used to boost the final ZIP's original boxes (score >= 0.001) of bridge and playground. No holdout check (user).
+# used to boost the final ZIP's original boxes (score >= 0.001) of bridge and playground. No holdout check.
 #   python job_dh.py FINAL.zip OUT_DIR
 import json, sys, time, zipfile
 from pathlib import Path

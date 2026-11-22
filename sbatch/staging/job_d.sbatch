@@ -1,5 +1,5 @@
 #!/bin/bash
-# job_d: an all-data candidate from existing detectors, no detector training (31 Oct, Phase 2 generalisation goal).
+# job_d: an all-data candidate from existing detectors, no detector training (31 Oct).
 # Averages the listed detectors (all from the all-data third stage ft40-s1ad-third-338033) into one model, trains its
 # two-head image classifier (branch + conv head, as the final model's heads 339995), then runs make_final_zip.py's
 # five steps (one2many boxes, rounding, hedging, low-score tail, two-head labels).

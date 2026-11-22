@@ -1,5 +1,5 @@
 #!/bin/bash
-# Low-score tail test (user, 28 Oct ~21:10: "yes run the low-score tail test on the free gpu"): the holdout refit
+# Low-score tail test (28 Oct): the holdout refit
 # 340514 (training-split twin of refit 2) predicted again with conf 1e-5 and up to 1000 boxes per image, then
 # tools/analysis/lowconf_tail_study.py scores the sub-0.001 boxes appended at three places in the ranking.
 #SBATCH --job-name=sar-tail-lowconf

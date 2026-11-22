@@ -1,5 +1,5 @@
 #!/bin/bash
-# Adds the low-score tail to a finished ZIP (user, 28 Oct ~22:00, after the holdout tail test gained +0.09): the ZIP's
+# Adds the low-score tail to a finished ZIP (28 Oct, after the holdout tail test gained +0.09): the ZIP's
 # own detector predicts the test images again with conf 1e-5, and models/yolo/lowconf_tail.py appends its sub-0.001
 # boxes below every box in the ZIP. Env: DET (weights), Z (rounded + hedged [-s1two] ZIP); writes Z with -tail.
 #SBATCH --job-name=sar-tail-zip

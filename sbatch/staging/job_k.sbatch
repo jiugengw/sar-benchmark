@@ -1,5 +1,5 @@
 #!/bin/bash
-# job_k: two recall checks on the holdout for the Phase 1 race (1 Nov; job_k.py): B. one2one + one2many boxes merged,
+# job_k: two recall checks on the holdout (1 Nov; job_k.py): B. one2one + one2many boxes merged,
 # A. image-class rescoring. Inference for B only (one2one boxes of 340514, ~5 min), the rest rescoring.
 #   sbatch --job-name=job2 --constraint=<free type> ~/sbatch-staging/job_k.sbatch
 #SBATCH --job-name=job2

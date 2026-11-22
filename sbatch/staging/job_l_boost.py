@@ -1,5 +1,5 @@
-# job_l_boost: can raising scores help the bridges and playgrounds found only below score 0.001? (1 Nov, user: "for
-# these cant i jus make the score higher".) Refit 340514's holdout boxes, job_l.py's outcomes, scored as submitted.
+# job_l_boost: can raising scores help the bridges and playgrounds found only below score 0.001? (1 Nov.)
+# Refit 340514's holdout boxes, job_l.py's outcomes, scored as submitted.
 #  raise all   every sub-0.001 bridge / playground box moved up to just above 0.001 (ranked right after the real
 #              originals and hedged like them): what "make the score higher" can do without knowing which are right.
 #  ORACLE      only the correct ones (job_l.py's "found low" boxes) raised to 0.5: needs the labels, so impossible;

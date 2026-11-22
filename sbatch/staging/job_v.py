@@ -1,5 +1,5 @@
-# job_v: the second downsampling layer at stride 1 too, at inference only (1 Nov, user: "i made them stride 1 alr, is
-# it i shd stride 1 one more time"). The weights don't change: layer 1's conv slides by 1 pixel instead of 2, so every
+# job_v: the second downsampling layer at stride 1 too, at inference only (1 Nov).
+# The weights don't change: layer 1's conv slides by 1 pixel instead of 2, so every
 # feature map is twice as fine and the head's strides halve. The model then sees a 512-px image the way it already
 # sees a 256-px one (upscaled x2), where it finds 61% of the bridges against 20% in 512-px images. Boxes can't exceed
 # 15 x stride per side (DFL), so at the finer stride nothing over ~240 px fits: the finer stride is used only on images

@@ -9,14 +9,16 @@ not in the queue yet, so they are not shown.
 
 One SSH call collects everything (the cluster needs the VPN). Read-only.
 
-    python3 scripts/jobs_table.py [--host jgwong.2023@10.193.104.102]
+    python3 scripts/jobs_table.py [--host USER@HOST]   (default: $CLUSTER_HOST or scripts/.cluster_host)
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
+from pathlib import Path
 
 REMOTE = r'''
 cd ~/scratchDirectory/sar-benchmark 2>/dev/null || exit 3
@@ -118,15 +120,20 @@ def timeline(data: dict) -> list[tuple[float, float, int, str]]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--host', default='jgwong.2023@10.193.104.102')
+    here = Path(__file__).resolve().parent
+    def local_setting(env: str, name: str) -> str:
+        file = here / name
+        return os.environ.get(env) or (file.read_text().strip() if file.exists() else '')
+    parser.add_argument('--host', default=local_setting('CLUSTER_HOST', '.cluster_host'))
     parser.add_argument('--direct', action='store_true', help='log in directly (needs a working SSH key) when no '
                                                               'shared connection is open')
     args = parser.parse_args()
     # Reuse a shared connection when one is open (ssh -M -o ControlPath=~/.ssh/cm-%r@%h:%p ...): frequent fresh logins
-    # get this address refused for a while. Else log in with the cluster's own key (~/.ssh/id_ed25519_smu, comment
-    # mac-to-smu); else a key loaded in the agent.
-    from pathlib import Path
-    key = Path.home() / '.ssh' / 'id_ed25519_smu'
+    # get this address refused for a while. Else log in with the cluster key ($CLUSTER_KEY or scripts/.cluster_key);
+    # else a key loaded in the agent.
+    if not args.host:
+        sys.exit('set CLUSTER_HOST=user@host or write it to scripts/.cluster_host')
+    key = Path(os.path.expanduser(local_setting('CLUSTER_KEY', '.cluster_key') or '~/.ssh/no-cluster-key'))
     shared = Path.home() / '.ssh' / f"cm-{args.host}:22"
     has_key = subprocess.run(['ssh-add', '-l'], capture_output=True).returncode == 0
     if not key.exists() and not shared.exists() and not has_key and not args.direct:

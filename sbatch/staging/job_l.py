@@ -1,5 +1,5 @@
-# job_l: where do the holdout's bridges and playgrounds go missing, and what could the same detector still give? (1 Nov,
-# user: "keeping same detector, what can help to see bridges and playground?? look at the missed ones".) No training,
+# job_l: where do the holdout's bridges and playgrounds go missing, and what could the same detector still give? (1 Nov.)
+# No training,
 # no inference: refit 340514's holdout boxes down to score 1e-5 (results/tail-lowconf-340514), the training-split twin of
 # the final recipe.
 #  1. Every bridge / playground label on the clean holdout gets one outcome: found (same-class box IoU >= 0.5, score

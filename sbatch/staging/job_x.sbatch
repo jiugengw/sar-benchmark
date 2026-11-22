@@ -1,14 +1,13 @@
 #!/bin/bash
 # job_x: retrain only the detection head (layer 29 of 30, 1.4M of 21M weights) with the backbone and neck frozen, so
-# the two-head image classifier's inputs and labels stay exactly the same (1 Nov, user: "think of how u can modify
-# the detector slightly without retraining it all", then "Start it"). Bridge and playground images shown 3 times, their
+# the two-head image classifier's inputs and labels stay exactly the same (1 Nov).
+# Bridge and playground images shown 3 times, their
 # positive targets weighted x2; class-selective dataset flips, no augmentation, beta 8, as the final recipe.
 # Ultralytics saves last.pt every epoch, so a run stopped at the deadline cut-off still leaves a usable head.
 #   V=twin sbatch --job-name=job6 --export=ALL ~/sbatch-staging/job_x.sbatch   training split, from 344678 (holdout check)
 #   V=all  sbatch --job-name=job7 --export=ALL ~/sbatch-staging/job_x.sbatch   all data, from the final flip soup
 #   V=all2 sbatch --job-name=job11 --export=ALL --constraint=l40s ~/sbatch-staging/job_x.sbatch   the same with LR 0.005
 #          (2.5x) over 10 epochs (8 on an A40, 5 on anything slower, to finish before the deadline), saved every epoch
-#          (user, 1 Nov ~19:40: "use one gpu for more epochs ... start from differnt lr? and diff decay")
 #SBATCH --job-name=job-x
 #SBATCH --partition=student
 #SBATCH --gres=gpu:1

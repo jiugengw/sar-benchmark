@@ -1,7 +1,7 @@
 #!/bin/bash
 # watch_tail3.sh N TRIES: waits for the N-th "alldata-s1fsr3: tail ZIP:" line in fliprefit.log and downloads that ZIP.
 N=$1; T=${2:-90}
-H=jgwong.2023@10.193.104.102; K=~/.ssh/id_ed25519_smu; REPO=/Users/jiugeng/Projects/sar-benchmark
+H=${CLUSTER_HOST:?user@host}; K=${CLUSTER_KEY:-~/.ssh/id_ed25519}; REPO=$(cd "$(dirname "$0")/../.." && pwd)
 for i in $(seq 1 $T); do
   L=$(ssh -i $K -o BatchMode=yes -o ConnectTimeout=15 $H "grep 'alldata-s1fsr3: tail ZIP:' ~/sbatch-staging/fliprefit.log | sed -n ${N}p; grep -c 'refit 3 ended' ~/sbatch-staging/fliprefit.log" 2>/dev/null | grep -v -E "^tput:|Pseudo-terminal")
   Z=$(echo "$L" | grep -o "nonsubmissions/[^ ]*\.zip" | head -1)

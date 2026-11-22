@@ -2,7 +2,7 @@
   "detector": "runs/soup-s1fs/alldata-s1fs-six.pt, the flip soup without refits (the +65.80 final model)",
   "classifier": "stride-1 two-head on the flip soup (job 339995); classification.csv byte-for-byte that of alldata-s1fs-soup6-rounded-hedged-s1two-tail (+65.80)",
   "post": "the +65.80 ZIP's 73,555 boxes unchanged, then 19,149 more ranked below every one of them: 2,787 of the detector's own boxes that NMS at IoU 0.7 removed (an NMS-0.95 pass, one2many, scores >= 0.001, whole-pixel rounded), then 16,362 wider hedge copies of the originals (sizes x1.2 / x0.83, shifts +-16%); at most 100 per image and class (sbatch/staging/job_w.py, job 348180, L40S)",
-  "purpose": "Phase 1 race (1 Nov, Team 9 at +67.16): boxes ranked below all others can only add COCO matches, so this can't score below +65.80",
+  "purpose": "Extra boxes (1 Nov): boxes ranked below all others can only add COCO matches, so this can't score below +65.80",
   "no_ensemble": true,
   "no_test_time_augmentation": true,
   "image_size": 512

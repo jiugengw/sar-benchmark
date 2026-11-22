@@ -1,5 +1,5 @@
 #!/bin/bash
-# All-data refit 3 (user, 28 Oct ~17:15: "sure"): refit 2 (340754, 19 flip epochs on the flip soup, Codabench mAP 59.93
+# All-data refit 3 (28 Oct): refit 2 (340754, 19 flip epochs on the flip soup, Codabench mAP 59.93
 # with the quick classifier) plus 10 more epochs of the same class-selective flip memorise (lr 0.001, beta 8).
 # The ladder so far: 0 epochs 59.80, 9 epochs 59.75, 19 epochs 59.93; this is the 29-epoch rung.
 #SBATCH --job-name=sar-ft40-fliprefit3

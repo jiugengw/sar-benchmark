@@ -1,5 +1,4 @@
-# job_g: which model does best on NEW scenes? (31 Oct, user: "make sure generalise for phase 2, so means must be good
-# on new unseen images, thats our goal"; "judge if our current setup is actually good for phase 2 too".)
+# job_g: which model does best on NEW scenes? (31 Oct.)
 #  1. Builds weighted averages of training-split checkpoints that share one start (ft40-s1r-third-337119) and exports
 #     their holdout predictions with the submission code (deadline_recovery.evaluate_export, one2many branch).
 #  2. Scores each listed run rounded + hedged as submitted: official-mix (clean images, as new_scene_runs.py) and AP per

@@ -1,5 +1,5 @@
-# job_s: does each step of the final pipeline still help on NEW scenes? (31 Oct, user: "can we make it gernalise
-# well, is every step ok".) No training and no inference: rescores holdout predictions that already exist, one step
+# job_s: does each step of the final pipeline still help on NEW scenes? (31 Oct.)
+# No training and no inference: rescores holdout predictions that already exist, one step
 # added at a time, by image group (job_g.py's groups: twins, flipped copies, near, mid and NEW scenes < 0.6).
 #  Boxes (steps 1-4 of make_final_zip.py): raw boxes >= 0.001 -> + rounding to whole pixels -> + hedging -> + low-score
 #    tail, on the plain stride-1 model 337666, the class-selective flip model 344678 (the final recipe) and refit 340514

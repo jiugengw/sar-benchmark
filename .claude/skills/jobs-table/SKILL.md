@@ -11,7 +11,7 @@ description: Show the SMU cluster's current SAR training jobs as a timeline (row
    python3 scripts/jobs_table.py
    ```
 
-   It makes one read-only SSH call to `jgwong.2023@10.193.104.102` and prints, first, a timeline: rows are time periods
+   It makes one read-only SSH call to the cluster login node (`$CLUSTER_HOST` or `scripts/.cluster_host`) and prints, first, a timeline: rows are time periods
    (clock times, `Mon 09:15` once past midnight) and columns are the user's two running slots ("GPU slot 1/2"), each cell
    the job in that slot with its id and GPU type. Running jobs end when their epochs run out; waiting jobs take the next
    free slot in Slurm priority order with a typical duration for their kind (`TYPICAL_HOURS` in the script), marked `≈`.

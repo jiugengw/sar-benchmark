@@ -1,5 +1,4 @@
-# job_y: does job_x's retrained detection head help, and the ZIP if it does (1 Nov, user: "think of how u can modify
-# the detector slightly without retraining it all", then "Start it").
+# job_y: does job_x's retrained detection head help, and the ZIP if it does (1 Nov).
 #  head SRC TRAINED OUT    SRC with TRAINED's detection head (the last layer, both branches) and nothing else: backbone
 #                          and neck stay SRC's bit for bit, so the two-head classifier's labels can't move. Prints how
 #                          far TRAINED's frozen layers drifted anyway (BatchNorm statistics) and how much the head moved.

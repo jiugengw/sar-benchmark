@@ -1,5 +1,5 @@
 #!/bin/bash
-# Goal Δm 70 (user, 29 Oct: "continue trying, think of why we not good, twins performance"): where the test mAP is lost
+# 29 Oct: where the test mAP is lost
 # by holdout group and class, and what is left in the twin gap (labels vs boxes, sharpness). CPU only, analysis only.
 #SBATCH --job-name=sar-where-lost
 #SBATCH --partition=student

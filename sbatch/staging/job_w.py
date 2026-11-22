@@ -1,5 +1,5 @@
-# job_w: guesses the detector already makes, put back at the bottom of the ranking (1 Nov, user: "think of smthj
-# else"; no training, no holdout check, straight to Codabench). Two kinds of extra boxes for a finished ZIP:
+# job_w: guesses the detector already makes, put back at the bottom of the ranking (1 Nov;
+# no training, no holdout check). Two kinds of extra boxes for a finished ZIP:
 #  1. boxes NMS removed: the detector proposes many overlapping boxes per object and NMS keeps the strongest, deleting
 #     neighbours that overlap it by IoU >= 0.7. Those neighbours are its own second guesses at the box edges. A pass
 #     with NMS at 0.95 instead (one2many, scores >= 0.001, up to 1000 per image) gives them back; whole-pixel rounded.

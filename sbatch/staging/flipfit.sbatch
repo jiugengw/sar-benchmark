@@ -1,5 +1,5 @@
 #!/bin/bash
-# Analysis (goal: Δm 70, 28 Oct): is the flip-memorised holdout refit under-fit on flipped views of its own training images?
+# Analysis (28 Oct): is the flip-memorised holdout refit under-fit on flipped views of its own training images?
 #SBATCH --job-name=sar-flipfit
 #SBATCH --partition=student
 #SBATCH --cpus-per-task=4

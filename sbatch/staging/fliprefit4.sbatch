@@ -1,5 +1,5 @@
 #!/bin/bash
-# All-data refit 4 (goal Δm 70; user 28 Oct ~23:30: "after 3am need to run smth, make sure l40s is preferred"): refit 3
+# All-data refit 4 (28 Oct): refit 3
 # (341403, 29 flip epochs) plus 10 more epochs of the same class-selective flip memorise (lr 0.001, beta 8), submitted
 # by after3.sh only if the holdout rung 341702 gains (or the user's Codabench result says go).
 #SBATCH --job-name=sar-ft40-fliprefit4

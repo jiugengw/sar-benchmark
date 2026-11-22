@@ -1,5 +1,5 @@
 #!/bin/bash
-# Analysis (goal: Δm 70, 29 Oct): where twins lose AP against their training copies (recognition, scores, boxes)
+# Analysis (29 Oct): where twins lose AP against their training copies (recognition, scores, boxes)
 #SBATCH --job-name=sar-twincopy
 #SBATCH --partition=student
 #SBATCH --cpus-per-task=4

@@ -1,5 +1,5 @@
 #!/bin/bash
-# job_r: soup of refits (user, 30 Oct: queue two, L40S only, neutral names). Siblings of refit 2 from the same flip
+# job_r: soup of refits (30 Oct). Siblings of refit 2 from the same flip
 # soup, each with refit 2's recipe (two 10-epoch cycles of class-selective flip memorise at lr 0.001; refit 2 used
 # beta 8) but another assigner beta. BETAS from the environment, run back to back (~10.5 h each):
 #   BETAS="7 9" sbatch --job-name=job-r1 --export=ALL ~/sbatch-staging/job_r.sbatch

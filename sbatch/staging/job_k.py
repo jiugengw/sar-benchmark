@@ -1,5 +1,4 @@
-# job_k: two recall checks for the Phase 1 race (1 Nov ~17:30, user: another team posted +67.16, "we need to spot new
-# scenes", then "great do those"). Same model, one pass, nothing taken from training labels. Holdout twin of the final
+# job_k: two recall checks (1 Nov). Same model, one pass, nothing taken from training labels. Holdout twin of the final
 # recipe = refit 340514 (training split), scored as submitted (round + hedge + low-score tail), clean official-mix and
 # new6 (job_g.py's groups). Baseline: official-mix 58.55 (hard-classes-ceiling note, tail study 28 Oct).
 #  rescore  A. image-class rescoring: every box's score times g(p), p = the two-head classifier's probability of the

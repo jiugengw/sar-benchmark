@@ -1,5 +1,5 @@
 #!/bin/bash
-# Goal Δm 70 / Phase 1 (28 Oct ~23:55): do weight-averaged (SWA) classifier heads beat the last epoch? Training-split
+# 28 Oct: do weight-averaged (SWA) classifier heads beat the last epoch? Training-split
 # heads on 340514 (holdout twin of refit 2): branch 20 epochs (SWA 11-20), conv 30 epochs (SWA 16-30); two-head F1.
 #SBATCH --job-name=sar-heads-swa-test
 #SBATCH --partition=student

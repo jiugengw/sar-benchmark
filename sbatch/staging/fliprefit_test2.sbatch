@@ -1,5 +1,5 @@
 #!/bin/bash
-# Goal Δm 70 (user, 28 Oct ~22:20): does the flip ladder keep gaining? On Codabench the all-data refits went 59.80 (soup)
+# 28 Oct: does the flip ladder keep gaining? On Codabench the all-data refits went 59.80 (soup)
 # -> 59.75 (+9 epochs) -> 59.93 (+19); refit 3 (+29) is training. Holdout analog of the next rung: the holdout refit
 # 340514 (338727 + 10) plus 10 more epochs of the same recipe, scored by holdout group against 338727 and 340514.
 #SBATCH --job-name=sar-fliprefit-test2

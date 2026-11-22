@@ -1,6 +1,5 @@
 #!/bin/bash
-# All-data refit with frozen TerraMind features fused into the detector (user, 29 Oct: "just run all data version
-# only"): refit 2 (340754, Codabench 60.04 with the tail) + 10 epochs of the same class-selective flip memorise, with
+# All-data refit with frozen TerraMind features fused into the detector (29 Oct): refit 2 (340754, Codabench 60.04 with the tail) + 10 epochs of the same class-selective flip memorise, with
 # terramind_fusion.py (frozen TerraMind-1.0-base tokens added at backbone layers 6 and 10 through zero-initialised 1x1
 # convolutions; one network). No training-split test first, by the user's choice: Codabench decides. Driver:
 #   cd ~/scratchDirectory/sar-benchmark

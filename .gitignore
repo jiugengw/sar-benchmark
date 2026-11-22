@@ -25,3 +25,7 @@ __pycache__/
 # Final-model weights: downloaded from the GitHub release (final_model/README.md), not committed
 /final_model/*.pt
 
+
+# local cluster login (host, key): not in the repo
+scripts/.cluster_host
+scripts/.cluster_key

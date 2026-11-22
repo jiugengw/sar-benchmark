@@ -1,5 +1,5 @@
 #!/bin/bash
-# User, 29 Oct: "then for new images what can we do?": rank existing training-split runs by new-scene AP per class.
+# 29 Oct: rank existing training-split runs by new-scene AP per class.
 # CPU only, analysis only (private-m4x* rows are diagnostic, never submittable). Results: new_scene_runs.out
 #SBATCH --job-name=sar-new-scene-runs
 #SBATCH --partition=student

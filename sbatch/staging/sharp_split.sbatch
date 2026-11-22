@@ -1,5 +1,5 @@
 #!/bin/bash
-# Goal Δm 70 (29 Oct): does Gaussian input smoothing help only the noisiest images? 340514 vs 342730 by sharpness.
+# 29 Oct: does Gaussian input smoothing help only the noisiest images? 340514 vs 342730 by sharpness.
 # CPU only, analysis only.
 #SBATCH --job-name=sar-sharp-split
 #SBATCH --partition=student

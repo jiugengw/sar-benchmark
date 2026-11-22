@@ -1,5 +1,5 @@
 #!/bin/bash
-# Goal Δm 70 / Phase 1 (28 Oct ~23:55): twin-matched jitter in memorise. Holdout twins score 84.8 against 98.3 on their
+# 28 Oct: twin-matched jitter in memorise. Holdout twins score 84.8 against 98.3 on their
 # training copies; they are pixel-aligned (median shift 0.02 px) and differ by gain 0.8-1.1, offset and smoothing
 # (Lee / Gaussian 0.5-2). TwinJitter (p 0.5) adds those; test = 340514 + 10 epochs of its recipe with it.
 #SBATCH --job-name=sar-twinjit-test

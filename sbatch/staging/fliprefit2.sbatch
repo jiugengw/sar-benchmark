@@ -1,5 +1,5 @@
 #!/bin/bash
-# Slot 2 while the flip-refit probe packages (user, 28 Oct ~09:10: "use l40s, do something"). Two parts in one job:
+# Slot 2 while the flip-refit probe packages (28 Oct). Two parts in one job:
 # 1. Holdout SWA, no training: average the flip test (338727) with its 10-epoch refit (340514) and score by holdout
 #    group. The refit came from a warm restart (lr back up to 0.001), and the average of the two ends of such a cycle
 #    often beats both. If it does, the all-data twin is free: average the +65.55 soup with the 9-epoch all-data refit.

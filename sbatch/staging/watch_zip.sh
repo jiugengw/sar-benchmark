@@ -1,7 +1,7 @@
 #!/bin/bash
 # watch_zip.sh TAG quick|twohead TRIES: waits for TAG's ZIP line in fliprefit.log and downloads the ZIP.
 TAG=$1; KIND=$2; N=${3:-80}
-H=jgwong.2023@10.193.104.102; K=~/.ssh/id_ed25519_smu; REPO=/Users/jiugeng/Projects/sar-benchmark
+H=${CLUSTER_HOST:?user@host}; K=${CLUSTER_KEY:-~/.ssh/id_ed25519}; REPO=$(cd "$(dirname "$0")/../.." && pwd)
 if [ $KIND = quick ]; then PAT="$TAG: (rounded \+ hedged ZIP|packaging ended)|refit 3 ended"; OK="rounded + hedged ZIP"
 else PAT="$TAG: (two-head classifier ended|packaging ended)|refit 3 ended"; OK="S1FSR_TWOHEAD_ZIP"; fi
 for i in $(seq 1 $N); do

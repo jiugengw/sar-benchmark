@@ -1,5 +1,5 @@
 # Why do flipped copies score ~91 when the model trains on those exact flipped pixels, while the same scenes as-is
-# score ~98? (29 Oct, goal Δm 70; analysis only, no label is copied anywhere.) For the clean holdout images that are
+# score ~98? (29 Oct; analysis only, no label is copied anywhere.) For the clean holdout images that are
 # flipped copies of training images (64 px correlation >= 0.9 under a flip), with the holdout twin of refit 2 (340514):
 #   A  the holdout flipped copies, the model's own boxes, on their own labels (what the test sees)
 #   B  their training originals as they are, on the originals' labels (trained-on, as-is)

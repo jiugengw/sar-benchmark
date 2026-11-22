@@ -8,7 +8,8 @@
 #   scripts/cluster.sh --get REMOTE_FILE LOCAL_PATH      copy a file down
 #   scripts/cluster.sh --status                          shared login open? new logins in the last hour?
 set -uo pipefail
-HOST=${CLUSTER_HOST:-jgwong.2023@10.193.104.102}
+HOST=${CLUSTER_HOST:-$(cat "$(dirname "$0")/.cluster_host" 2>/dev/null)}  # user@host, git-ignored file or env
+[ -n "$HOST" ] || { echo "set CLUSTER_HOST=user@host or write it to scripts/.cluster_host"; exit 2; }
 LOG=${CLUSTER_LOGIN_LOG:-$HOME/.ssh/cluster-logins.log}
 MAX_PER_HOUR=${CLUSTER_MAX_LOGINS_PER_HOUR:-3}
 WAIT_AFTER_REFUSAL=1800  # seconds; one attempt after that, never a loop

@@ -1,7 +1,7 @@
 #!/bin/bash
 # job_n: one generalisation direction on the training split, judged on NEW scenes with job_g.py against the plain
 # stride-1 memorise 337666 (same start ft40-s1r-third-337119, 40 epochs, lr 0.002, no augmentation, beta 8, batch 16).
-# 31 Oct, user: "try stuff in diff direction, and make sure generalise for phase 2 ... good on new unseen images".
+# 31 Oct.
 #   V=freeze11 sbatch --job-name=job-n2 --export=ALL ~/sbatch-staging/job_n.sbatch
 #   V=flipsel   the final model's recipe (class-selective flip memorise, 20 epochs over the 4x list as 338727): does
 #               the recipe we submit lose on new scenes against plain memorise?

@@ -1,5 +1,5 @@
 #!/bin/bash
-# TerraMind fusion smoke test (user, 29 Oct: "just run all data version only"): equality at start, a 2% one-epoch
+# TerraMind fusion smoke test (29 Oct): equality at start, a 2% one-epoch
 # training through Ultralytics, reload, make_submission, head paths, step time. Results: tm_smoke.out
 #SBATCH --job-name=sar-tm-smoke
 #SBATCH --partition=student

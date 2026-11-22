@@ -1,5 +1,5 @@
 #!/bin/bash
-# Phase 1, last cheap checks (user, 29 Oct: "Yes, run both"): image class from the heads plus the detector's boxes, and a
+# Last cheap checks (29 Oct): image class from the heads plus the detector's boxes, and a
 # re-fit of the post-processing (box-edge nudge, per-class hedge tiers) on 340514; CPU only. Results: ppcls_eval.out
 #SBATCH --job-name=sar-ppcls-study
 #SBATCH --partition=student

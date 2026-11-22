@@ -1,4 +1,4 @@
-# job_l_rank: two re-ranking signals the image classifier doesn't give (1 Nov, user: "there has to be a way"). Refit
+# job_l_rank: two re-ranking signals the image classifier doesn't give (1 Nov). Refit
 # 340514's holdout boxes, scored as submitted (round + hedge + tail; official-mix baseline 58.55).
 #  rank   images hold few bridges / playgrounds (~3 / ~2 per holdout image), so an image's k-th box of such a class is
 #         more often wrong: score x gamma^(k - K) beyond its top K boxes of that class.

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Goal Δm 70 / Phase 1 (29 Oct ~10:45): a FIXED smoothing filter on every input (training and prediction). Twins lose
+# 29 Oct: a FIXED smoothing filter on every input (training and prediction). Twins lose
 # 85.3 vs 89.6 (copy boxes on twin labels) mostly to looser boxes (twin_vs_copy.py); the same filter on both images
 # halves their difference (twin_fixed_filter.py). Test = 340514 + 10 epochs of its recipe with SAR_INPUT_FILTER=$FILTER.
 # Rule (set before the result): vs 340514, official-mix >= +0.15 and twins >= +1.0.

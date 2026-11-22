@@ -83,8 +83,7 @@ backbone/adapter combinations. The TA's own validation table put TerraMind + MoE
 LoRA or MoE-LoRA adapters, image-class head plus ViTDet feature pyramid and Faster R-CNN. 24 epochs, batch 16,
 AdamW, LR 1e-4, weight decay 0.05, seed 0, final-epoch checkpoint. ZIPs via `models/terramind/make_submission.py`. One extra
 screening run unfroze the last two TerraMind blocks (`--unfreeze-last 2`, unfrozen LR 2e-5, 12 epochs).
-The first plan aimed to beat a leaderboard snapshot of +8.22 (leader: F1 92.13%, mAP 30.75%) within the
-limit of five uploads per day.
+Uploads were limited to five per day.
 
 **Results.**
 
@@ -435,7 +434,7 @@ audit found 57% / 61% of boxes matched at IoU ≥ 0.3 at some score, but median 
 Ruled out: classifier gating/relabelling of boxes (oracle +0.19 mAP at best), maxDets 300 (+0.02), GT shifts,
 size snapping, per-class score calibration, bigger generic detectors. Ranked next ideas (NWD loss/assignment,
 P1 level, IoU-aware ranking, bridge/playground oversampling and class-conditioned detection) are in
-[DELTA45_PLAN.md](./DELTA45_PLAN.md).
+earlier planning notes (not kept).
 
 ---
 
@@ -687,7 +686,7 @@ submitted (job 348074, `sbatch/staging/job_g.py` with `job_g2.json`): official-m
 (337666). The detector almost never gives a box a second class at 0.001 or more (4,180 → 4,214 boxes on 939 images),
 so there was nothing to gain. Left out.
 
-Two more recall checks (1 Nov, after another team posted Δm +67.16 with AP50 78.99), on refit 340514 scored as
+Two more recall checks (1 Nov), on refit 340514 scored as
 submitted, rounded + hedged + low-score tail (official-mix 58.55, new6 45.53; job 348081, `sbatch/staging/job_k.py`).
 YOLO26 computes both branches in every forward pass, but adding the one2one boxes lost: NMS union of both 57.99, only
 the one2one boxes no one2many box covers (IoU < 0.5) 58.53, one2one alone 57.45. Multiplying each box's score by the
@@ -716,8 +715,7 @@ Two changes went straight to Codabench the same evening (labels byte-identical t
 
 Last, the finer internal stride at inference (`sbatch/staging/job_v.py`, job 348313): the second downsampling conv
 at stride 1 with the head's strides halved, no weight change, so the model sees a 512-px image the way it sees the
-upscaled 256-px ones, where it finds three times as many bridges. Team 9's numbers (AP50 +3.4, mAP +0.8 over ours)
-look like more small objects found with looser boxes, which is what a higher effective resolution gives. It fails
+upscaled 256-px ones, where it finds three times as many bridges. It fails
 without retraining: holdout official-mix 59.00 → 55.2 with the finer stride on bridge and playground scenes only
 (55.4 on their 512-px images only), 35.2 on the six small-object classes, 12.0 everywhere; new-scene bridge AP
 7.1 → 2.1, playground 4.4 → 0. The layers after the changed stride don't read features at that scale. Phase 1 ends
